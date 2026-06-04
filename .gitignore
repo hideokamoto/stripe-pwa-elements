@@ -5,7 +5,9 @@ loader/
 *~
 *.sw[mnpcod]
 *.log
-*.lock
+package-lock.json
+yarn.lock
+!pnpm-lock.yaml
 *.tmp
 *.tmp.*
 log.txt
