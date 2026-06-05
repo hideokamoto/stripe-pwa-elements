@@ -1,0 +1,197 @@
+version: 2.1
+
+# ---------------------------------------------------------------------------
+# Orbs
+# ---------------------------------------------------------------------------
+orbs:
+  node: circleci/node@6
+
+# ---------------------------------------------------------------------------
+# Reusable executor
+# ---------------------------------------------------------------------------
+executors:
+  default:
+    docker:
+      - image: cimg/base:current
+
+# ---------------------------------------------------------------------------
+# Reusable commands
+# ---------------------------------------------------------------------------
+commands:
+  install-deps:
+    description: >
+      Install the requested Node.js version (via nvm), activate pnpm via
+      corepack, then restore/save the pnpm store cache and install frozen
+      dependencies.
+    parameters:
+      node-version:
+        type: string
+        default: "22"
+    steps:
+      - node/install:
+          node-version: << parameters.node-version >>
+      # node/install-packages does NOT auto-install pnpm.
+      # corepack enable creates a lazy shim that still results in exit 127.
+      # Installing via npm is the simplest reliable approach; the version is
+      # read from the packageManager field in package.json.
+      - run:
+          name: Install pnpm
+          command: |
+            PNPM_VERSION=$(node -e "console.log(require('./package.json').packageManager.split('@')[1])")
+            npm install -g "pnpm@${PNPM_VERSION}"
+      - node/install-packages:
+          pkg-manager: pnpm
+          # Bump cache-version (e.g. v2) to force a fresh cache when needed.
+          cache-version: v1
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # ── Static checks (run once on LTS, not worth matrix-ing) ─────────────────
+  lint:
+    executor: default
+    resource_class: small
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: ESLint
+          command: pnpm run lint
+      - run:
+          name: Security audit (moderate+, prod deps only)
+          command: pnpm audit --audit-level=moderate --prod
+
+  type-check:
+    executor: default
+    resource_class: small
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: TypeScript type check
+          command: pnpm exec tsc --noEmit
+
+  # ── Unit tests ─────────────────────────────────────────────────────────────
+  #
+  # `circleci run testsuite` is the CircleCI Smarter Testing entrypoint.
+  # It reads .circleci/test-suites.yml and handles:
+  #
+  #   1. Discovery  – runs the `discover` command to enumerate all test files.
+  #
+  #   2. Selective execution  – when Test Impact Analysis is enabled in project
+  #      settings, only the tests linked to files changed in this PR run; the
+  #      rest are skipped entirely.
+  #
+  #   3. Dynamic splitting  – distributes the selected tests across the
+  #      `parallelism` containers weighted by historical JUnit timing data so
+  #      all containers finish at roughly the same time.
+  #
+  #   4. Failed-test reruns  – retrying the job re-runs only the tests that
+  #      failed, not the full suite.
+  #
+  # The `run` command in test-suites.yml receives the per-container test slice
+  # via << test.atoms >> and writes JUnit XML to << outputs.junit >>.
+  # store_test_results ingests that XML so CircleCI builds timing and impact
+  # data for future runs.
+  #
+  # test-suites.yml suite: "unit tests"
+  # Files: src/(utils|services)/**.spec.ts and **.unit.spec.ts  (19 today)
+  test-unit:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    parallelism: 4
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Unit tests — CircleCI Smarter Testing
+          command: |
+            mkdir -p test-reports/unit
+            circleci run testsuite "unit tests"
+      - store_test_results:
+          path: test-reports
+
+  # ── Component (rendering) tests ────────────────────────────────────────────
+  #
+  # test-suites.yml suite: "component tests"
+  # Files: **.spec.tsx  (8 today); raise parallelism as the suite grows.
+  test-component:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    parallelism: 2
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Component tests — CircleCI Smarter Testing
+          command: |
+            mkdir -p test-reports/component
+            circleci run testsuite "component tests"
+      - store_test_results:
+          path: test-reports
+
+  # ── Build verification ─────────────────────────────────────────────────────
+  build:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Production build
+          command: pnpm run build
+      - store_artifacts:
+          path: dist
+          destination: dist-node<< parameters.node-version >>
+
+# ---------------------------------------------------------------------------
+# Workflow
+# ---------------------------------------------------------------------------
+workflows:
+  ci:
+    jobs:
+      # Static checks first – fast, resource-light, no Node matrix needed.
+      - lint
+      - type-check
+
+      # Tests and build run on both active LTS lines (Node 20 & 22).
+      # Each job fans out once per node-version via the matrix.
+      # Test jobs additionally fan out across parallel containers; within
+      # each container `circleci run testsuite` narrows work via Smarter
+      # Testing (selective execution + dynamic splitting + failed-only reruns).
+      - test-unit:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
+
+      - test-component:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
+
+      - build:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
