@@ -30,13 +30,15 @@ commands:
     steps:
       - node/install:
           node-version: << parameters.node-version >>
-      # node/install-packages does NOT auto-install pnpm; enable it explicitly
-      # via corepack (bundled with Node ≥16.10) before the install step.
-      # corepack reads the packageManager field in package.json and activates
-      # the pinned pnpm version.
+      # node/install-packages does NOT auto-install pnpm.
+      # corepack enable creates a lazy shim that still results in exit 127.
+      # Installing via npm is the simplest reliable approach; the version is
+      # read from the packageManager field in package.json.
       - run:
-          name: Enable pnpm via corepack
-          command: corepack enable pnpm
+          name: Install pnpm
+          command: |
+            PNPM_VERSION=$(node -e "console.log(require('./package.json').packageManager.split('@')[1])")
+            npm install -g "pnpm@${PNPM_VERSION}"
       - node/install-packages:
           pkg-manager: pnpm
           # Bump cache-version (e.g. v2) to force a fresh cache when needed.
