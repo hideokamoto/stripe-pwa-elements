@@ -550,34 +550,22 @@ export class StripePaymentElement {
         return;
       }
 
-      // Build submit event props based on mode
-      const submitEventProps: PaymentElementSubmitEvent = {
+      // Build submit event props based on mode (shared with formSubmitEventHandler)
+      const result = buildSubmitEventProps({
         stripe,
-      };
+        isCheckoutSession,
+        checkout: this.stripeService.getCheckout(),
+        checkoutSessionClientSecret: this.checkoutSessionClientSecret,
+        elements: this.stripeService.getElements(),
+        intentClientSecret: this.intentClientSecret,
+      });
 
-      if (isCheckoutSession) {
-        // Checkout Session mode
-        const checkout = this.stripeService.getCheckout();
-
-        if (checkout == null) {
-          console.error('Checkout not properly initialized');
-          return;
-        }
-
-        submitEventProps.checkout = checkout;
-        submitEventProps.checkoutSessionClientSecret = this.checkoutSessionClientSecret;
-      } else {
-        // Payment Intent / Setup Intent mode
-        const elements = this.stripeService.getElements();
-
-        if (elements == null) {
-          console.error('Elements not properly initialized');
-          return;
-        }
-
-        submitEventProps.elements = elements;
-        submitEventProps.intentClientSecret = this.intentClientSecret;
+      if ('error' in result) {
+        console.error(result.error);
+        return;
       }
+
+      const submitEventProps = result.props;
 
       this.progress = 'loading';
       try {
