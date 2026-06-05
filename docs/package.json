@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "sync:components": "node scripts/sync-stencil-readmes.mjs",
-    "build": "npm run sync:components && astro build",
+    "build": "pnpm run sync:components && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "pnpm run build && wrangler deploy"
