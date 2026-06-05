@@ -17,9 +17,9 @@
   "scripts": {
     "build": "stencil build --docs",
     "start": "stencil build --dev --watch --serve",
-    "docs:dev": "npm --prefix docs run dev",
-    "docs:build": "npm --prefix docs run build",
-    "docs:preview": "npm --prefix docs run preview",
+    "docs:dev": "pnpm -C docs run dev",
+    "docs:build": "pnpm -C docs run build",
+    "docs:preview": "pnpm -C docs run preview",
     "lint": "eslint src/**/*{.ts,.tsx}",
     "fmt": "prettier-eslint --write $PWD/'src/{components, utils}/**/*{.ts,.tsx,.js}'",
     "test": "stencil test --spec",
@@ -32,8 +32,8 @@
     "generate": "stencil generate",
     "format": "prettier --write src",
     "example:copy": "stencil build --docs && cp -R dist/stripe-elements example/",
-    "example:serve": "npx serve example",
-    "prepublishOnly": "npm run build",
+    "example:serve": "pnpm dlx serve example",
+    "prepublishOnly": "pnpm run build",
     "release": "np"
   },
   "dependencies": {
@@ -96,7 +96,10 @@
     "puppeteer": "^24.30.0",
     "typescript": "^5.9.3"
   },
-  "overrides": {
-    "tmp": "^0.2.5"
-  }
+  "pnpm": {
+    "overrides": {
+      "tmp": "^0.2.5"
+    }
+  },
+  "packageManager": "pnpm@10.33.0"
 }
