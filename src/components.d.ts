@@ -114,7 +114,7 @@ export namespace Components {
           * Get Stripe.js, and initialize elements
           * @param publishableKey
           * @param options
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    tripeElement.initStripe('pk_test_XXXXXXXXX')  }) ```
+          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    stripeElement.initStripe('pk_test_XXXXXXXXX')  }) ```
          */
         "initStripe": (publishableKey: string, options?: InitStripeOptions) => Promise<void>;
         /**
@@ -136,7 +136,7 @@ export namespace Components {
           * Set error message
           * @param errorMessage string
           * @returns 
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    // You must set the attributes to stop running default form submit action when you want to listen the 'formSubmit' event.    stripeElement.setAttribute('should-use-default-form-submit-action', false)    stripeElement.addEventListener('formSubmit', async props => {      try {        throw new Error('debug')      } catch (e) {        stripeElement.setErrorMessage(`Error: ${e.message}`)        stripeElement.updateProgress('failure')      }   }); })
+          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    // You must set the attributes to stop running default form submit action when you want to listen the 'formSubmit' event.    stripeElement.setAttribute('should-use-default-form-submit-action', false)    stripeElement.addEventListener('formSubmit', async props => {      try {        throw new Error('debug')      } catch (e) {        stripeElement.setErrorMessage(`Error: ${e.message}`)        stripeElement.updateProgress('failure')      }   }); }) ```
          */
         "setErrorMessage": (errorMessage: string) => Promise<this>;
         /**
@@ -176,7 +176,7 @@ export namespace Components {
           * Update the form submit progress
           * @param progress
           * @returns 
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    // You must set the attributes to stop running default form submit action when you want to listen the 'formSubmit' event.    stripeElement.setAttribute('should-use-default-form-submit-action', false)    stripeElement.addEventListener('formSubmit', async props => {      const {        detail: { stripe, cardNumber, event },      } = props;      const result = await stripe.createPaymentMethod({        type: 'card',        card: cardNumber,      });      console.log(result);      stripeElement.updateProgress('success')    }); })
+          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {    // You must set the attributes to stop running default form submit action when you want to listen the 'formSubmit' event.    stripeElement.setAttribute('should-use-default-form-submit-action', false)    stripeElement.addEventListener('formSubmit', async props => {      const {        detail: { stripe, cardNumber, event },      } = props;      const result = await stripe.createPaymentMethod({        type: 'card',        card: cardNumber,      });      console.log(result);      stripeElement.updateProgress('success')    }); }) ```
          */
         "updateProgress": (progress: ProgressStatus) => Promise<this>;
         /**
@@ -208,13 +208,13 @@ export namespace Components {
         "handleSubmit": FormSubmitHandler;
         /**
           * The client secret from paymentIntent.create response
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement.setAttribute('intent-client-secret', 'dummy')   }) ```
-          * @example ``` <stripe-card-element intent-client-secret="dummy" /> ```
+          * @example ``` const stripeElement = document.createElement('stripe-card-element-modal'); customElements  .whenDefined('stripe-card-element-modal')  .then(() => {     stripeElement.setAttribute('intent-client-secret', 'dummy')   }) ```
+          * @example ``` <stripe-card-element-modal intent-client-secret="dummy" /> ```
          */
         "intentClientSecret"?: string;
         /**
           * Default submit handle type. If you want to use `setupIntent`, should update this attribute.
-          * @example ``` <stripe-card-element intent-type="setup" /> ```
+          * @example ``` <stripe-card-element-modal intent-type="setup" /> ```
           * @default 'payment'
          */
         "intentType": IntentType;
@@ -961,12 +961,12 @@ declare namespace LocalJSX {
         "intentType"?: IntentType;
         /**
           * Recieve the result of defaultFormSubmit event
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement.addEventListener('defaultFormSubmitResult', async ({detail}) => {       if (detail instanceof Error) {         console.error(detail)       } else {         console.log(detail)       }     })   })
+          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement.addEventListener('defaultFormSubmitResult', async ({detail}) => {       if (detail instanceof Error) {         console.error(detail)       } else {         console.log(detail)       }     })   }) ```
          */
         "onDefaultFormSubmitResult"?: (event: StripeCardElementCustomEvent<DefaultFormSubmitResult>) => void;
         /**
           * Form submit event
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement       .addEventListener('formSubmit', async props => {         const {           detail: { stripe, cardNumber, event },         } = props;         const result = await stripe.createPaymentMethod({           type: 'card',           card: cardNumber,         });         console.log(result);       })   })
+          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement       .addEventListener('formSubmit', async props => {         const {           detail: { stripe, cardNumber, event },         } = props;         const result = await stripe.createPaymentMethod({           type: 'card',           card: cardNumber,         });         console.log(result);       })   }) ```
          */
         "onFormSubmit"?: (event: StripeCardElementCustomEvent<FormSubmitEvent>) => void;
         /**
@@ -1027,13 +1027,13 @@ declare namespace LocalJSX {
         "handleSubmit"?: FormSubmitHandler;
         /**
           * The client secret from paymentIntent.create response
-          * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement.setAttribute('intent-client-secret', 'dummy')   }) ```
-          * @example ``` <stripe-card-element intent-client-secret="dummy" /> ```
+          * @example ``` const stripeElement = document.createElement('stripe-card-element-modal'); customElements  .whenDefined('stripe-card-element-modal')  .then(() => {     stripeElement.setAttribute('intent-client-secret', 'dummy')   }) ```
+          * @example ``` <stripe-card-element-modal intent-client-secret="dummy" /> ```
          */
         "intentClientSecret"?: string;
         /**
           * Default submit handle type. If you want to use `setupIntent`, should update this attribute.
-          * @example ``` <stripe-card-element intent-type="setup" /> ```
+          * @example ``` <stripe-card-element-modal intent-type="setup" /> ```
           * @default 'payment'
          */
         "intentType"?: IntentType;
@@ -1374,31 +1374,113 @@ declare namespace LocalJSX {
          */
         "stripeDidLoaded"?: StripeDidLoadedHandler;
     }
+
+    interface StripeAddressElementAttributes {
+        "mode": 'shipping' | 'billing';
+        "sheetTitle": string;
+        "buttonLabel": string;
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "showLabel": boolean;
+        "defaultCountry": string;
+    }
+    interface StripeCardElementAttributes {
+        "intentType": IntentType;
+        "zip": boolean;
+        "sheetTitle": string;
+        "buttonLabel": string;
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "showLabel": boolean;
+        "intentClientSecret": string;
+        "shouldUseDefaultFormSubmitAction": boolean;
+        "showPaymentRequestButton": boolean;
+    }
+    interface StripeCardElementModalAttributes {
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "showLabel": boolean;
+        "sheetTitle": string;
+        "buttonLabel": string;
+        "intentClientSecret": string;
+        "shouldUseDefaultFormSubmitAction": boolean;
+        "intentType": IntentType;
+        "showCloseButton": boolean;
+        "zip": boolean;
+        "open": boolean;
+    }
+    interface StripeCurrencySelectorAttributes {
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "clientSecret": string;
+    }
+    interface StripeExpressCheckoutElementAttributes {
+        "intentType": IntentType;
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "clientSecret": string;
+        "amount": number;
+        "currency": string;
+        "buttonHeight": string;
+        "shouldUseDefaultConfirmAction": boolean;
+    }
+    interface StripeLinkAuthenticationElementAttributes {
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "defaultEmail": string;
+    }
+    interface StripeModalAttributes {
+        "showCloseButton": boolean;
+        "open": boolean;
+    }
+    interface StripePaymentElementAttributes {
+        "intentType": IntentType;
+        "sheetTitle": string;
+        "buttonLabel": string;
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+        "intentClientSecret": string;
+        "checkoutSessionClientSecret": string;
+        "shouldUseDefaultFormSubmitAction": boolean;
+    }
+    interface StripePaymentRequestButtonAttributes {
+        "publishableKey": string;
+        "stripeAccount": string;
+        "applicationName": string;
+    }
+
     interface IntrinsicElements {
-        "stripe-address-element": StripeAddressElement;
-        "stripe-card-element": StripeCardElement;
-        "stripe-card-element-modal": StripeCardElementModal;
-        "stripe-currency-selector": StripeCurrencySelector;
-        "stripe-express-checkout-element": StripeExpressCheckoutElement;
-        "stripe-link-authentication-element": StripeLinkAuthenticationElement;
-        "stripe-modal": StripeModal;
-        "stripe-payment-element": StripePaymentElement;
-        "stripe-payment-request-button": StripePaymentRequestButton;
+        "stripe-address-element": Omit<StripeAddressElement, keyof StripeAddressElementAttributes> & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes]?: StripeAddressElement[K] } & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes as `attr:${K}`]?: StripeAddressElementAttributes[K] } & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes as `prop:${K}`]?: StripeAddressElement[K] };
+        "stripe-card-element": Omit<StripeCardElement, keyof StripeCardElementAttributes> & { [K in keyof StripeCardElement & keyof StripeCardElementAttributes]?: StripeCardElement[K] } & { [K in keyof StripeCardElement & keyof StripeCardElementAttributes as `attr:${K}`]?: StripeCardElementAttributes[K] } & { [K in keyof StripeCardElement & keyof StripeCardElementAttributes as `prop:${K}`]?: StripeCardElement[K] };
+        "stripe-card-element-modal": Omit<StripeCardElementModal, keyof StripeCardElementModalAttributes> & { [K in keyof StripeCardElementModal & keyof StripeCardElementModalAttributes]?: StripeCardElementModal[K] } & { [K in keyof StripeCardElementModal & keyof StripeCardElementModalAttributes as `attr:${K}`]?: StripeCardElementModalAttributes[K] } & { [K in keyof StripeCardElementModal & keyof StripeCardElementModalAttributes as `prop:${K}`]?: StripeCardElementModal[K] };
+        "stripe-currency-selector": Omit<StripeCurrencySelector, keyof StripeCurrencySelectorAttributes> & { [K in keyof StripeCurrencySelector & keyof StripeCurrencySelectorAttributes]?: StripeCurrencySelector[K] } & { [K in keyof StripeCurrencySelector & keyof StripeCurrencySelectorAttributes as `attr:${K}`]?: StripeCurrencySelectorAttributes[K] } & { [K in keyof StripeCurrencySelector & keyof StripeCurrencySelectorAttributes as `prop:${K}`]?: StripeCurrencySelector[K] };
+        "stripe-express-checkout-element": Omit<StripeExpressCheckoutElement, keyof StripeExpressCheckoutElementAttributes> & { [K in keyof StripeExpressCheckoutElement & keyof StripeExpressCheckoutElementAttributes]?: StripeExpressCheckoutElement[K] } & { [K in keyof StripeExpressCheckoutElement & keyof StripeExpressCheckoutElementAttributes as `attr:${K}`]?: StripeExpressCheckoutElementAttributes[K] } & { [K in keyof StripeExpressCheckoutElement & keyof StripeExpressCheckoutElementAttributes as `prop:${K}`]?: StripeExpressCheckoutElement[K] };
+        "stripe-link-authentication-element": Omit<StripeLinkAuthenticationElement, keyof StripeLinkAuthenticationElementAttributes> & { [K in keyof StripeLinkAuthenticationElement & keyof StripeLinkAuthenticationElementAttributes]?: StripeLinkAuthenticationElement[K] } & { [K in keyof StripeLinkAuthenticationElement & keyof StripeLinkAuthenticationElementAttributes as `attr:${K}`]?: StripeLinkAuthenticationElementAttributes[K] } & { [K in keyof StripeLinkAuthenticationElement & keyof StripeLinkAuthenticationElementAttributes as `prop:${K}`]?: StripeLinkAuthenticationElement[K] };
+        "stripe-modal": Omit<StripeModal, keyof StripeModalAttributes> & { [K in keyof StripeModal & keyof StripeModalAttributes]?: StripeModal[K] } & { [K in keyof StripeModal & keyof StripeModalAttributes as `attr:${K}`]?: StripeModalAttributes[K] } & { [K in keyof StripeModal & keyof StripeModalAttributes as `prop:${K}`]?: StripeModal[K] };
+        "stripe-payment-element": Omit<StripePaymentElement, keyof StripePaymentElementAttributes> & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes]?: StripePaymentElement[K] } & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes as `attr:${K}`]?: StripePaymentElementAttributes[K] } & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes as `prop:${K}`]?: StripePaymentElement[K] };
+        "stripe-payment-request-button": Omit<StripePaymentRequestButton, keyof StripePaymentRequestButtonAttributes> & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes]?: StripePaymentRequestButton[K] } & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes as `attr:${K}`]?: StripePaymentRequestButtonAttributes[K] } & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes as `prop:${K}`]?: StripePaymentRequestButton[K] };
     }
 }
 export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
-            "stripe-address-element": LocalJSX.StripeAddressElement & JSXBase.HTMLAttributes<HTMLStripeAddressElementElement>;
-            "stripe-card-element": LocalJSX.StripeCardElement & JSXBase.HTMLAttributes<HTMLStripeCardElementElement>;
-            "stripe-card-element-modal": LocalJSX.StripeCardElementModal & JSXBase.HTMLAttributes<HTMLStripeCardElementModalElement>;
+            "stripe-address-element": LocalJSX.IntrinsicElements["stripe-address-element"] & JSXBase.HTMLAttributes<HTMLStripeAddressElementElement>;
+            "stripe-card-element": LocalJSX.IntrinsicElements["stripe-card-element"] & JSXBase.HTMLAttributes<HTMLStripeCardElementElement>;
+            "stripe-card-element-modal": LocalJSX.IntrinsicElements["stripe-card-element-modal"] & JSXBase.HTMLAttributes<HTMLStripeCardElementModalElement>;
             /**
              * Stripe Currency Selector Element
              * Allows customers to select their preferred currency for Adaptive Pricing
              * @info https://docs.stripe.com/elements/currency-selector-element
              */
-            "stripe-currency-selector": LocalJSX.StripeCurrencySelector & JSXBase.HTMLAttributes<HTMLStripeCurrencySelectorElement>;
+            "stripe-currency-selector": LocalJSX.IntrinsicElements["stripe-currency-selector"] & JSXBase.HTMLAttributes<HTMLStripeCurrencySelectorElement>;
             /**
              * Express Checkout Element Component
              * Provides one-click payment methods (Apple Pay, Google Pay, Link, PayPal, etc.)
@@ -1411,11 +1493,11 @@ declare module "@stencil/core" {
              * />
              * ```
              */
-            "stripe-express-checkout-element": LocalJSX.StripeExpressCheckoutElement & JSXBase.HTMLAttributes<HTMLStripeExpressCheckoutElementElement>;
-            "stripe-link-authentication-element": LocalJSX.StripeLinkAuthenticationElement & JSXBase.HTMLAttributes<HTMLStripeLinkAuthenticationElementElement>;
-            "stripe-modal": LocalJSX.StripeModal & JSXBase.HTMLAttributes<HTMLStripeModalElement>;
-            "stripe-payment-element": LocalJSX.StripePaymentElement & JSXBase.HTMLAttributes<HTMLStripePaymentElementElement>;
-            "stripe-payment-request-button": LocalJSX.StripePaymentRequestButton & JSXBase.HTMLAttributes<HTMLStripePaymentRequestButtonElement>;
+            "stripe-express-checkout-element": LocalJSX.IntrinsicElements["stripe-express-checkout-element"] & JSXBase.HTMLAttributes<HTMLStripeExpressCheckoutElementElement>;
+            "stripe-link-authentication-element": LocalJSX.IntrinsicElements["stripe-link-authentication-element"] & JSXBase.HTMLAttributes<HTMLStripeLinkAuthenticationElementElement>;
+            "stripe-modal": LocalJSX.IntrinsicElements["stripe-modal"] & JSXBase.HTMLAttributes<HTMLStripeModalElement>;
+            "stripe-payment-element": LocalJSX.IntrinsicElements["stripe-payment-element"] & JSXBase.HTMLAttributes<HTMLStripePaymentElementElement>;
+            "stripe-payment-request-button": LocalJSX.IntrinsicElements["stripe-payment-request-button"] & JSXBase.HTMLAttributes<HTMLStripePaymentRequestButtonElement>;
         }
     }
 }
