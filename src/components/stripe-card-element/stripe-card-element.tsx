@@ -179,6 +179,10 @@ export class StripeCardElement {
   @Prop() publishableKey: string;
   @Watch('publishableKey')
   updatePublishableKey(publishableKey: string) {
+    if (publishableKey == null || publishableKey === '') {
+      return;
+    }
+
     this.initStripe(publishableKey, buildInitStripeOptionsFromAccount(this.stripeAccount));
   }
 
@@ -388,9 +392,7 @@ export class StripeCardElement {
       return;
     }
 
-    this.initStripe(publishableKey, {
-      stripeAccount: this.stripeService.state.stripeAccount,
-    });
+    this.initStripe(publishableKey, buildInitStripeOptionsFromAccount(this.stripeService.state.stripeAccount));
   }
 
   /**
@@ -422,9 +424,7 @@ export class StripeCardElement {
     this.cardElementManager = serviceFactory.createCardElementManager(this.stripeService);
 
     if (this.publishableKey != null && this.publishableKey !== '') {
-      this.initStripe(this.publishableKey, {
-        stripeAccount: this.stripeAccount,
-      });
+      this.initStripe(this.publishableKey, buildInitStripeOptionsFromAccount(this.stripeAccount));
     }
   }
 

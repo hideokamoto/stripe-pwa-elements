@@ -9,13 +9,11 @@ import { IntentType, InitStripeOptions, PaymentRequestButtonOption } from '../..
  * @returns InitStripeOptions when an account id exists, otherwise undefined
  */
 export const buildInitStripeOptionsFromAccount = (stripeAccount?: string): InitStripeOptions | undefined => {
-  const options: InitStripeOptions = {};
-
   if (stripeAccount != null && stripeAccount !== '') {
-    options.stripeAccount = stripeAccount;
+    return { stripeAccount };
   }
 
-  return Object.keys(options).length > 0 ? options : undefined;
+  return undefined;
 };
 
 /**
