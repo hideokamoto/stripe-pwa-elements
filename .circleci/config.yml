@@ -20,8 +20,9 @@ executors:
 commands:
   install-deps:
     description: >
-      Install the requested Node.js version (via nvm) and restore/save the
-      pnpm store cache, then install frozen dependencies.
+      Install the requested Node.js version (via nvm), activate pnpm via
+      corepack, then restore/save the pnpm store cache and install frozen
+      dependencies.
     parameters:
       node-version:
         type: string
@@ -29,6 +30,13 @@ commands:
     steps:
       - node/install:
           node-version: << parameters.node-version >>
+      # node/install-packages does NOT auto-install pnpm; enable it explicitly
+      # via corepack (bundled with Node ≥16.10) before the install step.
+      # corepack reads the packageManager field in package.json and activates
+      # the pinned pnpm version.
+      - run:
+          name: Enable pnpm via corepack
+          command: corepack enable pnpm
       - node/install-packages:
           pkg-manager: pnpm
           # Bump cache-version (e.g. v2) to force a fresh cache when needed.
