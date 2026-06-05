@@ -1,0 +1,225 @@
+version: 2.1
+
+# ---------------------------------------------------------------------------
+# Orbs
+# ---------------------------------------------------------------------------
+orbs:
+  node: circleci/node@6
+
+# ---------------------------------------------------------------------------
+# Reusable executor
+# ---------------------------------------------------------------------------
+executors:
+  default:
+    docker:
+      - image: cimg/base:current
+
+# ---------------------------------------------------------------------------
+# Reusable commands
+# ---------------------------------------------------------------------------
+commands:
+  install-deps:
+    description: >
+      Install the requested Node.js version (via nvm) and restore/save the
+      pnpm store cache, then install frozen dependencies.
+    parameters:
+      node-version:
+        type: string
+        default: "22"
+    steps:
+      - node/install:
+          node-version: << parameters.node-version >>
+      - node/install-packages:
+          pkg-manager: pnpm
+          # Bump cache-version (e.g. v2) to force a fresh cache when needed.
+          cache-version: v1
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # ── Static checks (run once on LTS, not worth matrix-ing) ─────────────────
+  lint:
+    executor: default
+    resource_class: small
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: ESLint
+          command: pnpm run lint
+      - run:
+          name: Security audit (moderate+, prod deps only)
+          command: pnpm audit --audit-level=moderate --prod
+
+  type-check:
+    executor: default
+    resource_class: small
+    steps:
+      - checkout
+      - install-deps
+      - run:
+          name: TypeScript type check
+          command: pnpm exec tsc --noEmit
+
+  # ── Unit tests – parallel split across 4 containers ───────────────────────
+  #
+  # Files matched by stencil.config.unit.ts testRegex:
+  #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts
+  #
+  # On the first run CircleCI splits by file count; subsequent runs use
+  # stored timing data (store_test_results) for smarter, duration-balanced
+  # splitting across the 4 containers.
+  test-unit:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    parallelism: 4
+    environment:
+      JEST_JUNIT_OUTPUT_DIR: ./test-results/unit
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Split and run unit tests
+          command: |
+            # Glob all unit-test files, then split the list for this container.
+            TESTS=$(circleci tests glob \
+              "src/**/*.unit.spec.ts" \
+              "src/utils/**/*.spec.ts" \
+              "src/services/**/*.spec.ts" | \
+              circleci tests split --split-by=timings --timings-type=filename)
+
+            if [ -z "$TESTS" ]; then
+              echo "Container $CIRCLE_NODE_INDEX received no unit tests – skipping."
+              exit 0
+            fi
+
+            echo "=== Container $CIRCLE_NODE_INDEX / $CIRCLE_NODE_TOTAL ==="
+            echo "$TESTS"
+
+            mkdir -p ./test-results/unit
+
+            # Build a Jest testPathPattern from the assigned file list.
+            # Dots are escaped so the pattern is treated as literal paths.
+            PATTERN=$(echo "$TESTS" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+
+            # Collect coverage only on container 0 to avoid partial reports
+            # (full-project coverage would require merging across containers).
+            COVERAGE_FLAG=""
+            [ "$CIRCLE_NODE_INDEX" = "0" ] && COVERAGE_FLAG="--coverage"
+
+            # shellcheck disable=SC2086
+            pnpm exec stencil test \
+              --spec \
+              --config=stencil.config.unit.ts \
+              $COVERAGE_FLAG \
+              --testPathPattern="$PATTERN"
+      - store_test_results:
+          path: ./test-results
+      - store_artifacts:
+          path: coverage
+          destination: coverage-unit
+
+  # ── Component (rendering) tests – parallel split across 2 containers ──────
+  #
+  # Files matched by stencil.config.component.ts testRegex: **.spec.tsx
+  #
+  # Currently 8 component spec files; parallelism: 2 gives ~4 files/container.
+  # Increase parallelism as the component suite grows.
+  test-component:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    parallelism: 2
+    environment:
+      JEST_JUNIT_OUTPUT_DIR: ./test-results/component
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Split and run component tests
+          command: |
+            TESTS=$(circleci tests glob "src/**/*.spec.tsx" | \
+              circleci tests split --split-by=timings --timings-type=filename)
+
+            if [ -z "$TESTS" ]; then
+              echo "Container $CIRCLE_NODE_INDEX received no component tests – skipping."
+              exit 0
+            fi
+
+            echo "=== Container $CIRCLE_NODE_INDEX / $CIRCLE_NODE_TOTAL ==="
+            echo "$TESTS"
+
+            mkdir -p ./test-results/component
+
+            PATTERN=$(echo "$TESTS" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+
+            pnpm exec stencil test \
+              --spec \
+              --config=stencil.config.component.ts \
+              --testPathPattern="$PATTERN"
+      - store_test_results:
+          path: ./test-results
+
+  # ── Build verification ─────────────────────────────────────────────────────
+  build:
+    parameters:
+      node-version:
+        type: string
+    executor: default
+    resource_class: medium
+    steps:
+      - checkout
+      - install-deps:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Production build
+          command: pnpm run build
+      - store_artifacts:
+          path: dist
+          destination: dist-node<< parameters.node-version >>
+
+# ---------------------------------------------------------------------------
+# Workflow
+# ---------------------------------------------------------------------------
+workflows:
+  ci:
+    jobs:
+      # Static checks first – fast, resource-light, no Node matrix needed.
+      - lint
+      - type-check
+
+      # Tests and build run on both active LTS lines (Node 20 & 22).
+      # Each job fans out once per node-version via the matrix, and
+      # test jobs additionally fan out across parallel containers for
+      # duration-balanced splitting.
+      - test-unit:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
+
+      - test-component:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
+
+      - build:
+          matrix:
+            parameters:
+              node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
