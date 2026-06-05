@@ -240,7 +240,7 @@ export class StripeExpressCheckoutElement {
       stripe: this.stripeService.getStripe(),
     };
 
-    if (this.stripeDidLoaded) {
+    if (this.stripeDidLoaded != null) {
       this.stripeDidLoaded(event);
     }
 
@@ -315,7 +315,7 @@ export class StripeExpressCheckoutElement {
     this.stripeService = serviceFactory.createStripeService();
     this.expressCheckoutManager = serviceFactory.createExpressCheckoutElementManager(this.stripeService);
 
-    if (this.publishableKey) {
+    if (this.publishableKey != null && this.publishableKey !== '') {
       this.initStripe(this.publishableKey, {
         stripeAccount: this.stripeAccount,
       });
@@ -323,7 +323,7 @@ export class StripeExpressCheckoutElement {
   }
 
   componentWillUpdate() {
-    if (!this.stripeService.state.publishableKey) {
+    if (this.stripeService.state.publishableKey == null || this.stripeService.state.publishableKey === '') {
       return;
     }
 
@@ -347,11 +347,11 @@ export class StripeExpressCheckoutElement {
       const stripe = this.stripeService.getStripe();
       const { intentType, clientSecret } = this;
 
-      if (!stripe) {
+      if (stripe == null) {
         throw new Error('Stripe not initialized');
       }
 
-      if (!clientSecret) {
+      if (clientSecret == null || clientSecret === '') {
         throw new Error('Client secret is required');
       }
 
@@ -377,7 +377,7 @@ export class StripeExpressCheckoutElement {
         });
       })();
 
-      if (result.error) {
+      if (result.error != null) {
         throw new StripeAPIError(result.error);
       }
 
@@ -410,11 +410,11 @@ export class StripeExpressCheckoutElement {
       elementOptions.amount = this.amount;
     }
 
-    if (this.currency) {
+    if (this.currency != null && this.currency !== '') {
       elementOptions.currency = this.currency;
     }
 
-    if (this.buttonHeight) {
+    if (this.buttonHeight != null && this.buttonHeight !== '') {
       // Convert string like "48px" to number for Stripe API
       if (typeof this.buttonHeight === 'string') {
         const height = parseInt(this.buttonHeight.replace('px', ''), 10);
@@ -432,7 +432,7 @@ export class StripeExpressCheckoutElement {
       onConfirm: async event => {
         this.confirm.emit(event);
 
-        if (this.shouldUseDefaultConfirmAction && this.clientSecret) {
+        if (this.shouldUseDefaultConfirmAction && this.clientSecret != null && this.clientSecret !== '') {
           await this.defaultConfirmAction(event);
         }
       },

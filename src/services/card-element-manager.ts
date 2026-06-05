@@ -36,12 +36,12 @@ export class CardElementManager implements ICardElementManager {
   async initialize(containerElement: HTMLElement): Promise<CardElementInstances> {
     const elements = this.stripeService.getElements();
 
-    if (!elements) {
+    if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
     // Unmount if already initialized
-    if (this.cardElements) {
+    if (this.cardElements != null) {
       this.unmount();
     }
 
@@ -103,7 +103,7 @@ export class CardElementManager implements ICardElementManager {
    * Unmount all card elements
    */
   unmount(): void {
-    if (!this.cardElements) {
+    if (this.cardElements == null) {
       return;
     }
 

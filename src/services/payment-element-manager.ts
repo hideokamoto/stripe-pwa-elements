@@ -39,7 +39,7 @@ export class PaymentElementManager implements IPaymentElementManager {
     const isCheckoutSession = this.stripeService.state.isCheckoutSession;
 
     // Unmount if already initialized
-    if (this.paymentElement) {
+    if (this.paymentElement != null) {
       this.unmount();
     }
 
@@ -47,7 +47,7 @@ export class PaymentElementManager implements IPaymentElementManager {
       // Checkout Session mode: use checkout.createPaymentElement()
       const checkout = this.stripeService.getCheckout();
 
-      if (!checkout) {
+      if (checkout == null) {
         throw new Error('StripeService not initialized with Checkout Session. Call StripeService.initializeWithCheckoutSession() first.');
       }
 
@@ -57,7 +57,7 @@ export class PaymentElementManager implements IPaymentElementManager {
       // Payment Intent mode: use elements.create('payment')
       const elements = this.stripeService.getElements();
 
-      if (!elements) {
+      if (elements == null) {
         throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
       }
 
@@ -104,7 +104,7 @@ export class PaymentElementManager implements IPaymentElementManager {
    * Unmount payment element
    */
   unmount(): void {
-    if (!this.paymentElement) {
+    if (this.paymentElement == null) {
       return;
     }
 

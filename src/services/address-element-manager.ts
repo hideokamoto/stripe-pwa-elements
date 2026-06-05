@@ -37,12 +37,12 @@ export class AddressElementManager implements IAddressElementManager {
   async initialize(containerElement: HTMLElement, options?: import('@stripe/stripe-js').StripeAddressElementOptions): Promise<StripeAddressElement> {
     const elements = this.stripeService.getElements();
 
-    if (!elements) {
+    if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
     // Unmount if already initialized
-    if (this.addressElement) {
+    if (this.addressElement != null) {
       this.unmount();
     }
 
@@ -89,7 +89,7 @@ export class AddressElementManager implements IAddressElementManager {
    * Unmount address element
    */
   unmount(): void {
-    if (!this.addressElement) {
+    if (this.addressElement == null) {
       return;
     }
 
