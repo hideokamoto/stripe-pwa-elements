@@ -62,14 +62,28 @@ jobs:
           name: TypeScript type check
           command: pnpm exec tsc --noEmit
 
-  # ── Unit tests – parallel split across 4 containers ───────────────────────
+  # ── Unit tests ─────────────────────────────────────────────────────────────
+  #
+  # Uses `circleci tests run` (not the older `circleci tests split`) which
+  # enables the full CircleCI Smarter Testing stack:
+  #
+  #   1. Timing-based load balancing – splits test files across `parallelism`
+  #      containers weighted by historical duration so all containers finish
+  #      at roughly the same time.
+  #
+  #   2. Selective test execution – when CircleCI Smarter Testing is enabled
+  #      in project settings, only tests linked to files changed in the
+  #      current PR are run, skipping unrelated tests entirely.
+  #
+  #   3. Failed-test reruns – retrying a failed job re-runs only the tests
+  #      that failed, not the full suite, cutting retry time dramatically.
+  #
+  # JUnit XML (written by jest-junit, configured in stencil.config.ts) is
+  # read by `circleci tests run --test-results-path` and then stored via
+  # `store_test_results` to feed timing data for future splits.
   #
   # Files matched by stencil.config.unit.ts testRegex:
-  #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts
-  #
-  # On the first run CircleCI splits by file count; subsequent runs use
-  # stored timing data (store_test_results) for smarter, duration-balanced
-  # splitting across the 4 containers.
+  #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts  (19 files today)
   test-unit:
     parameters:
       node-version:
@@ -84,52 +98,31 @@ jobs:
       - install-deps:
           node-version: << parameters.node-version >>
       - run:
-          name: Split and run unit tests
+          name: Run unit tests (CircleCI Smarter Testing)
           command: |
-            # Glob all unit-test files, then split the list for this container.
-            TESTS=$(circleci tests glob \
+            mkdir -p ./test-results/unit
+
+            # `circleci tests run` replaces {test_names} with the space-separated
+            # file paths assigned to THIS container after timing-based splitting.
+            # scripts/run-stencil-tests.sh converts them to a Jest testPathPattern.
+            circleci tests glob \
               "src/**/*.unit.spec.ts" \
               "src/utils/**/*.spec.ts" \
               "src/services/**/*.spec.ts" | \
-              circleci tests split --split-by=timings --timings-type=filename)
-
-            if [ -z "$TESTS" ]; then
-              echo "Container $CIRCLE_NODE_INDEX received no unit tests – skipping."
-              exit 0
-            fi
-
-            echo "=== Container $CIRCLE_NODE_INDEX / $CIRCLE_NODE_TOTAL ==="
-            echo "$TESTS"
-
-            mkdir -p ./test-results/unit
-
-            # Build a Jest testPathPattern from the assigned file list.
-            # Dots are escaped so the pattern is treated as literal paths.
-            PATTERN=$(echo "$TESTS" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
-
-            # Collect coverage only on container 0 to avoid partial reports
-            # (full-project coverage would require merging across containers).
-            COVERAGE_FLAG=""
-            [ "$CIRCLE_NODE_INDEX" = "0" ] && COVERAGE_FLAG="--coverage"
-
-            # shellcheck disable=SC2086
-            pnpm exec stencil test \
-              --spec \
-              --config=stencil.config.unit.ts \
-              $COVERAGE_FLAG \
-              --testPathPattern="$PATTERN"
+            circleci tests run \
+              --command="./scripts/run-stencil-tests.sh stencil.config.unit.ts {test_names}" \
+              --split-by=timings \
+              --timings-type=filename \
+              --test-results-path="./test-results/unit"
       - store_test_results:
           path: ./test-results
-      - store_artifacts:
-          path: coverage
-          destination: coverage-unit
 
-  # ── Component (rendering) tests – parallel split across 2 containers ──────
+  # ── Component (rendering) tests ────────────────────────────────────────────
   #
+  # Same Smarter Testing setup as test-unit.
   # Files matched by stencil.config.component.ts testRegex: **.spec.tsx
-  #
-  # Currently 8 component spec files; parallelism: 2 gives ~4 files/container.
-  # Increase parallelism as the component suite grows.
+  # Currently 8 files; parallelism: 2 gives ~4 files per container.
+  # Raise parallelism as the component suite grows.
   test-component:
     parameters:
       node-version:
@@ -144,27 +137,16 @@ jobs:
       - install-deps:
           node-version: << parameters.node-version >>
       - run:
-          name: Split and run component tests
+          name: Run component tests (CircleCI Smarter Testing)
           command: |
-            TESTS=$(circleci tests glob "src/**/*.spec.tsx" | \
-              circleci tests split --split-by=timings --timings-type=filename)
-
-            if [ -z "$TESTS" ]; then
-              echo "Container $CIRCLE_NODE_INDEX received no component tests – skipping."
-              exit 0
-            fi
-
-            echo "=== Container $CIRCLE_NODE_INDEX / $CIRCLE_NODE_TOTAL ==="
-            echo "$TESTS"
-
             mkdir -p ./test-results/component
 
-            PATTERN=$(echo "$TESTS" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
-
-            pnpm exec stencil test \
-              --spec \
-              --config=stencil.config.component.ts \
-              --testPathPattern="$PATTERN"
+            circleci tests glob "src/**/*.spec.tsx" | \
+            circleci tests run \
+              --command="./scripts/run-stencil-tests.sh stencil.config.component.ts {test_names}" \
+              --split-by=timings \
+              --timings-type=filename \
+              --test-results-path="./test-results/component"
       - store_test_results:
           path: ./test-results
 
@@ -197,9 +179,10 @@ workflows:
       - type-check
 
       # Tests and build run on both active LTS lines (Node 20 & 22).
-      # Each job fans out once per node-version via the matrix, and
-      # test jobs additionally fan out across parallel containers for
-      # duration-balanced splitting.
+      # Each job fans out once per node-version via the matrix.
+      # Test jobs additionally fan out across parallel containers; within
+      # each container `circleci tests run` further narrows the work via
+      # Smarter Testing (selective execution + failed-only reruns).
       - test-unit:
           matrix:
             parameters:
