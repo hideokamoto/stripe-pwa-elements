@@ -6,9 +6,10 @@
     "dev": "astro dev",
     "start": "astro dev",
     "sync:components": "node scripts/sync-stencil-readmes.mjs",
-    "build": "npm run sync:components && astro build",
+    "build": "pnpm run sync:components && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "deploy": "pnpm run build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.1",
@@ -16,5 +17,8 @@
     "astro-mermaid": "^1.4.0",
     "mermaid": "^11.13.0",
     "sharp": "^0.34.2"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
   }
 }
