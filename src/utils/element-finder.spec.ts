@@ -47,7 +47,7 @@ describe('element-finder', () => {
     });
 
     afterEach(() => {
-      if (containerElement.parentNode) {
+      if (containerElement.parentNode != null) {
         document.body.removeChild(containerElement);
       }
       jest.clearAllTimers();

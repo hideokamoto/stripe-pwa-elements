@@ -42,12 +42,12 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
   ): Promise<StripeExpressCheckoutElement> {
     const elements = this.stripeService.getElements();
 
-    if (!elements) {
+    if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
     // Unmount if already initialized
-    if (this.expressCheckoutElement) {
+    if (this.expressCheckoutElement != null) {
       this.unmount();
     }
 
@@ -71,23 +71,23 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
     const mountPoint = await findElement(containerElement, '#express-checkout-element');
 
     // Set up event handlers before mounting
-    if (eventHandlers?.onConfirm) {
+    if (eventHandlers?.onConfirm != null) {
       expressCheckout.on('confirm', eventHandlers.onConfirm);
     }
 
-    if (eventHandlers?.onClick) {
+    if (eventHandlers?.onClick != null) {
       expressCheckout.on('click', eventHandlers.onClick);
     }
 
-    if (eventHandlers?.onCancel) {
+    if (eventHandlers?.onCancel != null) {
       expressCheckout.on('cancel', eventHandlers.onCancel);
     }
 
-    if (eventHandlers?.onShippingAddressChange) {
+    if (eventHandlers?.onShippingAddressChange != null) {
       expressCheckout.on('shippingaddresschange', eventHandlers.onShippingAddressChange);
     }
 
-    if (eventHandlers?.onShippingRateChange) {
+    if (eventHandlers?.onShippingRateChange != null) {
       expressCheckout.on('shippingratechange', eventHandlers.onShippingRateChange);
     }
 
@@ -116,7 +116,7 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
    * @param options - Partial options to update
    */
   update(options: Partial<ExpressCheckoutElementOptions>): void {
-    if (!this.expressCheckoutElement) {
+    if (this.expressCheckoutElement == null) {
       console.warn('Express Checkout Element not initialized. Cannot update options.');
       return;
     }
@@ -154,7 +154,7 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
    * Unmount express checkout element
    */
   unmount(): void {
-    if (!this.expressCheckoutElement) {
+    if (this.expressCheckoutElement == null) {
       return;
     }
 

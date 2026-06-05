@@ -9,7 +9,7 @@ export function findElement(containerElement: HTMLElement, selector: string, tim
   return new Promise((resolve, reject) => {
     const elem = containerElement.querySelector(selector);
 
-    if (elem) {
+    if (elem != null) {
       return resolve(elem as HTMLElement);
     }
 
@@ -21,7 +21,7 @@ export function findElement(containerElement: HTMLElement, selector: string, tim
     const observer = new MutationObserver(() => {
       const elem = containerElement.querySelector(selector);
 
-      if (elem) {
+      if (elem != null) {
         clearTimeout(timeoutId);
         observer.disconnect();
         resolve(elem as HTMLElement);

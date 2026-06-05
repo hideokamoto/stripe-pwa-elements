@@ -14,12 +14,12 @@ export const checkPlatform = () => {
 
 export const waitForElm = (el: HTMLStripeCardElementElement, selector: string): Promise<HTMLElement> => {
   return new Promise(resolve => {
-    if (el.querySelector(selector)) {
+    if (el.querySelector(selector) != null) {
       return resolve(el.querySelector(selector) as HTMLElement);
     }
 
     const observer = new MutationObserver(() => {
-      if (el.querySelector(selector)) {
+      if (el.querySelector(selector) != null) {
         resolve(el.querySelector(selector) as HTMLElement);
         observer.disconnect();
       }

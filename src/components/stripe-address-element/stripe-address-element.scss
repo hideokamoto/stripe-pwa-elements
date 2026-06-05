@@ -1,6 +1,10 @@
 @use '../../style/theme';
 @use '../../style/rest';
 
+// NOTE: `stripe-payment-sheet-wrap` is a legacy CSS class kept for backward
+// compatibility (leftover from a former component name). It is part of the public
+// DOM contract — consumers may target it in their own stylesheets — so this selector
+// and the matching className in stripe-address-element.tsx must be kept in sync.
 .stripe-payment-sheet-wrap {
   @include rest.rest;
 

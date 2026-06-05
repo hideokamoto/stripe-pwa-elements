@@ -47,12 +47,12 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
   async initialize(containerElement: HTMLElement, options?: StripeLinkAuthenticationElementOptions): Promise<StripeLinkAuthenticationElement> {
     const elements = this.stripeService.getElements();
 
-    if (!elements) {
+    if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
     // Unmount if already initialized
-    if (this.linkAuthenticationElement) {
+    if (this.linkAuthenticationElement != null) {
       this.unmount();
     }
 
@@ -99,7 +99,7 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
    * Unmount link authentication element
    */
   unmount(): void {
-    if (!this.linkAuthenticationElement) {
+    if (this.linkAuthenticationElement == null) {
       return;
     }
 

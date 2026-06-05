@@ -38,12 +38,12 @@ export class CurrencySelectorElementManager implements ICurrencySelectorElementM
   async initialize(containerElement: HTMLElement, options?: any): Promise<StripeCurrencySelectorElement> {
     const elements = this.stripeService.getElements();
 
-    if (!elements) {
+    if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
     // Unmount if already initialized
-    if (this.currencySelectorElement) {
+    if (this.currencySelectorElement != null) {
       this.unmount();
     }
 
@@ -98,7 +98,7 @@ export class CurrencySelectorElementManager implements ICurrencySelectorElementM
    * Unmount currency selector element
    */
   unmount(): void {
-    if (!this.currencySelectorElement) {
+    if (this.currencySelectorElement == null) {
       return;
     }
 

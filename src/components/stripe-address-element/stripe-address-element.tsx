@@ -170,7 +170,7 @@ export class StripeAddressElement {
   }> {
     const addressElement = this.addressElementManager.getElement();
 
-    if (!addressElement) {
+    if (addressElement == null) {
       throw new Error('Address element not initialized');
     }
 
@@ -188,11 +188,11 @@ export class StripeAddressElement {
   updatePublishableKey(publishableKey: string) {
     const options: InitStripeOptions = {};
 
-    if (this.stripeAccount) {
+    if (this.stripeAccount != null && this.stripeAccount !== '') {
       options.stripeAccount = this.stripeAccount;
     }
 
-    this.initStripe(publishableKey, Object.keys(options).length ? options : undefined);
+    this.initStripe(publishableKey, Object.keys(options).length > 0 ? options : undefined);
   }
 
   /**
@@ -205,7 +205,7 @@ export class StripeAddressElement {
   updateStripeAccountId(stripeAccount: string) {
     const publishableKey = this.stripeService.state.publishableKey || this.publishableKey;
 
-    if (!publishableKey) {
+    if (publishableKey == null || publishableKey === '') {
       return;
     }
 
@@ -273,7 +273,7 @@ export class StripeAddressElement {
       stripe: this.stripeService.getStripe(),
     };
 
-    if (this.stripeDidLoaded) {
+    if (this.stripeDidLoaded != null) {
       this.stripeDidLoaded(event);
     }
 
@@ -307,7 +307,7 @@ export class StripeAddressElement {
   }
 
   componentWillRender() {
-    if (!this.stripeService.state.publishableKey) {
+    if (this.stripeService.state.publishableKey == null || this.stripeService.state.publishableKey === '') {
       return;
     }
 
@@ -325,7 +325,7 @@ export class StripeAddressElement {
     this.stripeService = serviceFactory.createStripeService();
     this.addressElementManager = serviceFactory.createAddressElementManager(this.stripeService);
 
-    if (this.publishableKey) {
+    if (this.publishableKey != null && this.publishableKey !== '') {
       this.initStripe(this.publishableKey, {
         stripeAccount: this.stripeAccount,
       });
@@ -341,7 +341,7 @@ export class StripeAddressElement {
       mode: this.mode,
     };
 
-    if (this.defaultCountry) {
+    if (this.defaultCountry != null && this.defaultCountry !== '') {
       addressOptions.defaultValues = {
         address: {
           country: this.defaultCountry,
@@ -359,13 +359,13 @@ export class StripeAddressElement {
     // Add form submit listener scoped to this component instance
     const formElement = this.el.querySelector('#stripe-address-element-form');
 
-    if (!formElement) {
+    if (formElement == null) {
       console.error('Form element #stripe-address-element-form not found');
       return;
     }
 
     // Remove previous listener if it exists to prevent duplicate submissions
-    if (this.formSubmitListener) {
+    if (this.formSubmitListener != null) {
       formElement.removeEventListener('submit', this.formSubmitListener);
     }
 
@@ -375,7 +375,7 @@ export class StripeAddressElement {
 
       const addressElement = this.addressElementManager.getElement();
 
-      if (!addressElement) {
+      if (addressElement == null) {
         console.error('Address element not initialized');
         return;
       }
@@ -385,13 +385,13 @@ export class StripeAddressElement {
       try {
         const addressValue = await this.getValue();
 
-        if (this.handleSubmit) {
+        if (this.handleSubmit != null) {
           await this.handleSubmit(e, { address: addressValue });
         }
 
         await this.formSubmitEventHandler();
 
-        if (this.handleSubmit) {
+        if (this.handleSubmit != null) {
           this.progress = 'success';
         }
       } catch (error) {
@@ -411,10 +411,10 @@ export class StripeAddressElement {
 
   disconnectedCallback() {
     // Remove form submit listener
-    if (this.formSubmitListener) {
+    if (this.formSubmitListener != null) {
       const formElement = this.el.querySelector('#stripe-address-element-form');
 
-      if (formElement) {
+      if (formElement != null) {
         formElement.removeEventListener('submit', this.formSubmitListener);
       }
 
@@ -434,6 +434,10 @@ export class StripeAddressElement {
 
     const disabled = this.progress === 'loading';
 
+    // NOTE: `stripe-payment-sheet-wrap` below is a legacy CSS class kept for backward
+    // compatibility (leftover from a former component name). It is part of the public
+    // DOM contract — consumers may target it in their own stylesheets — so it must
+    // remain in the rendered output. Do not remove it.
     return (
       <div class="stripe-payment-sheet-wrap">
         <form id="stripe-address-element-form">
