@@ -14,7 +14,7 @@ This document provides comprehensive guidance for AI assistants working with the
 
 ## Repository Structure
 
-```
+```text
 stripe-pwa-elements/
 ├── .github/                    # GitHub configuration
 │   ├── workflows/
@@ -133,18 +133,18 @@ Payment Request API button component (Apple Pay / Google Pay).
 
 ### Environment Requirements
 - Node.js >= 18.x (CI tests against Node.js 20.x and 22.x)
-- npm
-- Package manager: npm (package.json scripts use npm)
+- pnpm
+- Package manager: pnpm (package.json `packageManager`: pnpm@10.33.0)
 
 ### Setup
 ```bash
-npm install          # Install dependencies
-npm start            # Start dev server with watch mode
-npm run build        # Production build
-npm test             # Run unit tests
-npm run lint         # Lint TypeScript/TSX files
-npm run format       # Format code with Prettier
-npm run generate     # Generate new Stencil component
+pnpm install          # Install dependencies
+pnpm start            # Start dev server with watch mode
+pnpm run build        # Production build
+pnpm test             # Run unit tests
+pnpm run lint         # Lint TypeScript/TSX files
+pnpm run format       # Format code with Prettier
+pnpm run generate     # Generate new Stencil component
 ```
 
 ### Build Process
@@ -160,11 +160,11 @@ npm run generate     # Generate new Stencil component
 - Test framework: Jest + Puppeteer
 - Test location: `src/components/*/test/` and `src/services/*.spec.ts` and `src/utils/*.spec.ts`
 - Test commands:
-  - `npm test` - Run all spec tests
-  - `npm run test:unit` - Run unit tests (services/utils) via `stencil.config.unit.ts`
-  - `npm run test:component` - Run component tests via `stencil.config.component.ts`
-  - `npm run test:e2e` - Run E2E tests
-  - `npm run test.watch` - Watch mode for all tests
+  - `pnpm test` - Run all spec tests
+  - `pnpm run test:unit` - Run unit tests (services/utils) via `stencil.config.unit.ts`
+  - `pnpm run test:component` - Run component tests via `stencil.config.component.ts`
+  - `pnpm run test:e2e` - Run E2E tests
+  - `pnpm run test.watch` - Watch mode for all tests
 - Tests include snapshots (stored in `__snapshots__/` directories)
 - Test environment configured in `src/utils/test-setup.ts`
 
@@ -173,14 +173,14 @@ npm run generate     # Generate new Stencil component
 - Workflow file: `.github/workflows/ci.yml`
 - Triggers: On push and pull_request
 - Jobs:
-  1. **lint** — Node 20.x: `npm run lint` + `npm audit`
-  2. **type-check** — Node 20.x: `npx tsc --noEmit`
-  3. **test** (matrix: 20.x, 22.x; needs lint+type-check): `npm run test:unit --coverage` + `npm run test:component`
-  4. **build** (matrix: 20.x, 22.x; needs lint+type-check): `npm run build`
+  1. **lint** — Node 20.x: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
+  2. **type-check** — Node 20.x: `pnpm exec tsc --noEmit`
+  3. **test** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run test:unit -- --coverage` + `pnpm run test:component`
+  4. **build** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run build`
 
 ### Publishing
 - Uses `np` package for releases
-- Command: `npm run release`
+- Command: `pnpm run release`
 - Pre-publish: Automatically runs build via `prepublishOnly` script
 
 ## Code Conventions
@@ -203,7 +203,7 @@ npm run generate     # Generate new Stencil component
   @Component({
     tag: 'component-name',
     styleUrl: 'component-name.scss',
-    shadow: false,  // Note: Shadow DOM is disabled
+    shadow: false,  // Note: Shadow DOM is disabled for most components
   })
   export class ComponentName {
     @Element() el: HTMLElement;
@@ -355,15 +355,15 @@ fix #42
 1. Fork the repository
 2. Create feature branch
 3. Make changes with conventional commits
-4. Ensure tests pass (`npm test`)
-5. Ensure build succeeds (`npm run build`)
+4. Ensure tests pass (`pnpm test`)
+5. Ensure build succeeds (`pnpm run build`)
 6. Submit PR
 
 ## Common Development Tasks
 
 ### Creating a New Component
 ```bash
-npm run generate
+pnpm run generate
 # or
 stencil generate
 ```
@@ -372,10 +372,10 @@ Follow Stencil prompts to scaffold a new component.
 ### Running Examples Locally
 ```bash
 # Build and copy to example directory
-npm run example:copy
+pnpm run example:copy
 
 # Serve examples
-npm run example:serve
+pnpm run example:serve
 ```
 
 ### Debugging
@@ -389,22 +389,22 @@ npm run example:serve
 
 1. **Always run tests** after code changes:
    ```bash
-   npm test
+   pnpm test
    ```
 
 2. **Lint before committing**:
    ```bash
-   npm run lint
+   pnpm run lint
    ```
 
 3. **Format code**:
    ```bash
-   npm run format
+   pnpm run format
    ```
 
 4. **Build to verify**:
    ```bash
-   npm run build
+   pnpm run build
    ```
 
 5. **Follow commit conventions**: Use conventional commits format
@@ -434,7 +434,7 @@ npm run example:serve
 
 ### Common Pitfalls to Avoid
 
-1. **Don't use shadow: true** - Project uses light DOM
+1. **Don't use shadow: true** - Project uses light DOM (the only intentional exception is `stripe-modal`, which sets `shadow: true`)
 2. **Don't skip semicolons** - Required by Prettier config
 3. **Don't exceed 180 character line width** - Prettier will wrap
 4. **Don't use stencil/stnl prefixes** - Banned by ESLint
@@ -452,7 +452,7 @@ npm run example:serve
 
 ### Documentation
 
-1. **Component READMEs are auto-generated** - Run `npm run build --docs`
+1. **Component READMEs are auto-generated** - Run `pnpm run build --docs`
 2. **Update main README.md** - For major feature additions
 3. **JSDoc comments** - Will appear in generated docs
 4. **Example usage** - Add to `example/` directory if adding new features
