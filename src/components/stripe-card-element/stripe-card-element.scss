@@ -1,6 +1,9 @@
 @use '../../style/theme';
 @use '../../style/rest';
 
+// NOTE: `.stripe-payment-sheet-wrap` is a legacy class name (leftover from a former
+// component name). It is part of the public DOM contract — external consumers may rely
+// on it in their own CSS — so this selector MUST be kept for backward compatibility.
 .stripe-payment-sheet-wrap {
   @include rest.rest;
 

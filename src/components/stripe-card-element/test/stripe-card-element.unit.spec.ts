@@ -95,9 +95,7 @@ describe('stripe-card-element unit tests', () => {
       mockStripeService.state.publishableKey = 'pk_test_xxxx';
       mockStripeService.state.loadStripeStatus = loadingStatus;
       element.componentWillRender();
-      expect(element.initStripe).toHaveBeenCalledWith('pk_test_xxxx', {
-        stripeAccount: undefined,
-      });
+      expect(element.initStripe).toHaveBeenCalledWith('pk_test_xxxx', undefined);
     });
 
     it.each([['success' as const], ['loading' as const]])(
