@@ -1,0 +1,17 @@
+---
+# Unit tests – files matched by stencil.config.unit.ts testRegex:
+#   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts
+name: unit tests
+discover: find src -type f \( -name "*.unit.spec.ts" -o -path "*/utils/*.spec.ts" -o -path "*/services/*.spec.ts" \)
+run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-stencil-tests.sh stencil.config.unit.ts << test.atoms >>
+outputs:
+  junit: test-reports/unit/results.xml
+
+---
+# Component rendering tests – files matched by stencil.config.component.ts testRegex:
+#   **.spec.tsx
+name: component tests
+discover: find src -type f -name "*.spec.tsx"
+run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-stencil-tests.sh stencil.config.component.ts << test.atoms >>
+outputs:
+  junit: test-reports/component/results.xml

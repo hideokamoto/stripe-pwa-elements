@@ -64,26 +64,29 @@ jobs:
 
   # ── Unit tests ─────────────────────────────────────────────────────────────
   #
-  # Uses `circleci tests run` (not the older `circleci tests split`) which
-  # enables the full CircleCI Smarter Testing stack:
+  # `circleci run testsuite` is the CircleCI Smarter Testing entrypoint.
+  # It reads .circleci/test-suites.yml and handles:
   #
-  #   1. Timing-based load balancing – splits test files across `parallelism`
-  #      containers weighted by historical duration so all containers finish
-  #      at roughly the same time.
+  #   1. Discovery  – runs the `discover` command to enumerate all test files.
   #
-  #   2. Selective test execution – when CircleCI Smarter Testing is enabled
-  #      in project settings, only tests linked to files changed in the
-  #      current PR are run, skipping unrelated tests entirely.
+  #   2. Selective execution  – when Test Impact Analysis is enabled in project
+  #      settings, only the tests linked to files changed in this PR run; the
+  #      rest are skipped entirely.
   #
-  #   3. Failed-test reruns – retrying a failed job re-runs only the tests
-  #      that failed, not the full suite, cutting retry time dramatically.
+  #   3. Dynamic splitting  – distributes the selected tests across the
+  #      `parallelism` containers weighted by historical JUnit timing data so
+  #      all containers finish at roughly the same time.
   #
-  # JUnit XML (written by jest-junit, configured in stencil.config.ts) is
-  # read by `circleci tests run --test-results-path` and then stored via
-  # `store_test_results` to feed timing data for future splits.
+  #   4. Failed-test reruns  – retrying the job re-runs only the tests that
+  #      failed, not the full suite.
   #
-  # Files matched by stencil.config.unit.ts testRegex:
-  #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts  (19 files today)
+  # The `run` command in test-suites.yml receives the per-container test slice
+  # via << test.atoms >> and writes JUnit XML to << outputs.junit >>.
+  # store_test_results ingests that XML so CircleCI builds timing and impact
+  # data for future runs.
+  #
+  # test-suites.yml suite: "unit tests"
+  # Files: src/(utils|services)/**.spec.ts and **.unit.spec.ts  (19 today)
   test-unit:
     parameters:
       node-version:
@@ -91,38 +94,22 @@ jobs:
     executor: default
     resource_class: medium
     parallelism: 4
-    environment:
-      JEST_JUNIT_OUTPUT_DIR: ./test-results/unit
     steps:
       - checkout
       - install-deps:
           node-version: << parameters.node-version >>
       - run:
-          name: Run unit tests (CircleCI Smarter Testing)
+          name: Unit tests — CircleCI Smarter Testing
           command: |
-            mkdir -p ./test-results/unit
-
-            # `circleci tests run` replaces {test_names} with the space-separated
-            # file paths assigned to THIS container after timing-based splitting.
-            # scripts/run-stencil-tests.sh converts them to a Jest testPathPattern.
-            circleci tests glob \
-              "src/**/*.unit.spec.ts" \
-              "src/utils/**/*.spec.ts" \
-              "src/services/**/*.spec.ts" | \
-            circleci tests run \
-              --command="./scripts/run-stencil-tests.sh stencil.config.unit.ts {test_names}" \
-              --split-by=timings \
-              --timings-type=filename \
-              --test-results-path="./test-results/unit"
+            mkdir -p test-reports/unit
+            circleci run testsuite "unit tests"
       - store_test_results:
-          path: ./test-results
+          path: test-reports
 
   # ── Component (rendering) tests ────────────────────────────────────────────
   #
-  # Same Smarter Testing setup as test-unit.
-  # Files matched by stencil.config.component.ts testRegex: **.spec.tsx
-  # Currently 8 files; parallelism: 2 gives ~4 files per container.
-  # Raise parallelism as the component suite grows.
+  # test-suites.yml suite: "component tests"
+  # Files: **.spec.tsx  (8 today); raise parallelism as the suite grows.
   test-component:
     parameters:
       node-version:
@@ -130,25 +117,17 @@ jobs:
     executor: default
     resource_class: medium
     parallelism: 2
-    environment:
-      JEST_JUNIT_OUTPUT_DIR: ./test-results/component
     steps:
       - checkout
       - install-deps:
           node-version: << parameters.node-version >>
       - run:
-          name: Run component tests (CircleCI Smarter Testing)
+          name: Component tests — CircleCI Smarter Testing
           command: |
-            mkdir -p ./test-results/component
-
-            circleci tests glob "src/**/*.spec.tsx" | \
-            circleci tests run \
-              --command="./scripts/run-stencil-tests.sh stencil.config.component.ts {test_names}" \
-              --split-by=timings \
-              --timings-type=filename \
-              --test-results-path="./test-results/component"
+            mkdir -p test-reports/component
+            circleci run testsuite "component tests"
       - store_test_results:
-          path: ./test-results
+          path: test-reports
 
   # ── Build verification ─────────────────────────────────────────────────────
   build:
@@ -181,8 +160,8 @@ workflows:
       # Tests and build run on both active LTS lines (Node 20 & 22).
       # Each job fans out once per node-version via the matrix.
       # Test jobs additionally fan out across parallel containers; within
-      # each container `circleci tests run` further narrows the work via
-      # Smarter Testing (selective execution + failed-only reruns).
+      # each container `circleci run testsuite` narrows work via Smarter
+      # Testing (selective execution + dynamic splitting + failed-only reruns).
       - test-unit:
           matrix:
             parameters:

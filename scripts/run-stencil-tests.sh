@@ -16,9 +16,19 @@ if [ "$#" -eq 0 ]; then
   exit 0
 fi
 
-# Escape dots so path components are treated as literals, then join with | to
-# form a Jest testPathPattern that matches any of the assigned files.
-PATTERN=$(printf '%s\n' "$@" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+# Escape all regex metacharacters that can appear in file-system paths, then
+# join with | to form a Jest --testPathPattern that matches only the assigned
+# files. We escape . + ? ( ) [ ] individually to keep the sed expressions
+# readable and avoid brittle character-class construction.
+PATTERN=$(printf '%s\n' "$@" | \
+  sed 's/\./\\./g' | \
+  sed 's/+/\\+/g'  | \
+  sed 's/?/\\?/g'  | \
+  sed 's/(/\\(/g'  | \
+  sed 's/)/\\)/g'  | \
+  sed 's/\[/\\[/g' | \
+  sed 's/\]/\\]/g' | \
+  tr '\n' '|' | sed 's/|$//')
 
 echo "Container ${CIRCLE_NODE_INDEX:-0}/${CIRCLE_NODE_TOTAL:-1}: running ${#} file(s)"
 echo "  testPathPattern: ${PATTERN}"
