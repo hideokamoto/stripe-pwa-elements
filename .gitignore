@@ -29,3 +29,7 @@ UserInterfaceState.xcuserstate
 
 example/stripe-elements/
 RELEASE_NOTES_*.md
+
+# Test output artifacts
+junit.xml
+test-reports/
