@@ -12,7 +12,7 @@ const ciReporters: Config['testing'] = process.env.CI
   ? {
       reporters: [
         'default',
-        ['jest-junit', { addFileAttribute: 'true' }],
+        ['jest-junit', { addFileAttribute: true }],
       ],
     }
   : {};
