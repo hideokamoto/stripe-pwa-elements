@@ -11,7 +11,7 @@ import {
 import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IPaymentElementManager, CheckoutSessionOptions } from '../../services/interfaces';
-import { StripeAPIError } from '../../utils/error';
+import { confirmCheckoutSession, confirmPaymentOrSetup, isSubmitButtonDisabled, buildSubmitEventProps } from './stripe-payment-element.helpers';
 
 import type { Stripe, StripeElements, StripeCheckout, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
 
@@ -221,7 +221,7 @@ export class StripePaymentElement {
     const options: InitStripeOptions = {};
 
     options.stripeAccount = this.stripeService.state.stripeAccount;
-    const hasOptionValue = Object.values(options).filter(Boolean).length > 0;
+    const hasOptionValue = Object.values(options).filter(value => value != null && value !== '').length > 0;
 
     this.initStripe(publishableKey, hasOptionValue ? options : undefined);
   }
@@ -294,7 +294,7 @@ export class StripePaymentElement {
   @Watch('checkoutSessionClientSecret')
   async updateCheckoutSessionClientSecret(newValue: string) {
     // Re-initialize with checkout session when client secret changes
-    if (this.publishableKey && newValue) {
+    if (this.publishableKey != null && this.publishableKey !== '' && newValue != null && newValue !== '') {
       await this.initStripeWithCheckoutSession(this.publishableKey, newValue, {
         stripeAccount: this.stripeAccount,
       });
@@ -346,7 +346,7 @@ export class StripePaymentElement {
       stripe: this.stripeService.getStripe(),
     };
 
-    if (this.stripeDidLoaded) {
+    if (this.stripeDidLoaded != null) {
       this.stripeDidLoaded(event);
     }
 
@@ -373,42 +373,28 @@ export class StripePaymentElement {
 
   private async formSubmitEventHandler() {
     const stripe = this.stripeService.getStripe();
-    const isCheckoutSession = this.stripeService.state.isCheckoutSession;
+    const isCheckoutSession = this.stripeService.state.isCheckoutSession === true;
 
-    if (!stripe) {
+    if (stripe == null) {
       console.error('Stripe not properly initialized');
       return;
     }
 
-    const eventData: PaymentElementSubmitEvent = {
+    const result = buildSubmitEventProps({
       stripe,
-    };
+      isCheckoutSession,
+      checkout: this.stripeService.getCheckout(),
+      checkoutSessionClientSecret: this.checkoutSessionClientSecret,
+      elements: this.stripeService.getElements(),
+      intentClientSecret: this.intentClientSecret,
+    });
 
-    if (isCheckoutSession) {
-      // Checkout Session mode
-      const checkout = this.stripeService.getCheckout();
-
-      if (!checkout) {
-        console.error('Checkout not properly initialized');
-        return;
-      }
-
-      eventData.checkout = checkout;
-      eventData.checkoutSessionClientSecret = this.checkoutSessionClientSecret;
-    } else {
-      // Payment Intent / Setup Intent mode
-      const elements = this.stripeService.getElements();
-
-      if (!elements) {
-        console.error('Elements not properly initialized');
-        return;
-      }
-
-      eventData.elements = elements;
-      eventData.intentClientSecret = this.intentClientSecret;
+    if ('error' in result) {
+      console.error(result.error);
+      return;
     }
 
-    this.formSubmit.emit(eventData);
+    this.formSubmit.emit(result.props);
   }
 
   /**
@@ -464,7 +450,9 @@ export class StripePaymentElement {
   }
 
   componentWillRender() {
-    if (!this.stripeService.state.publishableKey) {
+    const { publishableKey } = this.stripeService.state;
+
+    if (publishableKey == null || publishableKey === '') {
       return;
     }
 
@@ -487,34 +475,9 @@ export class StripePaymentElement {
   private async defaultFormSubmitAction(event: Event, { stripe, elements }: PaymentElementSubmitEvent) {
     event.preventDefault();
     try {
-      const { intentType } = this;
-
       // Get current page URL for return_url
       const returnUrl = window.location.href;
-
-      const result = await (() => {
-        if (intentType === 'payment') {
-          return stripe.confirmPayment({
-            elements,
-            confirmParams: {
-              return_url: returnUrl,
-            },
-            redirect: 'if_required',
-          });
-        }
-
-        return stripe.confirmSetup({
-          elements,
-          confirmParams: {
-            return_url: returnUrl,
-          },
-          redirect: 'if_required',
-        });
-      })();
-
-      if (result.error) {
-        throw new StripeAPIError(result.error);
-      }
+      const result = await confirmPaymentOrSetup(stripe, elements, this.intentType, returnUrl);
 
       this.defaultFormSubmitResultHandler(result);
     } catch (e) {
@@ -533,42 +496,9 @@ export class StripePaymentElement {
   private async checkoutSessionFormSubmitAction(event: Event, checkout: StripeCheckout) {
     event.preventDefault();
     try {
-      // Load actions from the checkout session
-      const loadActionsResult = await checkout.loadActions();
-
-      if (loadActionsResult.type === 'error') {
-        // Create a StripeError-compatible object from the Checkout Session error
-        const stripeError = {
-          type: 'api_error' as const,
-          code: loadActionsResult.error.code || 'checkout_session_error',
-          message: loadActionsResult.error.message,
-        };
-
-        throw new StripeAPIError(stripeError);
-      }
-
-      const { actions } = loadActionsResult;
-
       // Get current page URL for return_url
       const returnUrl = window.location.href;
-
-      // Confirm the payment using checkout session actions
-      const result = await actions.confirm({
-        returnUrl,
-        redirect: 'if_required',
-      });
-
-      if (result.type === 'error') {
-        // Create a StripeError-compatible object from the confirm error
-        const stripeError = {
-          type: 'card_error' as const,
-          code: result.error.code || 'payment_failed',
-          message: result.error.message,
-          decline_code: result.error.code === 'paymentFailed' ? (result.error as { paymentFailed?: { declineCode?: string } }).paymentFailed?.declineCode : undefined,
-        };
-
-        throw new StripeAPIError(stripeError);
-      }
+      const result = await confirmCheckoutSession(checkout, returnUrl);
 
       this.checkoutSessionConfirmResultHandler(result);
     } catch (e) {
@@ -583,7 +513,7 @@ export class StripePaymentElement {
     this.stripeService = serviceFactory.createStripeService();
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
 
-    if (this.publishableKey) {
+    if (this.publishableKey != null && this.publishableKey !== '') {
       this.initStripe(this.publishableKey, {
         stripeAccount: this.stripeAccount,
       });
@@ -600,22 +530,22 @@ export class StripePaymentElement {
     // Add form submit listener scoped to this component instance
     const formElement = this.el.querySelector('#stripe-payment-element');
 
-    if (!formElement) {
+    if (formElement == null) {
       console.error('Form element #stripe-payment-element not found');
       return;
     }
 
     // Remove existing listener if present to prevent duplicates
-    if (this._submitHandler) {
+    if (this._submitHandler != null) {
       formElement.removeEventListener('submit', this._submitHandler);
     }
 
     // Create and store the submit handler
     this._submitHandler = async (e: Event) => {
       const stripe = this.stripeService.getStripe();
-      const isCheckoutSession = this.stripeService.state.isCheckoutSession;
+      const isCheckoutSession = this.stripeService.state.isCheckoutSession === true;
 
-      if (!stripe) {
+      if (stripe == null) {
         console.error('Stripe not properly initialized');
         return;
       }
@@ -629,7 +559,7 @@ export class StripePaymentElement {
         // Checkout Session mode
         const checkout = this.stripeService.getCheckout();
 
-        if (!checkout) {
+        if (checkout == null) {
           console.error('Checkout not properly initialized');
           return;
         }
@@ -640,7 +570,7 @@ export class StripePaymentElement {
         // Payment Intent / Setup Intent mode
         const elements = this.stripeService.getElements();
 
-        if (!elements) {
+        if (elements == null) {
           console.error('Elements not properly initialized');
           return;
         }
@@ -651,13 +581,13 @@ export class StripePaymentElement {
 
       this.progress = 'loading';
       try {
-        if (this.handleSubmit) {
+        if (this.handleSubmit != null) {
           await this.handleSubmit(e, submitEventProps);
         } else if (this.shouldUseDefaultFormSubmitAction === true) {
-          if (isCheckoutSession && submitEventProps.checkout) {
+          if (isCheckoutSession && submitEventProps.checkout != null) {
             // Use Checkout Session confirmation
             await this.checkoutSessionFormSubmitAction(e, submitEventProps.checkout);
-          } else if (this.intentClientSecret) {
+          } else if (this.intentClientSecret != null && this.intentClientSecret !== '') {
             // Use Payment Intent / Setup Intent confirmation
             await this.defaultFormSubmitAction(e, submitEventProps);
           } else {
@@ -668,7 +598,7 @@ export class StripePaymentElement {
         }
 
         await this.formSubmitEventHandler();
-        if (this.handleSubmit || this.shouldUseDefaultFormSubmitAction === true) {
+        if (this.handleSubmit != null || this.shouldUseDefaultFormSubmitAction === true) {
           this.progress = 'success';
         }
       } catch (err) {
@@ -690,10 +620,10 @@ export class StripePaymentElement {
     this.paymentElementManager.unmount();
 
     // Remove event listener to prevent memory leaks
-    if (this._submitHandler) {
+    if (this._submitHandler != null) {
       const formElement = this.el.querySelector('#stripe-payment-element');
 
-      if (formElement) {
+      if (formElement != null) {
         formElement.removeEventListener('submit', this._submitHandler);
       }
     }
@@ -707,13 +637,18 @@ export class StripePaymentElement {
       return <p>{i18n.t('Failed to load Stripe')}</p>;
     }
 
-    // Determine if button should be disabled
-    // For Checkout Session mode: check if checkout is initialized (loadStripeStatus === 'success')
-    // For Payment Intent mode: check if intentClientSecret is set
-    const hasValidSecret = isCheckoutSession ? loadStripeStatus === 'success' : !!this.intentClientSecret;
-    const disabled = this.progress === 'loading' || !hasValidSecret;
+    // Determine if button should be disabled (see isSubmitButtonDisabled helper for mode-specific rules)
+    const disabled = isSubmitButtonDisabled({
+      progress: this.progress,
+      isCheckoutSession: isCheckoutSession === true,
+      loadStripeStatus,
+      intentClientSecret: this.intentClientSecret,
+    });
 
     return (
+      // NOTE: `stripe-payment-sheet-wrap` is a legacy CSS class kept for backward compatibility.
+      // It is a leftover from a former component name but is part of the public DOM contract,
+      // so external stylesheets may target it. Keep it in the rendered output and the .scss.
       <div class="stripe-payment-sheet-wrap">
         <form id="stripe-payment-element">
           <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
