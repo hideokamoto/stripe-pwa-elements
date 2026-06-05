@@ -4,53 +4,74 @@ This document provides comprehensive guidance for AI assistants working with the
 
 ## Project Overview
 
-**stripe-pwa-elements** is a web component library that provides Stripe payment elements for Progressive Web Apps. It uses Stencil.js (version 4.30.0+) to build framework-agnostic web components that can be used across any web platform.
+**stripe-pwa-elements** is a web component library that provides Stripe payment elements for Progressive Web Apps. It uses Stencil.js (version 4.38+) to build framework-agnostic web components that can be used across any web platform.
 
 - **Repository**: https://github.com/wpkyoto/stripe-pwa-elements
 - **License**: MIT
-- **Version**: 3.0.0-0
+- **Version**: 3.2.0
 - **Main Technology**: Stencil.js 4.x (web components framework)
-- **Primary Dependencies**: @stripe/stripe-js, i18next for internationalization
+- **Primary Dependencies**: @stripe/stripe-js ^8.6.0, i18next for internationalization, ionicons
 
 ## Repository Structure
 
-```
+```text
 stripe-pwa-elements/
 ├── .github/                    # GitHub configuration
 │   ├── workflows/
-│   │   └── ci.yml             # CI/CD pipeline (runs tests and build)
+│   │   └── ci.yml             # CI/CD pipeline (lint, type-check, tests, build)
 │   ├── CODE_OF_CONDUCT.md
 │   └── CONTRIBUTING.md         # Contribution guidelines with commit conventions
+├── docs/                       # Astro/Starlight documentation site
 ├── example/                    # Example HTML files demonstrating usage
 │   ├── index.html
-│   └── example2.html
+│   ├── example2.html
+│   ├── example3.html          # Payment Element
+│   ├── example4.html          # Link Authentication
+│   ├── address-example.html   # Address Element
+│   └── example-express-checkout.html  # Express Checkout
 ├── src/                        # Source code
-│   ├── components/            # Web components
-│   │   ├── stripe-modal/                  # Modal wrapper component
-│   │   ├── stripe-card-element/           # Card Element component (Stripe Card Elements)
-│   │   │   ├── store/                     # Stencil store for state management
-│   │   │   ├── stripe-card-element.tsx
-│   │   │   ├── stripe-card-element.scss
-│   │   │   ├── readme.md                  # Auto-generated component docs
-│   │   │   └── test/                      # Component tests
+│   ├── components/            # Web components (9 components)
+│   │   ├── stripe-address-element/        # Address collection form
+│   │   ├── stripe-card-element/           # Card Element component (card number, expiry, CVC)
 │   │   ├── stripe-card-element-modal/     # Combined card element with modal
+│   │   ├── stripe-currency-selector/      # Currency selector for Adaptive Pricing
+│   │   ├── stripe-express-checkout-element/ # Express Checkout (Apple Pay, Google Pay, etc.)
+│   │   ├── stripe-link-authentication-element/ # Email + Stripe Link authentication
+│   │   ├── stripe-modal/                  # Modal wrapper component
+│   │   ├── stripe-payment-element/        # Unified Payment Element
 │   │   └── stripe-payment-request-button/ # Payment Request API button (Beta)
+│   │       Each component has: *.tsx, *.scss, readme.md (auto-generated), test/
+│   ├── services/              # Service layer (dependency injection)
+│   │   ├── interfaces.ts      # IStripeService + element manager interfaces
+│   │   ├── stripe-service.ts  # StripeServiceClass: Stripe.js init, Elements/Checkout state
+│   │   ├── factory.ts         # ServiceFactory: DI wiring, default serviceFactory singleton
+│   │   ├── card-element-manager.ts
+│   │   ├── payment-element-manager.ts
+│   │   ├── address-element-manager.ts
+│   │   ├── link-authentication-element-manager.ts
+│   │   ├── currency-selector-element-manager.ts
+│   │   ├── express-checkout-element-manager.ts
+│   │   └── *.spec.ts          # Unit tests for each manager
 │   ├── utils/                 # Utility functions
-│   │   ├── error.ts          # Error handling utilities
-│   │   ├── i18n.ts           # Internationalization setup
-│   │   ├── platform.ts       # Platform detection utilities
-│   │   └── utils.ts          # General utilities
+│   │   ├── element-finder.ts  # DOM element lookup helpers
+│   │   ├── error.ts           # StripeAPIError and error handling utilities
+│   │   ├── i18n.ts            # Internationalization setup (i18next)
+│   │   ├── platform.ts        # Platform detection utilities
+│   │   ├── test-setup.ts      # Jest test environment setup
+│   │   └── utils.ts           # General utilities (checkPlatform, etc.)
 │   ├── style/                 # Global styles
-│   │   ├── rest.scss         # CSS reset styles
-│   │   └── theme.scss        # Theme variables
+│   │   ├── rest.scss          # CSS reset styles
+│   │   └── theme.scss         # Theme variables
 │   ├── components.d.ts        # Generated TypeScript definitions
-│   ├── index.ts              # Entry point
-│   ├── index.html            # Development/demo page
-│   └── interfaces.ts         # TypeScript interfaces and types
+│   ├── index.ts               # Entry point
+│   ├── index.html             # Development/demo page
+│   └── interfaces.ts          # TypeScript interfaces and types
 ├── stencil.config.ts          # Stencil build configuration
+├── stencil.config.unit.ts     # Stencil config for unit tests
+├── stencil.config.component.ts # Stencil config for component tests
 ├── tsconfig.json              # TypeScript configuration
-├── .eslintrc.json            # ESLint configuration
-├── .prettierrc.json          # Prettier configuration
+├── eslint.config.js           # ESLint flat config (replaces .eslintrc.json)
+├── .prettierrc.json           # Prettier configuration
 ├── package.json               # Project dependencies and scripts
 └── readme.md                  # Project README
 ```
@@ -62,22 +83,47 @@ Main component providing a Stripe card form using Stripe Card Elements.
 - Location: `src/components/stripe-card-element/`
 - Tag: `<stripe-card-element>`
 - Features: Card number, expiry, CVC, optional ZIP code fields
-- Uses Stencil Store for state management
 - Supports both PaymentIntent and SetupIntent
 
-### 2. stripe-modal
-Simple modal wrapper for payment components.
+### 2. stripe-payment-element
+Unified payment form supporting multiple payment methods via Stripe's Payment Element.
+- Location: `src/components/stripe-payment-element/`
+- Tag: `<stripe-payment-element>`
+- Supports PaymentIntent, SetupIntent, and Checkout Session modes
+
+### 3. stripe-express-checkout-element
+One-click payment methods (Apple Pay, Google Pay, Link, PayPal, Amazon Pay, etc.).
+- Location: `src/components/stripe-express-checkout-element/`
+- Tag: `<stripe-express-checkout-element>`
+
+### 4. stripe-address-element
+Address collection form with autocomplete, shipping or billing mode.
+- Location: `src/components/stripe-address-element/`
+- Tag: `<stripe-address-element>`
+
+### 5. stripe-link-authentication-element
+Email collection with Stripe Link one-click checkout authentication.
+- Location: `src/components/stripe-link-authentication-element/`
+- Tag: `<stripe-link-authentication-element>`
+
+### 6. stripe-currency-selector
+Currency selection for Stripe Adaptive Pricing.
+- Location: `src/components/stripe-currency-selector/`
+- Tag: `<stripe-currency-selector>`
+
+### 7. stripe-modal
+Simple modal wrapper for payment components. Uses shadow DOM (`shadow: true`).
 - Location: `src/components/stripe-modal/`
 - Tag: `<stripe-modal>`
 - Provides modal functionality with open/close events
 
-### 3. stripe-card-element-modal
+### 8. stripe-card-element-modal
 Combined component integrating card element with modal.
 - Location: `src/components/stripe-card-element-modal/`
 - Tag: `<stripe-card-element-modal>`
 - Combines stripe-card-element and stripe-modal
 
-### 4. stripe-payment-request-button (Beta)
+### 9. stripe-payment-request-button (Beta)
 Payment Request API button component (Apple Pay / Google Pay).
 - Location: `src/components/stripe-payment-request-button/`
 - Tag: `<stripe-payment-request-button>`
@@ -86,19 +132,19 @@ Payment Request API button component (Apple Pay / Google Pay).
 ## Development Workflows
 
 ### Environment Requirements
-- Node.js >= 12.0.0 (CI uses Node.js 18.x)
-- npm or yarn
-- Package manager: Both npm and yarn are supported (CONTRIBUTING.md mentions yarn, but package.json uses npm scripts)
+- Node.js >= 18.x (CI tests against Node.js 20.x and 22.x)
+- pnpm
+- Package manager: pnpm (package.json `packageManager`: pnpm@10.33.0)
 
 ### Setup
 ```bash
-npm install          # Install dependencies
-npm start            # Start dev server with watch mode
-npm run build        # Production build
-npm test             # Run unit tests
-npm run lint         # Lint TypeScript/TSX files
-npm run format       # Format code with Prettier
-npm run generate     # Generate new Stencil component
+pnpm install          # Install dependencies
+pnpm start            # Start dev server with watch mode
+pnpm run build        # Production build
+pnpm test             # Run unit tests
+pnpm run lint         # Lint TypeScript/TSX files
+pnpm run format       # Format code with Prettier
+pnpm run generate     # Generate new Stencil component
 ```
 
 ### Build Process
@@ -112,28 +158,29 @@ npm run generate     # Generate new Stencil component
 
 ### Testing
 - Test framework: Jest + Puppeteer
-- Test location: `src/components/*/test/`
+- Test location: `src/components/*/test/` and `src/services/*.spec.ts` and `src/utils/*.spec.ts`
 - Test commands:
-  - `npm test` - Run unit tests
-  - `npm run test:e2e` - Run E2E tests
-  - `npm run test.watch` - Watch mode for all tests
+  - `pnpm test` - Run all spec tests
+  - `pnpm run test:unit` - Run unit tests (services/utils) via `stencil.config.unit.ts`
+  - `pnpm run test:component` - Run component tests via `stencil.config.component.ts`
+  - `pnpm run test:e2e` - Run E2E tests
+  - `pnpm run test.watch` - Watch mode for all tests
 - Tests include snapshots (stored in `__snapshots__/` directories)
+- Test environment configured in `src/utils/test-setup.ts`
 
 ### CI/CD Pipeline
 - Platform: GitHub Actions
 - Workflow file: `.github/workflows/ci.yml`
 - Triggers: On push and pull_request
-- Steps:
-  1. Checkout code
-  2. Setup Node.js 18.x
-  3. Cache node_modules
-  4. Run `npm ci`
-  5. Run tests (`npm test`)
-  6. Build project (`npm run build`)
+- Jobs:
+  1. **lint** — Node 20.x: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
+  2. **type-check** — Node 20.x: `pnpm exec tsc --noEmit`
+  3. **test** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run test:unit -- --coverage` + `pnpm run test:component`
+  4. **build** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run build`
 
 ### Publishing
 - Uses `np` package for releases
-- Command: `npm run release`
+- Command: `pnpm run release`
 - Pre-publish: Automatically runs build via `prepublishOnly` script
 
 ## Code Conventions
@@ -156,7 +203,7 @@ npm run generate     # Generate new Stencil component
   @Component({
     tag: 'component-name',
     styleUrl: 'component-name.scss',
-    shadow: false,  // Note: Shadow DOM is disabled
+    shadow: false,  // Note: Shadow DOM is disabled for most components
   })
   export class ComponentName {
     @Element() el: HTMLElement;
@@ -182,7 +229,7 @@ npm run generate     # Generate new Stencil component
   - Component props must be public and readonly
 
 ### ESLint Rules
-Configuration: `.eslintrc.json`
+Configuration: `eslint.config.js` (ESLint flat config)
 - Extends: `eslint:recommended`, `@typescript-eslint/recommended`, `@stencil-community/recommended`
 - Key rules:
   - `@stencil-community/async-methods`: error - All @Method() must be async
@@ -214,18 +261,27 @@ Configuration: `.prettierrc.json`
   - Theme variables: `src/style/theme.scss`
 
 ### File Naming
-- Components: kebab-case (e.g., `stripe-payment-sheet.tsx`)
+- Components: kebab-case (e.g., `stripe-payment-element.tsx`)
 - Utilities: camelCase (e.g., `error.ts`, `i18n.ts`)
-- Tests: `*.spec.tsx` in `test/` subdirectory
-- Styles: Match component name (e.g., `stripe-payment-sheet.scss`)
+- Tests: `*.spec.ts` or `*.spec.tsx` in `test/` subdirectory (components) or alongside service files
+- Styles: Match component name (e.g., `stripe-payment-element.scss`)
 
-### State Management
-- Uses `@stencil/store` for shared state
-- Store pattern: See `src/components/stripe-payment-sheet/store/`
-- Store files:
-  - `store.ts` - Store definition and initialization
-  - `CardElement.ts` - Stripe element management
-  - `index.ts` - Exports
+### State Management and Service Layer
+The codebase uses a **services layer** with dependency injection rather than a per-component Stencil Store.
+
+Architecture (`src/services/`):
+- **`IStripeService`** (`interfaces.ts`) — core interface: initializes Stripe.js, manages `StripeElements` and `StripeCheckout` instances, tracks `StripeServiceState` (publishableKey, loadStripeStatus, stripe, elements, checkout)
+- **`StripeServiceClass`** (`stripe-service.ts`) — concrete implementation of `IStripeService`; supports Payment Intent mode and Checkout Session mode
+- **Element managers** — one per element type, each taking an injected `IStripeService`:
+  - `CardElementManager` — manages card number, expiry, CVC elements
+  - `PaymentElementManager` — manages the unified Payment Element (PaymentIntent + Checkout Session)
+  - `AddressElementManager` — manages Address Element
+  - `LinkAuthenticationElementManager` — manages Link Authentication Element
+  - `CurrencySelectorElementManager` — manages Currency Selector Element
+  - `ExpressCheckoutElementManager` — manages Express Checkout Element
+- **`ServiceFactory`** (`factory.ts`) — creates all service/manager instances with proper DI; a default `serviceFactory` singleton is exported and used by components; can be replaced with mocks in tests
+
+Each Stencil component creates its own `IStripeService` and element manager via `serviceFactory` in `connectedCallback`, keeping state per-component instance.
 
 ### Internationalization
 - Library: i18next with browser language detector
@@ -299,15 +355,15 @@ fix #42
 1. Fork the repository
 2. Create feature branch
 3. Make changes with conventional commits
-4. Ensure tests pass (`npm test`)
-5. Ensure build succeeds (`npm run build`)
+4. Ensure tests pass (`pnpm test`)
+5. Ensure build succeeds (`pnpm run build`)
 6. Submit PR
 
 ## Common Development Tasks
 
 ### Creating a New Component
 ```bash
-npm run generate
+pnpm run generate
 # or
 stencil generate
 ```
@@ -316,10 +372,10 @@ Follow Stencil prompts to scaffold a new component.
 ### Running Examples Locally
 ```bash
 # Build and copy to example directory
-npm run example:copy
+pnpm run example:copy
 
 # Serve examples
-npm run example:serve
+pnpm run example:serve
 ```
 
 ### Debugging
@@ -333,22 +389,22 @@ npm run example:serve
 
 1. **Always run tests** after code changes:
    ```bash
-   npm test
+   pnpm test
    ```
 
 2. **Lint before committing**:
    ```bash
-   npm run lint
+   pnpm run lint
    ```
 
 3. **Format code**:
    ```bash
-   npm run format
+   pnpm run format
    ```
 
 4. **Build to verify**:
    ```bash
-   npm run build
+   pnpm run build
    ```
 
 5. **Follow commit conventions**: Use conventional commits format
@@ -359,7 +415,7 @@ npm run example:serve
 2. **All @Method() must be async** - Enforced by ESLint
 3. **JSDoc is required** - Document all public APIs
 4. **Props should be readonly** - Follow Stencil best practices
-5. **Use Stencil Store for shared state** - Not React context or similar
+5. **Use the services layer for state** - Create services via `serviceFactory` in `connectedCallback`; see `src/services/` for the architecture
 6. **Support internationalization** - Use i18next for user-facing strings
 7. **Platform detection** - Use `src/utils/platform.ts` utilities
 
@@ -378,7 +434,7 @@ npm run example:serve
 
 ### Common Pitfalls to Avoid
 
-1. **Don't use shadow: true** - Project uses light DOM
+1. **Don't use shadow: true** - Project uses light DOM (the only intentional exception is `stripe-modal`, which sets `shadow: true`)
 2. **Don't skip semicolons** - Required by Prettier config
 3. **Don't exceed 180 character line width** - Prettier will wrap
 4. **Don't use stencil/stnl prefixes** - Banned by ESLint
@@ -396,7 +452,7 @@ npm run example:serve
 
 ### Documentation
 
-1. **Component READMEs are auto-generated** - Run `npm run build --docs`
+1. **Component READMEs are auto-generated** - Run `pnpm run build --docs`
 2. **Update main README.md** - For major feature additions
 3. **JSDoc comments** - Will appear in generated docs
 4. **Example usage** - Add to `example/` directory if adding new features
@@ -404,11 +460,11 @@ npm run example:serve
 ## Migration Notes
 
 ### Recent Migration to Stencil 4
-The project recently migrated from Stencil 3 to Stencil 4 (see commit 99a0f5c).
-Key changes:
-- Updated to `@stencil/core@^4.30.0`
+The project migrated from Stencil 3 to Stencil 4 (see commit 99a0f5c) and has since been updated to `@stencil/core@^4.38.3`.
+Key changes from original migration:
 - Updated build configuration
 - CI actions updated
+- Node.js minimum raised to 18.x; CI matrix tests on 20.x and 22.x
 
 Be aware of Stencil 4 breaking changes when making updates.
 
@@ -427,6 +483,6 @@ Be aware of Stencil 4 breaking changes when making updates.
 
 ---
 
-**Last Updated**: 2025-11-15
-**Stencil Version**: 4.30.0
-**Node Version (CI)**: 18.x
+**Last Updated**: 2026-06-05
+**Stencil Version**: 4.38.3
+**Node Version (CI)**: 20.x / 22.x
