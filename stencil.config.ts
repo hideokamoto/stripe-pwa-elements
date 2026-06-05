@@ -19,6 +19,8 @@ const ciReporters: Config['testing'] = process.env.CI
 
 export const config: Config = {
   namespace: 'stripe-elements',
+  // CircleCI medium = 2 vCPUs; cap workers to avoid memory pressure with jsdom
+  maxConcurrentWorkers: process.env.CI ? 2 : undefined,
   outputTargets: [
     {
       type: 'dist',
