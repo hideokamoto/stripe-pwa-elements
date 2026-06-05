@@ -53,11 +53,11 @@ class StripeServiceClass implements IStripeService {
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = false;
-    if (options?.stripeAccount != null && options.stripeAccount !== '') {
+    if (options?.stripeAccount != null && options?.stripeAccount !== '') {
       this.store.state.stripeAccount = options.stripeAccount;
     }
 
-    if (options?.applicationName != null && options.applicationName !== '') {
+    if (options?.applicationName != null && options?.applicationName !== '') {
       this.store.state.applicationName = options.applicationName;
     }
 
@@ -102,11 +102,11 @@ class StripeServiceClass implements IStripeService {
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = true;
-    if (options?.stripeAccount != null && options.stripeAccount !== '') {
+    if (options?.stripeAccount != null && options?.stripeAccount !== '') {
       this.store.state.stripeAccount = options.stripeAccount;
     }
 
-    if (options?.applicationName != null && options.applicationName !== '') {
+    if (options?.applicationName != null && options?.applicationName !== '') {
       this.store.state.applicationName = options.applicationName;
     }
 
