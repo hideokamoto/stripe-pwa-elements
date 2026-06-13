@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm audit --audit-level=moderate --prod
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    strategy:
+      matrix:
+        node-version: ['20.x', '22.x']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Run unit tests with coverage
+        run: pnpm run test:unit -- --coverage
+      - name: Upload coverage to Codecov
+        # Only upload once (Node 20) to avoid duplicate reports
+        if: matrix.node-version == '20.x'
+        uses: codecov/codecov-action@v5
+        with:
+          # No token needed for public repos — Codecov supports tokenless uploads
+          # via OIDC. If uploads fail, set CODECOV_TOKEN as a repository secret.
+          files: ./coverage/lcov.info
+          flags: unit
+          fail_ci_if_error: false
+      - run: pnpm run test:component
+
+  build:
+    name: Build (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    strategy:
+      matrix:
+        node-version: ['20.x', '22.x']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
