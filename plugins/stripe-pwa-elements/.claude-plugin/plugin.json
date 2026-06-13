@@ -1,0 +1,12 @@
+{
+  "name": "stripe-pwa-elements",
+  "description": "Helps you integrate the stripe-pwa-elements web component library: choosing the right component, wiring publishable key + intent/checkout client secret, and handling the submit/confirm flow.",
+  "author": {
+    "name": "Hidetaka Okamoto",
+    "url": "https://github.com/hideokamoto"
+  },
+  "homepage": "https://github.com/hideokamoto/stripe-pwa-elements",
+  "repository": "https://github.com/hideokamoto/stripe-pwa-elements",
+  "license": "MIT",
+  "keywords": ["stripe", "payments", "web-components", "stencil", "pwa"]
+}
