@@ -5,7 +5,7 @@ import mermaid from 'astro-mermaid';
 
 // Cloudflare Web Analytics beacon is injected only when PUBLIC_CF_ANALYTICS_TOKEN is set.
 // Set this environment variable at build/deploy time — never hard-code a real token.
-const cfAnalyticsToken = process.env.PUBLIC_CF_ANALYTICS_TOKEN;
+const cfAnalyticsToken = process.env.PUBLIC_CF_ANALYTICS_TOKEN?.trim();
 const analyticsHeadEntries = cfAnalyticsToken
 	? [
 			{
