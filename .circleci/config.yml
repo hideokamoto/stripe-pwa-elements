@@ -157,6 +157,34 @@ jobs:
           path: dist
           destination: dist-node<< parameters.node-version >>
 
+  # ── Coverage (full suite, single container) ──────────────────────────────────
+  #
+  # The matrixed test-unit job above runs under CircleCI Smarter Testing, which
+  # splits the suite across parallel containers — so global coverage thresholds
+  # can't be enforced there (each container only runs a slice). This job runs the
+  # whole unit suite in one process with COVERAGE=true so coverage is meaningful,
+  # enforces the thresholds in stencil.config.unit.ts, and uploads to Codecov.
+  coverage:
+    executor: default
+    resource_class: medium
+    steps:
+      - checkout
+      - install-deps:
+          node-version: "22"
+      - run:
+          name: Unit tests with coverage (enforces thresholds)
+          command: COVERAGE=true pnpm run test:unit
+      - store_artifacts:
+          path: coverage
+          destination: coverage
+      - run:
+          name: Upload coverage to Codecov (non-fatal)
+          command: |
+            curl -Os https://cli.codecov.io/latest/linux/codecov || true
+            chmod +x codecov 2>/dev/null || true
+            ./codecov upload-process -f coverage/lcov.info \
+              || echo "Codecov upload skipped (no token / network)"
+
 # ---------------------------------------------------------------------------
 # Workflow
 # ---------------------------------------------------------------------------
@@ -192,6 +220,12 @@ workflows:
           matrix:
             parameters:
               node-version: ["20", "22"]
+          requires:
+            - lint
+            - type-check
+
+      # Coverage runs the full unit suite once and enforces thresholds.
+      - coverage:
           requires:
             - lint
             - type-check
