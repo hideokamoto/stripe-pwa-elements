@@ -2,14 +2,17 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
+import starlightLlmsTxt from 'starlight-llms-txt';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://stripe-pwa-elements-docs.workers.dev',
 	integrations: [
 		mermaid({
 			autoTheme: true,
 		}),
 		starlight({
+			plugins: [starlightLlmsTxt()],
 			title: 'stripe-pwa-elements',
 			defaultLocale: 'root',
 			locales: {
