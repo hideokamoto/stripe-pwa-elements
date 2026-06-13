@@ -257,6 +257,37 @@ If stripe-pwa-elements saves you time, please consider sponsoring the lead maint
 
 ---
 
+## Public API & TypeScript types
+
+All user-facing TypeScript types are exported directly from the package root. Import them using the package name:
+
+```ts
+import type {
+  FormSubmitEvent,
+  FormSubmitHandler,
+  StripeLoadedEvent,
+  StripeDidLoadedHandler,
+  ProgressStatus,
+  IntentType,
+  InitStripeOptions,
+  LinkAuthenticationElementChangeEvent,
+  LinkAuthenticationElementChangeHandler,
+  CurrencySelectorChangeEvent,
+  CurrencySelectorChangeHandler,
+  DefaultFormSubmitResult,
+} from 'stripe-pwa-elements';
+```
+
+**Do not** import from internal paths such as `dist/types/interfaces` or `dist-custom-elements/...`. Those paths are implementation details and are not part of the public API — they may change without notice across any release.
+
+### Semver policy
+
+All types exported from the package root (`stripe-pwa-elements`) are considered **public API** and follow [Semantic Versioning](https://semver.org/). Within the `^3.0.0` range:
+
+- No breaking changes will be made to the shape of any publicly exported type.
+- New optional fields may be added to event objects without a major bump.
+- Removals or renames of exported types always require a new major version.
+
 ## Maintainers
 
 | Maintainer | GitHub | Social |
