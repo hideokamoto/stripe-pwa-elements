@@ -59,8 +59,12 @@ jobs:
           name: ESLint
           command: pnpm run lint
       - run:
-          name: Security audit (moderate+, prod deps only)
-          command: pnpm audit --audit-level=moderate --prod
+          name: Security audit (library prod deps; docs-only advisories are non-blocking)
+          # `pnpm audit` cannot be scoped to a single workspace member, so this
+          # wrapper blocks only on advisories that reach the published library
+          # and demotes docs-site tooling advisories to warnings.
+          # See scripts/ci-audit.mjs.
+          command: node scripts/ci-audit.mjs
 
   type-check:
     executor: default
