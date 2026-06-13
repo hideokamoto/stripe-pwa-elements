@@ -115,6 +115,9 @@ jobs:
             circleci run testsuite "unit tests"
       - store_test_results:
           path: test-reports
+      - store_artifacts:
+          path: coverage
+          destination: coverage-unit-node<< parameters.node-version >>
 
   # ── Component (rendering) tests ────────────────────────────────────────────
   #
