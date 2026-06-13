@@ -3,6 +3,14 @@ title: <stripe-payment-request-button>
 description: Component API reference.
 ---
 
+:::caution[Deprecated]
+**`<stripe-payment-request-button>` は非推奨です。**
+`stripe.paymentRequest()` は Stripe.js 9.x で削除される予定です（2025-09-30 非推奨宣言 / 2026-03-25 削除予定）。
+`<stripe-express-checkout-element>` への移行を推奨します。Apple Pay・Google Pay・Link・PayPal などをモダンな Express Checkout Element API でサポートします。
+
+[移行ガイドを読む → migrate-payment-request-button-to-express-checkout](/guides/migrate-payment-request-button-to-express-checkout/)
+:::
+
 > このページは `src/components/stripe-payment-request-button/readme.md` から自動生成されています。
 
 ## 使用例
