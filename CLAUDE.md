@@ -359,6 +359,29 @@ fix #42
 5. Ensure build succeeds (`pnpm run build`)
 6. Submit PR
 
+### Keep internal references out of public artifacts
+
+This is a public open-source repository. Issue tracking happens in a **private** Linear
+workspace, and those references must never leak into anything pushed here.
+
+**Never** include private issue-tracker URLs or identifiers in:
+
+- Pull request titles or bodies
+- Commit messages
+- Branch names
+- Code comments, docs, or any committed file
+
+Concretely, do **not** write:
+
+- Linear URLs such as `https://linear.app/<workspace>/issue/...`
+- Linear issue keys such as `HID-123` (or any private tracker ID)
+- The private workspace/organization name
+
+If a task originates from a Linear issue, describe the *what* and *why* directly in the
+PR/commit using plain language; do not link back to or name the private tracker. Internal
+cross-referencing should stay inside Linear (e.g. paste the PR URL into the Linear issue),
+not the other way around.
+
 ## Common Development Tasks
 
 ### Creating a New Component
@@ -441,6 +464,7 @@ pnpm run example:serve
 5. **Don't forget to make public methods async** - Required by @stencil-community rules
 6. **Don't commit without conventional commit format** - Will break release workflow
 7. **Don't modify components.d.ts** - Auto-generated file
+8. **Don't leak private tracker references** - No Linear URLs/issue keys (e.g. `HID-123`) in PR titles, bodies, commit messages, or branch names (see "Keep internal references out of public artifacts")
 
 ### Working with Stripe
 
