@@ -35,7 +35,7 @@ Split card fields (number / expiry / CVC). Supports PaymentIntent and SetupInten
 | `button-label` | `string` | `'Pay'` | translated |
 | `show-label` | `boolean` | `false` | show field labels |
 | `show-payment-request-button` | `boolean` | — | render the Payment Request button |
-| `should-use-default-form-submit-action` | `boolean` | `true` | when `true`, calls `stripe.confirmCardPayment` for you |
+| `should-use-default-form-submit-action` | `boolean` | `true` | when `true`, confirms for you: `stripe.confirmCardPayment` for `intent-type="payment"`, `stripe.confirmCardSetup` for `intent-type="setup"` |
 | `stripe-account` | `string` | — | |
 | `application-name` | `string` | `'stripe-pwa-elements'` | |
 
@@ -65,7 +65,7 @@ Intent **or** Checkout Session.
 | `intent-type` | `'payment' \| 'setup'` | `'payment'` | |
 | `sheet-title` | `string` | `'Add your payment information'` | translated |
 | `button-label` | `string` | `'Pay'` | translated |
-| `should-use-default-form-submit-action` | `boolean` | `true` | when `true`, calls `stripe.confirmPayment` for you |
+| `should-use-default-form-submit-action` | `boolean` | `true` | when `true`, confirms for you: `stripe.confirmPayment` for `intent-type="payment"`, `stripe.confirmSetup` for `intent-type="setup"` |
 | `stripe-account` | `string` | — | |
 | `application-name` | `string` | `'stripe-pwa-elements'` | |
 

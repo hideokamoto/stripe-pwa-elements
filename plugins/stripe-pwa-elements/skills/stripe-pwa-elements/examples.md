@@ -1,7 +1,8 @@
 # stripe-pwa-elements — Integration recipes
 
-Copy-paste starting points. All use a publishable key (`pk_test_…`) and a client
-secret created on your **server**. Replace the placeholder values. See
+Copy-paste starting points. Most use a publishable key (`pk_test_…`) and a client
+secret created on your **server** — a few (Address and Link Authentication) need
+only a publishable key. Replace the placeholder values. See
 [reference.md](reference.md) for exact prop/event names.
 
 > Loading: either `import { defineCustomElements } from 'stripe-pwa-elements/loader'; defineCustomElements();`
@@ -80,7 +81,11 @@ await customElements.whenDefined('stripe-payment-element');
 await el.initStripeWithCheckoutSession('pk_test_xxxxx', 'cs_xxxxx_secret_xxxxx');
 
 el.addEventListener('checkoutSessionConfirmResult', ({ detail }) => {
-  if (detail instanceof Error || detail.type === 'error') {
+  if (detail instanceof Error) {
+    el.setErrorMessage(detail.message);
+    el.updateProgress('failure');
+  } else if (detail.type === 'error') {
+    el.setErrorMessage(detail.error.message);
     el.updateProgress('failure');
   } else {
     el.updateProgress('success'); // detail.session has the result
@@ -105,7 +110,12 @@ document.getElementById('container').appendChild(el);
 await customElements.whenDefined('stripe-express-checkout-element');
 
 el.addEventListener('defaultConfirmResult', ({ detail }) => {
-  console.log(detail instanceof Error ? 'failed' : 'succeeded', detail);
+  if (detail instanceof Error || detail.error) {
+    el.setErrorMessage(detail.error ? detail.error.message : detail.message);
+    el.updateProgress('failure');
+  } else {
+    el.updateProgress('success');
+  }
 });
 
 await el.initStripe('pk_test_xxxxx');
@@ -134,8 +144,13 @@ handling set `should-use-default-confirm-action="false"` and handle `confirm`.
         type: 'card',
         card: cardNumberElement, // also: cardExpiryElement, cardCVCElement
       });
-      // Send result.paymentMethod.id to your server to confirm the PaymentIntent.
-      el.updateProgress(result.error ? 'failure' : 'success');
+      if (result.error) {
+        el.setErrorMessage(result.error.message);
+        el.updateProgress('failure');
+      } else {
+        // Send result.paymentMethod.id to your server to confirm the PaymentIntent.
+        el.updateProgress('success');
+      }
     });
   });
 </script>
@@ -182,14 +197,17 @@ const email = await el.getEmail();
 Never expose your secret key in the browser. Create the intent server-side:
 
 ```js
-// Node.js
+// Node.js — wrap in an async function (top-level await isn't valid in CommonJS)
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const intent = await stripe.paymentIntents.create({
-  amount: 1099,
-  currency: 'usd',
-  automatic_payment_methods: { enabled: true },
-});
-// send intent.client_secret to the browser
+
+async function createIntent() {
+  const intent = await stripe.paymentIntents.create({
+    amount: 1099,
+    currency: 'usd',
+    automatic_payment_methods: { enabled: true },
+  });
+  return intent.client_secret; // send this to the browser
+}
 ```
 
 For quick local testing, generate one with the Stripe CLI:
