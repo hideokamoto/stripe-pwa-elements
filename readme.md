@@ -8,6 +8,17 @@
 
 Framework-agnostic Stripe payment components built with Web Components. Works with any web framework — React, Vue, Angular, Svelte, or plain HTML.
 
+> **Note:** The current npm package is **`stripe-pwa-elements`** (this repo).
+> The old package `@stripe-elements/stripe-elements` (v2.0.2) is deprecated and superseded — please use `stripe-pwa-elements` instead.
+
+## Used in production
+
+[![capacitor-community/stripe](https://img.shields.io/badge/capacitor--community%2Fstripe-4000%2B%20weekly%20downloads-brightgreen)](https://github.com/capacitor-community/stripe)
+
+This library powers the Web implementation of [`@capacitor-community/stripe`](https://github.com/capacitor-community/stripe), which receives 4,000+ weekly downloads. If you use Capacitor for cross-platform apps, `stripe-pwa-elements` handles all Stripe UI on the web layer.
+
+> **Manual follow-up (external repo):** Add a reciprocal link in the [capacitor-community/stripe README](https://github.com/capacitor-community/stripe) pointing back to this package.
+
 ## Features
 
 - **Framework-agnostic** — Standard Web Components that work everywhere
