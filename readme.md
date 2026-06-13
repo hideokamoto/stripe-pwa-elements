@@ -208,6 +208,55 @@ To run the unit tests for the components, run:
 npm test
 ```
 
+## Security & PCI DSS SAQ-A
+
+Card data **never** passes through this library's DOM, JavaScript state, or network requests.
+All sensitive input fields (card number, expiry, CVC) are rendered inside **Stripe-hosted iframes**,
+meaning your page never has access to raw card data. This architecture keeps integrations
+eligible for the lightest PCI DSS self-assessment questionnaire: **SAQ-A**.
+
+### How iframe isolation works
+
+```
+Your page (your domain)
+┌─────────────────────────────────────────────────────────┐
+│  <stripe-card-element>                                  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  <iframe src="https://js.stripe.com/...">         │  │
+│  │  ┌─────────────────────────────────────────────┐  │  │
+│  │  │  Card number  [____ ____ ____ ____]          │  │  │
+│  │  │  Expiry       [MM/YY]  CVC  [___]            │  │  │
+│  │  │                                              │  │  │
+│  │  │  (Stripe's origin — cross-origin boundary)   │  │  │
+│  │  └─────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  Your JS can call stripe.confirmPayment() but           │
+│  CANNOT read card values from the iframe.               │
+└─────────────────────────────────────────────────────────┘
+```
+
+- The browser's **same-origin policy** prevents any JavaScript on your page from reading
+  input values inside Stripe's iframe.
+- Card data travels directly from the iframe to **Stripe's servers over TLS** — it never
+  touches your application server.
+- This library only manages the mounting, styling, and event wiring of those iframes; it
+  does not alter Stripe's security model.
+
+For a complete explanation see [Stripe's SAQ-A documentation](https://stripe.com/docs/security/stripe#saq-a).
+
+For the vulnerability reporting channel and supply-chain notes (npm provenance), see [SECURITY.md](./SECURITY.md).
+
+---
+
+## Sponsors
+
+If stripe-pwa-elements saves you time, please consider sponsoring the lead maintainer:
+
+[![Sponsor hideokamoto](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors&style=flat-square)](https://github.com/sponsors/hideokamoto)
+
+---
+
 ## Maintainers
 
 | Maintainer | GitHub | Social |
