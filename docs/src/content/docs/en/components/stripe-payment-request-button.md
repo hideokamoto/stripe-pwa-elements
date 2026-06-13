@@ -83,6 +83,8 @@ stripeElement
   });
 ```
 
+> **⚠️ DEPRECATED:** This component is deprecated. `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated 2025-09-30 / removed 2026-03-25). Please migrate to [`<stripe-express-checkout-element>`](../stripe-express-checkout-element/) which supports Apple Pay, Google Pay, Link, PayPal, and more. See the [migration guide](../../docs/guides/migrate-payment-request-button-to-express-checkout.md).
+
 <!-- Auto Generated Below -->
 
 

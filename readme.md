@@ -176,6 +176,18 @@ const handleFormSubmit = (e) => {
 </script>
 ```
 
+## Use with AI assistants
+
+The documentation site publishes machine-readable plain-text files that AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) can use to answer questions about this library without hallucinating outdated API details.
+
+| File | Purpose |
+| --- | --- |
+| [`/llms.txt`](https://stripe-pwa-elements-docs.workers.dev/llms.txt) | Index — links to the full and compact documentation sets |
+| [`/llms-full.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-full.txt) | Full API reference for all components |
+| [`/llms-small.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-small.txt) | Compact version with non-essential content removed |
+
+These files are generated automatically from the documentation source at build time using the [`starlight-llms-txt`](https://github.com/HiDeoo/starlight-llms-txt) plugin and always reflect the latest published docs.
+
 ## Examples
 
 See the [example/](./example) directory for complete working examples:
