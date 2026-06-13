@@ -11,36 +11,33 @@ export const config: Config = {
     ...baseConfig.testing,
     testRegex: '(src/(utils|services)/.*\\.spec\\.ts$|\\.unit\\.spec\\.ts$)',
 
-    // Coverage collection — restrict to the main src/ tree so worktrees and
-    // generated files are excluded from the report.
+    // Coverage collection — restrict to the code this unit job actually
+    // exercises: services/ and utils/. Components are covered by the component
+    // test job, so including them here would report ~0% and skew the totals.
     collectCoverage: true,
     collectCoverageFrom: [
-      'src/**/*.{ts,tsx}',
+      'src/services/**/*.{ts,tsx}',
+      'src/utils/**/*.{ts,tsx}',
       '!src/**/*.spec.{ts,tsx}',
       '!src/**/*.e2e.{ts,tsx}',
       '!src/**/test/**',
-      '!src/components.d.ts',
-      '!src/index.ts',
     ],
     coverageReporters: ['text', 'lcov', 'json-summary'],
     coverageDirectory: 'coverage',
 
-    // Thresholds set at current measured levels (services ~85%, utils ~91%,
-    // components 22-58% — overall unit-test baseline).
-    // Target: ratchet toward 80% across all metrics over time.
-    // Current overall per-category:
+    // Thresholds set just below the current measured baseline so regressions
+    // fail CI while leaving a little headroom. Coverage here is scoped to
+    // services/ + utils/ (see collectCoverageFrom above).
+    // Current measured (services + utils blended):
+    //   ~87% stmts / ~79% branch / ~90% funcs / ~86% lines
     //   services: ~85% stmts / ~78% branch / ~87% funcs / ~85% lines
     //   utils:    ~91% stmts / ~83% branch / ~97% funcs / ~89% lines
-    //   components (unit tests): ~22-58% — lower because component tests focus
-    //     on integration; pure unit coverage of components is limited by design.
-    // The global threshold below reflects the blended actual baseline; bump it
-    // upward as more component unit tests are added toward the 80% target.
     coverageThreshold: {
       global: {
-        statements: 45,
-        branches: 35,
-        functions: 45,
-        lines: 45,
+        statements: 80,
+        branches: 70,
+        functions: 85,
+        lines: 80,
       },
       // Services and utils have stronger unit test coverage — enforce higher
       // thresholds for those directories to catch regressions in well-tested code.
