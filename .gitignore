@@ -33,3 +33,6 @@ RELEASE_NOTES_*.md
 # Test output artifacts
 junit.xml
 test-reports/
+
+# Claude Code agent worktrees (transient harness state)
+.claude/worktrees/
