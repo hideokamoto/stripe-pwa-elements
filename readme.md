@@ -19,6 +19,90 @@ This library powers the Web implementation of [`@capacitor-community/stripe`](ht
 
 > **Manual follow-up (external repo):** Add a reciprocal link in the [capacitor-community/stripe README](https://github.com/capacitor-community/stripe) pointing back to this package.
 
+## Why stripe-pwa-elements?
+
+Integrating Stripe from scratch requires wiring up several moving parts. This library collapses all of that into a single HTML element.
+
+### Before — raw `@stripe/stripe-js` (≈ 40 lines)
+
+```html
+<div id="payment-element"></div>
+<button id="pay" disabled>Pay</button>
+
+<script type="module">
+  import { loadStripe } from 'https://esm.sh/@stripe/stripe-js';
+
+  // 1. Load Stripe.js
+  const stripe = await loadStripe('pk_test_xxxxx');
+
+  // 2. Create an Elements instance with your PaymentIntent client secret
+  const elements = stripe.elements({
+    clientSecret: 'pi_xxxxx_secret_xxxxx',
+  });
+
+  // 3. Create and mount the Payment Element
+  const paymentElement = elements.create('payment');
+  paymentElement.mount('#payment-element');
+
+  // 4. Enable the button once the element is ready
+  paymentElement.on('ready', () => {
+    document.getElementById('pay').disabled = false;
+  });
+
+  // 5. Handle form submission
+  document.getElementById('pay').addEventListener('click', async e => {
+    e.preventDefault();
+
+    // 6. Validate the payment details before confirming
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      console.error(submitError.message);
+      return;
+    }
+
+    // 7. Confirm the payment (redirects on success)
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.href,
+      },
+    });
+
+    if (error) {
+      console.error(error.message);
+    }
+  });
+</script>
+```
+
+### After — stripe-pwa-elements (≈ 5 lines)
+
+```html
+<!-- One CDN line registers the custom element -->
+<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/wpkyoto/stripe-pwa-elements.esm.js"></script>
+
+<!-- Drop in the element — Stripe.js loading, Elements creation, mounting,
+     form submission, and confirmPayment are all handled for you -->
+<stripe-payment-element
+  publishable-key="pk_test_xxxxx"
+  intent-client-secret="pi_xxxxx_secret_xxxxx"
+></stripe-payment-element>
+```
+
+The component emits a `defaultFormSubmitResult` event when the payment completes, so you can react to success or failure without writing any Stripe boilerplate.
+
+### Value props
+
+- **Framework-agnostic** — Standard Web Components: drop into React, Vue, Angular, Svelte, or plain HTML with no adapter needed.
+- **No build step — one CDN line** — Load via `<script type="module">` from unpkg; no npm, no bundler, no configuration required.
+- **PCI DSS SAQ-A eligible** — All card data is entered inside Stripe-hosted iframes. Your page never touches raw card numbers, keeping you in the lightest PCI self-assessment tier.
+
+### Trust signal
+
+[![capacitor-community/stripe — 4000+ weekly downloads](https://img.shields.io/badge/capacitor--community%2Fstripe-4000%2B%20weekly%20downloads-brightgreen)](https://github.com/capacitor-community/stripe)
+
+Used in production as the web layer of [`@capacitor-community/stripe`](https://github.com/capacitor-community/stripe), which sees 4,000+ weekly npm downloads across Capacitor-powered iOS and Android apps.
+
 ## Features
 
 - **Framework-agnostic** — Standard Web Components that work everywhere
