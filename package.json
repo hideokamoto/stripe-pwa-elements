@@ -101,7 +101,8 @@
   },
   "pnpm": {
     "overrides": {
-      "tmp": "^0.2.5"
+      "tmp": "^0.2.5",
+      "esbuild": ">=0.28.1"
     }
   },
   "packageManager": "pnpm@10.33.0"
