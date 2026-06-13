@@ -8,6 +8,17 @@
 
 Framework-agnostic Stripe payment components built with Web Components. Works with any web framework — React, Vue, Angular, Svelte, or plain HTML.
 
+> **Note:** The current npm package is **`stripe-pwa-elements`** (this repo).
+> The old package `@stripe-elements/stripe-elements` (v2.0.2) is deprecated and superseded — please use `stripe-pwa-elements` instead.
+
+## Used in production
+
+[![capacitor-community/stripe](https://img.shields.io/badge/capacitor--community%2Fstripe-4000%2B%20weekly%20downloads-brightgreen)](https://github.com/capacitor-community/stripe)
+
+This library powers the Web implementation of [`@capacitor-community/stripe`](https://github.com/capacitor-community/stripe), which receives 4,000+ weekly downloads. If you use Capacitor for cross-platform apps, `stripe-pwa-elements` handles all Stripe UI on the web layer.
+
+> **Manual follow-up (external repo):** Add a reciprocal link in the [capacitor-community/stripe README](https://github.com/capacitor-community/stripe) pointing back to this package.
+
 ## Features
 
 - **Framework-agnostic** — Standard Web Components that work everywhere
@@ -196,6 +207,86 @@ To run the unit tests for the components, run:
 ```bash
 npm test
 ```
+
+## Security & PCI DSS SAQ-A
+
+Card data **never** passes through this library's DOM, JavaScript state, or network requests.
+All sensitive input fields (card number, expiry, CVC) are rendered inside **Stripe-hosted iframes**,
+meaning your page never has access to raw card data. This architecture keeps integrations
+eligible for the lightest PCI DSS self-assessment questionnaire: **SAQ-A**.
+
+### How iframe isolation works
+
+```
+Your page (your domain)
+┌─────────────────────────────────────────────────────────┐
+│  <stripe-card-element>                                  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  <iframe src="https://js.stripe.com/...">         │  │
+│  │  ┌─────────────────────────────────────────────┐  │  │
+│  │  │  Card number  [____ ____ ____ ____]          │  │  │
+│  │  │  Expiry       [MM/YY]  CVC  [___]            │  │  │
+│  │  │                                              │  │  │
+│  │  │  (Stripe's origin — cross-origin boundary)   │  │  │
+│  │  └─────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  Your JS can call stripe.confirmPayment() but           │
+│  CANNOT read card values from the iframe.               │
+└─────────────────────────────────────────────────────────┘
+```
+
+- The browser's **same-origin policy** prevents any JavaScript on your page from reading
+  input values inside Stripe's iframe.
+- Card data travels directly from the iframe to **Stripe's servers over TLS** — it never
+  touches your application server.
+- This library only manages the mounting, styling, and event wiring of those iframes; it
+  does not alter Stripe's security model.
+
+For a complete explanation see [Stripe's SAQ-A documentation](https://stripe.com/docs/security/stripe#saq-a).
+
+For the vulnerability reporting channel and supply-chain notes (npm provenance), see [SECURITY.md](./SECURITY.md).
+
+---
+
+## Sponsors
+
+If stripe-pwa-elements saves you time, please consider sponsoring the lead maintainer:
+
+[![Sponsor hideokamoto](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors&style=flat-square)](https://github.com/sponsors/hideokamoto)
+
+---
+
+## Public API & TypeScript types
+
+All user-facing TypeScript types are exported directly from the package root. Import them using the package name:
+
+```ts
+import type {
+  FormSubmitEvent,
+  FormSubmitHandler,
+  StripeLoadedEvent,
+  StripeDidLoadedHandler,
+  ProgressStatus,
+  IntentType,
+  InitStripeOptions,
+  LinkAuthenticationElementChangeEvent,
+  LinkAuthenticationElementChangeHandler,
+  CurrencySelectorChangeEvent,
+  CurrencySelectorChangeHandler,
+  DefaultFormSubmitResult,
+} from 'stripe-pwa-elements';
+```
+
+**Do not** import from internal paths such as `dist/types/interfaces` or `dist-custom-elements/...`. Those paths are implementation details and are not part of the public API — they may change without notice across any release.
+
+### Semver policy
+
+All types exported from the package root (`stripe-pwa-elements`) are considered **public API** and follow [Semantic Versioning](https://semver.org/). Within the `^3.0.0` range:
+
+- No breaking changes will be made to the shape of any publicly exported type.
+- New optional fields may be added to event objects without a major bump.
+- Removals or renames of exported types always require a new major version.
 
 ## Maintainers
 
