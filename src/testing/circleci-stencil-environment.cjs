@@ -13,7 +13,7 @@ const StencilEnvironment = require('@stencil/core/testing/jest-environment.js');
 const inspector = require('node:inspector');
 const { promisify } = require('node:util');
 const { mkdirSync, writeFileSync } = require('node:fs');
-const { basename, join, resolve, relative } = require('node:path');
+const { join, resolve, relative } = require('node:path');
 const { tmpdir } = require('node:os');
 const { fileURLToPath } = require('node:url');
 
@@ -21,7 +21,7 @@ const ENV_VAR = 'CIRCLECI_COVERAGE';
 // Must match the value used by @jsr/circleci__jest-circleci-coverage/reporter
 const TMP_COVERAGE_DIR =
   process.env.TMP_COVERAGE_DIR ||
-  join(tmpdir(), 'circleci-coverage', basename(process.cwd()));
+  join(tmpdir(), 'circleci-coverage', require('node:path').basename(process.cwd()));
 
 class CircleCIStencilEnvironment extends StencilEnvironment {
   constructor(config, context) {
@@ -63,7 +63,10 @@ class CircleCIStencilEnvironment extends StencilEnvironment {
       }
 
       mkdirSync(TMP_COVERAGE_DIR, { recursive: true });
-      const testCoverageFile = resolve(TMP_COVERAGE_DIR, `${basename(this._testPath)}.json`);
+      // Use full relative path as slug to avoid collisions between spec files
+      // in different directories that share the same basename.
+      const slug = relative(this._cwd, this._testPath).replace(/[/\\]/g, '_');
+      const testCoverageFile = resolve(TMP_COVERAGE_DIR, `${slug}.json`);
       writeFileSync(testCoverageFile, JSON.stringify(output));
     }
     await super.teardown();
