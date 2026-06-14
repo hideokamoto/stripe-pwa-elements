@@ -49,25 +49,34 @@ class CircleCIStencilEnvironment extends StencilEnvironment {
 
   async teardown() {
     if (this._initialized && this._session && this._post) {
-      await this._post('Profiler.stopPreciseCoverage');
-      await this._post('Profiler.disable');
-      this._session.disconnect();
-      this._initialized = false;
-
-      const output = {};
-      for (const [testKey, paths] of Object.entries(this._coverage)) {
-        for (const filePath of paths) {
-          if (!output[filePath]) output[filePath] = {};
-          if (!output[filePath][testKey]) output[filePath][testKey] = [1];
+      try {
+        try {
+          await this._post('Profiler.stopPreciseCoverage');
+          await this._post('Profiler.disable');
+        } catch {
+          // Ignore profiler errors during teardown to ensure we always clean up
+        } finally {
+          this._session.disconnect();
+          this._initialized = false;
         }
-      }
 
-      mkdirSync(TMP_COVERAGE_DIR, { recursive: true });
-      // Use full relative path as slug to avoid collisions between spec files
-      // in different directories that share the same basename.
-      const slug = relative(this._cwd, this._testPath).replace(/[/\\]/g, '_');
-      const testCoverageFile = resolve(TMP_COVERAGE_DIR, `${slug}.json`);
-      writeFileSync(testCoverageFile, JSON.stringify(output));
+        const output = {};
+        for (const [testKey, paths] of Object.entries(this._coverage)) {
+          for (const filePath of paths) {
+            if (!output[filePath]) output[filePath] = {};
+            if (!output[filePath][testKey]) output[filePath][testKey] = [1];
+          }
+        }
+
+        mkdirSync(TMP_COVERAGE_DIR, { recursive: true });
+        // Use full relative path as slug to avoid collisions between spec files
+        // in different directories that share the same basename.
+        const slug = relative(this._cwd, this._testPath).replace(/[/\\]/g, '_');
+        const testCoverageFile = resolve(TMP_COVERAGE_DIR, `${slug}.json`);
+        writeFileSync(testCoverageFile, JSON.stringify(output));
+      } catch {
+        // Prevent file system or other errors from blocking super.teardown()
+      }
     }
     await super.teardown();
   }
@@ -86,28 +95,38 @@ class CircleCIStencilEnvironment extends StencilEnvironment {
 
     if (event.name === 'test_fn_start') {
       // Drain accumulated coverage so next collect() reflects only this test
-      await this._post('Profiler.takePreciseCoverage');
+      try {
+        await this._post('Profiler.takePreciseCoverage');
+      } catch {
+        // Ignore errors during coverage drain
+      }
     }
 
     if (event.name === 'test_fn_success' || event.name === 'test_fn_failure') {
-      const result = await this._post('Profiler.takePreciseCoverage');
-      const testFile = relative(this._cwd, this._testPath);
-      const testName = event.test.name;
-      const testKey = `${testFile}!!${testName}|run`;
+      try {
+        const result = await this._post('Profiler.takePreciseCoverage');
+        if (result && Array.isArray(result.result)) {
+          const testFile = relative(this._cwd, this._testPath);
+          const testName = event.test.name;
+          const testKey = `${testFile}!!${testName}|run`;
 
-      const coveredFiles = result.result
-        .map(s => s.url)
-        .filter(url => {
-          try {
-            const u = new URL(url);
-            return u.protocol === 'file:' && !u.pathname.includes('node_modules');
-          } catch {
-            return false;
-          }
-        })
-        .map(url => relative(this._cwd, fileURLToPath(url)));
+          const coveredFiles = result.result
+            .map(s => s.url)
+            .filter(url => {
+              try {
+                const u = new URL(url);
+                return u.protocol === 'file:' && !u.pathname.includes('node_modules');
+              } catch {
+                return false;
+              }
+            })
+            .map(url => relative(this._cwd, fileURLToPath(url)));
 
-      this._coverage[testKey] = coveredFiles;
+          this._coverage[testKey] = coveredFiles;
+        }
+      } catch {
+        // Ignore coverage collection errors to avoid failing the test itself
+      }
     }
   }
 }
