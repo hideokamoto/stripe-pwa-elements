@@ -111,10 +111,13 @@ jobs:
       - run:
           name: Unit tests — CircleCI Smarter Testing
           command: |
-            mkdir -p test-reports/unit
+            mkdir -p test-reports/unit coverage
             circleci run testsuite "unit tests"
       - store_test_results:
           path: test-reports
+      - store_artifacts:
+          path: coverage
+          destination: coverage-node<< parameters.node-version >>
 
   # ── Component (rendering) tests ────────────────────────────────────────────
   #
