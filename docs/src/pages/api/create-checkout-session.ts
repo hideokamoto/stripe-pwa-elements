@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { corsHeaders, DEMO_AMOUNTS, ALLOWED_CURRENCIES, json, getStripe } from '../../lib/api-helpers';
+import { corsHeaders, isAllowedOrigin, DEMO_AMOUNTS, ALLOWED_CURRENCIES, json, getStripe } from '../../lib/api-helpers';
 
 export const prerender = false;
 
@@ -41,7 +41,10 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Server configuration error.' }, 500, cors);
   }
 
-  const returnUrl = origin ? `${origin}/` : PRODUCTION_RETURN_URL;
+  // Only trust the request origin for the post-checkout redirect when it passes the
+  // allowlist; otherwise fall back to the production docs origin. This prevents a caller
+  // from setting an arbitrary Origin header to point return_url at an unrelated site.
+  const returnUrl = isAllowedOrigin(origin, env) ? `${origin}/` : `${PRODUCTION_RETURN_URL}/`;
 
   try {
     const session = await stripe.checkout.sessions.create({

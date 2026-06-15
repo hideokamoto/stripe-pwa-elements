@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
   let stripe: ReturnType<typeof getStripe>;
   try {
     stripe = getStripe(env);
-  } catch (err) {
+  } catch {
     return json({ error: 'Server configuration error.' }, 500, cors);
   }
 
