@@ -83,6 +83,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
+    "@jsr/circleci__jest-circleci-coverage": "^0.4.0",
     "@stencil-community/eslint-plugin": "^0.10.0",
     "@stencil/sass": "^3.2.3",
     "@stencil/store": "^2.2.1",

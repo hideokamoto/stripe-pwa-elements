@@ -1,26 +1,15 @@
 import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
 import globals from 'globals';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import stencilPlugin from '@stencil-community/eslint-plugin';
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-});
 
 export default [
   {
     ignores: ['dist/**', 'www/**', 'loader/**', 'node_modules/**', '*.d.ts'],
   },
   js.configs.recommended,
-  ...compat.extends('plugin:@stencil-community/recommended'),
+  stencilPlugin.configs.flat.recommended,
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {

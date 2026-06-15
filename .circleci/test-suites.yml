@@ -3,7 +3,7 @@
 #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts
 name: unit tests
 discover: find src -type f \( -name "*.unit.spec.ts" -o \( -path "*/utils/*" -name "*.spec.ts" \) -o \( -path "*/services/*" -name "*.spec.ts" \) \)
-run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-stencil-tests.sh stencil.config.unit.ts << test.atoms >>
+run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" CIRCLECI_COVERAGE="coverage/cov-$CIRCLE_NODE_INDEX.json" ./scripts/run-stencil-tests.sh stencil.config.unit.ts << test.atoms >>
 outputs:
   junit: test-reports/unit/results.xml
 
