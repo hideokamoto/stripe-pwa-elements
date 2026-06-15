@@ -3,10 +3,12 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
 import starlightLlmsTxt from 'starlight-llms-txt';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://stripe-pwa-elements-docs.workers.dev',
+	adapter: cloudflare({ prerenderEnvironment: 'node' }),
 	integrations: [
 		mermaid({
 			autoTheme: true,

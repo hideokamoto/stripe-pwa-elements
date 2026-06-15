@@ -83,7 +83,7 @@ stripeElement
   });
 ```
 
-> **⚠️ 非推奨:** このコンポーネントは非推奨です。`stripe.paymentRequest()` は Stripe.js 9.x で削除される予定です(2025-09-30 非推奨 / 2026-03-25 削除)。Apple Pay、Google Pay、Link、PayPal などをサポートする [`<stripe-express-checkout-element>`](../stripe-express-checkout-element/) への移行を推奨します。詳細は[移行ガイド](../../guides/migrate-payment-request-button-to-express-checkout/)を参照してください。
+> **⚠️ DEPRECATED:** This component is deprecated. `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated 2025-09-30 / removed 2026-03-25). Please migrate to [`<stripe-express-checkout-element>`](../stripe-express-checkout-element/) which supports Apple Pay, Google Pay, Link, PayPal, and more. See the [migration guide](../../docs/guides/migrate-payment-request-button-to-express-checkout.md).
 
 <!-- Auto Generated Below -->
 
