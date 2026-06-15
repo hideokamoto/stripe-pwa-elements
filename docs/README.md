@@ -101,10 +101,11 @@ requests receive a `204` response with the appropriate headers.
 - `https://stripe-pwa-elements-docs.workers.dev`
 - `http://localhost:4321`
 - `https://stackblitz.com`
-- Any `*.stackblitz.io` subdomain (suffix match)
+- Any `*.stackblitz.io` subdomain
 
-To override, set `ALLOWED_ORIGINS` to a comma-separated list of exact origins (suffix match for
-`.stackblitz.io` always applies).
+Set `ALLOWED_ORIGINS` to a comma-separated list to **fully override** the defaults (the StackBlitz
+entries are no longer trusted unless you include them). Each entry may be an exact origin
+(`https://example.com`) or a `*.suffix` wildcard (`*.stackblitz.io`, matched as a host suffix).
 
 ---
 
@@ -118,7 +119,7 @@ To override, set `ALLOWED_ORIGINS` to a comma-separated list of exact origins (s
 
 2. Edit `.dev.vars` and fill in your test key:
 
-   ```
+   ```bash
    STRIPE_SECRET_KEY=sk_test_your_key_here
    ALLOWED_ORIGINS=http://localhost:4321
    ```

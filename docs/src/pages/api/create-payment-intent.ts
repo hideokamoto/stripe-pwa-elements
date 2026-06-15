@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { corsHeaders, DEMO_AMOUNTS, ALLOWED_CURRENCIES, json, getStripe } from '../../lib/api-helpers';
+import { corsHeaders, isAllowedOrigin, DEMO_AMOUNTS, ALLOWED_CURRENCIES, json, getStripe } from '../../lib/api-helpers';
 
 export const prerender = false;
 
@@ -13,6 +13,11 @@ export const OPTIONS: APIRoute = ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   const origin = request.headers.get('origin');
   const cors = corsHeaders(origin, env);
+
+  // Reject disallowed (or missing) origins before doing any Stripe work.
+  if (!isAllowedOrigin(origin, env)) {
+    return json({ error: 'Origin is not allowed.' }, 403, cors);
+  }
 
   let currency = 'usd';
   try {
