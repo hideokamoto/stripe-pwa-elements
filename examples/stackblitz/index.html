@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-pwa-elements — StackBlitz template</title>
+
+    <!-- Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required) -->
+    <script
+      type="module"
+      src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
+      integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f6f9fc;
+        color: #32325d;
+        line-height: 1.6;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+        color: #32325d;
+      }
+
+      header p {
+        margin: 0;
+        color: #6b7c93;
+        font-size: 0.9rem;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(50, 50, 93, 0.1);
+        padding: 24px;
+        max-width: 560px;
+      }
+
+      fieldset {
+        border: 1px solid #e6ebf1;
+        border-radius: 6px;
+        padding: 14px 16px;
+        margin: 0 0 16px;
+      }
+
+      legend {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #32325d;
+        padding: 0 4px;
+      }
+
+      input[type='text'] {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cfd7df;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #32325d;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      input[type='text']:focus {
+        border-color: #635bff;
+        box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.15);
+      }
+
+      small {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: #8898aa;
+      }
+
+      button[type='submit'] {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #635bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      button[type='submit']:hover {
+        background: #5145e5;
+      }
+
+      button[type='submit']:disabled {
+        background: #aab7c4;
+        cursor: not-allowed;
+      }
+
+      #error-msg {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #fff0f0;
+        border: 1px solid #f4a8a8;
+        border-radius: 4px;
+        color: #c0392b;
+        font-size: 0.875rem;
+      }
+
+      #demo-container {
+        margin-top: 24px;
+        max-width: 560px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>stripe-pwa-elements demo</h1>
+      <p>Enter your Stripe test publishable key to render the element.</p>
+    </header>
+
+    <div class="card">
+      <form id="setup-form" novalidate>
+        <fieldset>
+          <legend>Stripe publishable key</legend>
+          <input
+            id="pk-input"
+            type="text"
+            name="publishable-key"
+            placeholder="pk_test_..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <small>Must start with <code>pk_test_</code>. Never use a live key here.</small>
+        </fieldset>
+
+        <button type="submit" id="render-btn">Render</button>
+
+        <p id="error-msg" role="alert" hidden></p>
+      </form>
+    </div>
+
+    <!-- Stripe element mounts here -->
+    <div id="demo-container" hidden></div>
+
+    <script type="module">
+      // helpers.js exports are available here for demos that need a clientSecret.
+      // The default mountDemo() does not need them (stripe-address-element is
+      // clientSecret-free), but they are imported so forked demos can use them
+      // without adding another import line.
+      import { fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
+
+      // =====================================================================
+      // EXTENSION POINT
+      // When forking this template to create a new demo, replace the body of
+      // mountDemo() below.
+      //
+      // Parameters:
+      //   publishableKey {string}   – validated pk_test_… key from the form
+      //   container      {HTMLElement} – the #demo-container div (already empty)
+      //
+      // Available helpers (imported above):
+      //   fetchPaymentIntentClientSecret(publishableKey, currency?)
+      //     → Promise<string>  (POST /api/create-payment-intent)
+      //   fetchCheckoutSessionClientSecret(publishableKey, currency?)
+      //     → Promise<string>  (POST /api/create-checkout-session)
+      //
+      // Example — payment-element demo (see docs/fork-procedure.md):
+      //   const clientSecret = await fetchPaymentIntentClientSecret(publishableKey);
+      //   const el = document.createElement('stripe-payment-element');
+      //   el.setAttribute('publishable-key', publishableKey);
+      //   el.setAttribute('intent-client-secret', clientSecret);
+      //   container.appendChild(el);
+      // =====================================================================
+      async function mountDemo(publishableKey, container) {
+        // Default: stripe-address-element (no clientSecret required).
+        // @Watch('publishableKey') in the component triggers initStripe() automatically
+        // once the publishable-key attribute is set.
+        const el = document.createElement('stripe-address-element');
+        el.setAttribute('publishable-key', publishableKey);
+        container.appendChild(el);
+      }
+
+      // ---- form wiring (do not modify below this line in forked demos) ----
+
+      const form = document.getElementById('setup-form');
+      const renderBtn = document.getElementById('render-btn');
+      const errorMsg = document.getElementById('error-msg');
+      const demoContainer = document.getElementById('demo-container');
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.hidden = false;
+      }
+
+      function clearError() {
+        errorMsg.textContent = '';
+        errorMsg.hidden = true;
+      }
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        clearError();
+
+        const pk = e.target.elements['publishable-key'].value.trim();
+
+        if (!pk.startsWith('pk_test_')) {
+          showError('Please enter a Stripe test publishable key (starts with pk_test_).');
+          return;
+        }
+
+        renderBtn.disabled = true;
+        demoContainer.innerHTML = '';
+        demoContainer.hidden = false;
+
+        try {
+          await mountDemo(pk, demoContainer);
+        } catch (err) {
+          demoContainer.innerHTML = '';
+          demoContainer.hidden = true;
+          showError(`Error: ${err.message}`);
+        } finally {
+          renderBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
