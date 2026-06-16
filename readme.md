@@ -131,6 +131,21 @@ import { defineCustomElements } from 'stripe-pwa-elements/loader';
 defineCustomElements();
 ```
 
+### Bundlers (Vite, webpack, Capacitor)
+
+When using a bundler — including Capacitor apps built with Vite — import the
+components you need directly from the custom-elements build. Each module
+auto-registers its element on import, so no `defineCustomElements()` call is needed:
+
+```javascript
+import 'stripe-pwa-elements/dist/components/stripe-payment-element';
+```
+
+This avoids the runtime dynamic import the lazy `loader` relies on, which can fail
+with `Failed to fetch dynamically imported module` under Vite. See the
+[Bundler Integration guide](https://stripe-pwa-elements-docs.workers.dev/en/guides/bundler-integration/)
+for Vite/webpack/Rollup and Capacitor setup examples.
+
 ## Components
 
 ### `<stripe-card-element>`
@@ -390,7 +405,7 @@ import type {
 } from 'stripe-pwa-elements';
 ```
 
-**Do not** import from internal paths such as `dist/types/interfaces` or `dist-custom-elements/...`. Those paths are implementation details and are not part of the public API — they may change without notice across any release.
+The custom-elements entry `stripe-pwa-elements/dist/components/<tag>` is a supported import path for bundler-based setups (see [Bundlers](#bundlers-vite-webpack-capacitor) above). However, **do not** import from internal paths such as `dist/types/interfaces`. Those paths are implementation details and are not part of the public API — they may change without notice across any release.
 
 ### Semver policy
 
