@@ -1,0 +1,2 @@
+STRIPE_SECRET_KEY=sk_test_xxx
+ALLOWED_ORIGINS=http://localhost:4321
