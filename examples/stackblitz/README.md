@@ -50,7 +50,7 @@ two endpoints for this:
 | `POST /api/create-payment-intent` | `{ clientSecret }` |
 | `POST /api/create-checkout-session` | `{ clientSecret }` |
 
-Request body (JSON): `{ "currency": "usd" }` — supported currencies:
+Request body (JSON): `{ "currency": "usd", "publishableKey": "pk_test_…" }` — supported currencies:
 `usd`, `jpy`, `eur`, `gbp`, `aud`. Amount is fixed server-side.
 
 The `helpers.js` module in this directory wraps both endpoints:
@@ -127,9 +127,7 @@ Follow these steps to build a demo for a specific element:
      el.setAttribute('amount', '1099');
      el.setAttribute('currency', 'usd');
      container.appendChild(el);
-
-     await customElements.whenDefined('stripe-express-checkout-element');
-     await el.initStripe(publishableKey);
+     // publishable-key attribute triggers @Watch('publishableKey') → initStripe() automatically
    }
    ```
 

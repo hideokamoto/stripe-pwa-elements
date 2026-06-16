@@ -30,6 +30,9 @@ const ALLOWED_CURRENCIES = ['usd', 'jpy', 'eur', 'gbp', 'aud'];
  *   stripe-express-checkout-element.
  */
 export async function fetchPaymentIntentClientSecret(publishableKey, currency = 'usd') {
+  if (!publishableKey || !publishableKey.startsWith('pk_test_')) {
+    throw new Error('publishableKey must be a Stripe test publishable key (pk_test_…)');
+  }
   if (!ALLOWED_CURRENCIES.includes(currency)) {
     throw new Error(`Unsupported currency "${currency}". Use one of: ${ALLOWED_CURRENCIES.join(', ')}.`);
   }
@@ -66,6 +69,9 @@ export async function fetchPaymentIntentClientSecret(publishableKey, currency = 
  *   (checkout session mode).
  */
 export async function fetchCheckoutSessionClientSecret(publishableKey, currency = 'usd') {
+  if (!publishableKey || !publishableKey.startsWith('pk_test_')) {
+    throw new Error('publishableKey must be a Stripe test publishable key (pk_test_…)');
+  }
   if (!ALLOWED_CURRENCIES.includes(currency)) {
     throw new Error(`Unsupported currency "${currency}". Use one of: ${ALLOWED_CURRENCIES.join(', ')}.`);
   }
