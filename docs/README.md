@@ -28,7 +28,7 @@ npm run docs:build
 The docs site exposes two API endpoints that allow demo HTML (e.g. StackBlitz embeds) to obtain a Stripe
 `clientSecret` using only a public `pk_test_` key in the browser. The secret key stays on the server.
 
-> **WARNING**: Only Stripe test keys (`sk_test_*`) are permitted. Never configure a `sk_live_` key.
+> **WARNING**: Only Stripe test keys (`sk_test_*` or `rk_test_*`) are permitted. Never configure a live key (`sk_live_*` / `rk_live_*`).
 > The server validates the key prefix and will refuse to start if a live key is found.
 
 ### Endpoints
