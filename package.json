@@ -62,13 +62,13 @@
     "checkout",
     "card-element"
   ],
-  "homepage": "https://github.com/wpkyoto/stripe-pwa-elements#readme",
+  "homepage": "https://github.com/hideokamoto/stripe-pwa-elements#readme",
   "bugs": {
-    "url": "https://github.com/wpkyoto/stripe-pwa-elements/issues"
+    "url": "https://github.com/hideokamoto/stripe-pwa-elements/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wpkyoto/stripe-pwa-elements.git"
+    "url": "https://github.com/hideokamoto/stripe-pwa-elements.git"
   },
   "publishConfig": {
     "access": "public"
