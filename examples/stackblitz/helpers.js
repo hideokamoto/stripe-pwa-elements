@@ -37,7 +37,7 @@ export async function fetchPaymentIntentClientSecret(publishableKey, currency = 
   const res = await fetch(`${DEMO_API_BASE}/create-payment-intent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currency }),
+    body: JSON.stringify({ currency, publishableKey }),
   });
 
   if (!res.ok) {
@@ -73,7 +73,7 @@ export async function fetchCheckoutSessionClientSecret(publishableKey, currency 
   const res = await fetch(`${DEMO_API_BASE}/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currency }),
+    body: JSON.stringify({ currency, publishableKey }),
   });
 
   if (!res.ok) {
