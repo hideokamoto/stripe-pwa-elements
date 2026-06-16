@@ -28,7 +28,7 @@ npm run docs:build
 The docs site exposes two API endpoints that allow demo HTML (e.g. StackBlitz embeds) to obtain a Stripe
 `clientSecret` using only a public `pk_test_` key in the browser. The secret key stays on the server.
 
-> **WARNING**: Only Stripe test keys (`sk_test_*`) are permitted. Never configure a `sk_live_` key.
+> **WARNING**: Only Stripe test keys (`sk_test_*` or `rk_test_*`) are permitted. Never configure a live key (`sk_live_*` / `rk_live_*`).
 > The server validates the key prefix and will refuse to start if a live key is found.
 
 ### Endpoints
@@ -120,7 +120,7 @@ entries are no longer trusted unless you include them). Each entry may be an exa
 2. Edit `.dev.vars` and fill in your test key:
 
    ```bash
-   STRIPE_SECRET_KEY=sk_test_your_key_here
+   STRIPE_SECRET_KEY=sk_test_or_rk_test_your_key_here
    ALLOWED_ORIGINS=http://localhost:4321
    ```
 
@@ -141,7 +141,7 @@ Set the secret via Wrangler — never commit it to the repository:
 
 ```bash
 wrangler secret put STRIPE_SECRET_KEY
-# When prompted, paste your sk_test_ key
+# When prompted, paste your sk_test_ or rk_test_ key
 ```
 
 Then deploy:
@@ -150,5 +150,12 @@ Then deploy:
 pnpm run deploy
 ```
 
-> **Reminder**: Only `sk_test_` keys are accepted. Providing a `sk_live_` key will cause the endpoint
-> to return a 500 error without leaking any secret or stack trace.
+> **Reminder**: Only test-mode keys (`sk_test_` or `rk_test_`) are accepted. Providing a live key
+> (`sk_live_` / `rk_live_`) will cause the endpoint to return a 500 error without leaking any
+> secret or stack trace.
+>
+> **Recommended**: Use a **restricted key** (`rk_test_`) with only these permissions:
+> - `PaymentIntents: Write`
+> - `Checkout Sessions: Write`
+>
+> This minimises blast radius if the key is ever exposed.
