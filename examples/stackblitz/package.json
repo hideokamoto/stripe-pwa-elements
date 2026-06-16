@@ -2,6 +2,9 @@
   "name": "stripe-pwa-elements-stackblitz-demo",
   "private": true,
   "scripts": {
-    "start": "npx serve . --no-clipboard"
+    "start": "serve . --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
   }
 }
