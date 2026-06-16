@@ -120,7 +120,7 @@ entries are no longer trusted unless you include them). Each entry may be an exa
 2. Edit `.dev.vars` and fill in your test key:
 
    ```bash
-   STRIPE_SECRET_KEY=sk_test_your_key_here
+   STRIPE_SECRET_KEY=sk_test_or_rk_test_your_key_here
    ALLOWED_ORIGINS=http://localhost:4321
    ```
 
