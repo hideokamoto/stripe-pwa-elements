@@ -79,7 +79,7 @@ Integrating Stripe from scratch requires wiring up several moving parts. This li
 
 ```html
 <!-- One CDN line registers the custom element -->
-<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/wpkyoto/stripe-pwa-elements.esm.js"></script>
+<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js"></script>
 
 <!-- Drop in the element — Stripe.js loading, Elements creation, mounting,
      form submission, and confirmPayment are all handled for you -->
@@ -121,7 +121,7 @@ npm install stripe-pwa-elements
 ### Script tag
 
 ```html
-<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/wpkyoto/stripe-pwa-elements.esm.js"></script>
+<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js"></script>
 ```
 
 ### ES Module
@@ -197,7 +197,7 @@ Combined Card Element with Modal wrapper.
   intent-client-secret="pi_xxxxx_secret_xxxxx"
 ></stripe-card-element>
 
-<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/wpkyoto/stripe-pwa-elements.esm.js"></script>
+<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js"></script>
 <script>
   customElements.whenDefined('stripe-card-element').then(() => {
     const element = document.querySelector('stripe-card-element');

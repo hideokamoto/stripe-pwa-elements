@@ -9,7 +9,7 @@
   "types": "dist/types/components.d.ts",
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
-  "unpkg": "dist/wpkyoto/stripe-pwa-elements.esm.js",
+  "unpkg": "dist/stripe-elements/stripe-elements.esm.js",
   "files": [
     "dist/",
     "loader/"
