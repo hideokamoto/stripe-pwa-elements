@@ -100,6 +100,7 @@ let cachedStripe: Stripe | null = null;
  * which is required for Cloudflare Workers compatibility.
  * The instance is cached per isolate to avoid re-initializing it on every request.
  * Throws an error (without leaking the key) if the key is missing or is a live key.
+ * Accepts both full test secret keys (`sk_test_`) and restricted test keys (`rk_test_`).
  */
 export function getStripe(env: ApiEnv): Stripe {
   if (cachedStripe) {
@@ -109,8 +110,8 @@ export function getStripe(env: ApiEnv): Stripe {
   if (!key) {
     throw new Error('STRIPE_SECRET_KEY is not configured.');
   }
-  if (!key.startsWith('sk_test_')) {
-    throw new Error('Only Stripe test keys (sk_test_) are allowed.');
+  if (!key.startsWith('sk_test_') && !key.startsWith('rk_test_')) {
+    throw new Error('Only Stripe test keys (sk_test_ or rk_test_) are allowed.');
   }
   cachedStripe = new Stripe(key, {
     httpClient: Stripe.createFetchHttpClient(),

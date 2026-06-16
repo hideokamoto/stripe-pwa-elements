@@ -141,7 +141,7 @@ Set the secret via Wrangler — never commit it to the repository:
 
 ```bash
 wrangler secret put STRIPE_SECRET_KEY
-# When prompted, paste your sk_test_ key
+# When prompted, paste your sk_test_ or rk_test_ key
 ```
 
 Then deploy:
@@ -150,5 +150,12 @@ Then deploy:
 pnpm run deploy
 ```
 
-> **Reminder**: Only `sk_test_` keys are accepted. Providing a `sk_live_` key will cause the endpoint
-> to return a 500 error without leaking any secret or stack trace.
+> **Reminder**: Only test-mode keys (`sk_test_` or `rk_test_`) are accepted. Providing a live key
+> (`sk_live_` / `rk_live_`) will cause the endpoint to return a 500 error without leaking any
+> secret or stack trace.
+>
+> **Recommended**: Use a **restricted key** (`rk_test_`) with only these permissions:
+> - `PaymentIntents: Write`
+> - `Checkout Sessions: Write`
+>
+> This minimises blast radius if the key is ever exposed.
