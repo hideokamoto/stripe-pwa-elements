@@ -103,6 +103,7 @@ export default {
 ```
 
 ```javascript
+// index.js
 import 'stripe-pwa-elements/dist/components/stripe-payment-element';
 ```
 
