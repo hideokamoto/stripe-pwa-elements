@@ -128,6 +128,26 @@
         max-width: 560px;
       }
 
+      .demo-result {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        word-break: break-word;
+      }
+
+      .demo-result--success {
+        background: #effaf3;
+        border: 1px solid #9adcb6;
+        color: #1a7f4b;
+      }
+
+      .demo-result--error {
+        background: #fff0f0;
+        border: 1px solid #f4a8a8;
+        color: #c0392b;
+      }
+
       .note {
         max-width: 560px;
         margin-top: 24px;
@@ -242,6 +262,30 @@
         el.setAttribute('amount', '1099');
         el.setAttribute('currency', 'usd');
         container.appendChild(el);
+
+        // Status output for the result of the default confirm action. Without
+        // this, the wallet sheet just closes and the page gives no feedback.
+        const result = document.createElement('div');
+        result.className = 'demo-result';
+        result.hidden = true;
+        container.appendChild(result);
+
+        el.addEventListener('defaultConfirmResult', ({ detail }) => {
+          result.hidden = false;
+
+          // detail is either an Error or a Stripe PaymentIntent result; a
+          // failed payment comes back as { error: StripeError }, not an Error.
+          const error = detail instanceof Error ? detail : detail && detail.error;
+
+          if (error) {
+            result.className = 'demo-result demo-result--error';
+            result.textContent = `Payment failed: ${error.message}`;
+            return;
+          }
+
+          result.className = 'demo-result demo-result--success';
+          result.textContent = 'Payment succeeded!';
+        });
       }
 
       // ---- form wiring (do not modify below this line in forked demos) ----

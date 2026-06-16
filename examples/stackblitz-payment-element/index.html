@@ -233,9 +233,15 @@
         el.addEventListener('defaultFormSubmitResult', ({ detail }) => {
           result.hidden = false;
 
-          if (detail instanceof Error) {
+          // detail is either an Error (unexpected runtime error) or a Stripe
+          // PaymentIntent/SetupIntent result. A card decline or validation
+          // failure comes back as { error: StripeError }, which is NOT an
+          // Error instance — so check both forms before declaring success.
+          const error = detail instanceof Error ? detail : detail && detail.error;
+
+          if (error) {
             result.className = 'demo-result demo-result--error';
-            result.textContent = `Payment failed: ${detail.message}`;
+            result.textContent = `Payment failed: ${error.message}`;
             return;
           }
 
