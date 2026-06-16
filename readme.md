@@ -283,6 +283,22 @@ See the [example/](./example) directory for complete working examples:
 - [Address Element](./example/address-example.html) — Address collection
 - [Express Checkout](./example/example-express-checkout.html) — Apple Pay, Google Pay, etc.
 
+## Use with Claude Code
+
+This repo ships a [Claude Code](https://claude.com/claude-code) skill that teaches
+the assistant how to integrate `stripe-pwa-elements` correctly — picking the right
+component, wiring the publishable key + client secret, and handling the
+submit/confirm flow. Install it as a plugin:
+
+```text
+/plugin marketplace add hideokamoto/stripe-pwa-elements
+/plugin install stripe-pwa-elements@stripe-pwa-elements
+```
+
+Once installed, the skill activates automatically when Claude detects you are
+working with the library, or you can invoke it explicitly with
+`/stripe-pwa-elements:stripe-pwa-elements`.
+
 ## Contribution
 
 ### Getting Started

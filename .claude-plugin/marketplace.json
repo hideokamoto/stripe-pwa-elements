@@ -1,0 +1,17 @@
+{
+  "name": "stripe-pwa-elements",
+  "owner": {
+    "name": "stripe-pwa-elements maintainers",
+    "url": "https://github.com/hideokamoto/stripe-pwa-elements"
+  },
+  "description": "Claude Code skills for the stripe-pwa-elements web component library",
+  "plugins": [
+    {
+      "name": "stripe-pwa-elements",
+      "source": "./plugins/stripe-pwa-elements",
+      "description": "Integrate Stripe PWA web components (card, payment, express checkout, address, link auth, etc.) correctly",
+      "keywords": ["stripe", "payments", "web-components", "stencil", "pwa"],
+      "license": "MIT"
+    }
+  ]
+}
