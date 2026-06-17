@@ -3,6 +3,7 @@
 declare namespace Cloudflare {
   interface Env {
     STRIPE_SECRET_KEY: string;
+    STRIPE_PUBLISHABLE_KEY?: string;
     ALLOWED_ORIGINS?: string;
   }
 }
