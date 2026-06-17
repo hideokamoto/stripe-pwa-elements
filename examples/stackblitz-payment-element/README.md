@@ -24,10 +24,10 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 
 ## How to use
 
-1. Enter your Stripe test publishable key (starts with `pk_test_`) and click
-   **Render**.
-2. The demo fetches a PaymentIntent `clientSecret` from the demo API and mounts
-   the Payment Element.
+1. Enter your Stripe test publishable key (starts with `pk_test_`), pick a
+   currency (USD, JPY, EUR, GBP, or AUD), and click **Render**.
+2. The demo fetches a PaymentIntent `clientSecret` in the selected currency from
+   the demo API and mounts the Payment Element.
 3. Fill in the test card `4242 4242 4242 4242` — any future expiry date, any
    CVC, and any ZIP code.
 4. Click **Pay**. The result (success JSON or error message) appears below the

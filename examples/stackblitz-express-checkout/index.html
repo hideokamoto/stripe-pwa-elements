@@ -128,6 +128,25 @@
         max-width: 560px;
       }
 
+      select.currency-select {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cfd7df;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #32325d;
+        background: #fff;
+        outline: none;
+        cursor: pointer;
+      }
+
+      select.currency-select:focus {
+        border-color: #635bff;
+        box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.15);
+      }
+
       .demo-result {
         margin-top: 16px;
         padding: 12px 14px;
@@ -206,6 +225,18 @@
           <small>Must start with <code>pk_test_</code>. Never use a live key here.</small>
         </fieldset>
 
+        <fieldset>
+          <legend>Currency</legend>
+          <select id="currency-input" name="currency" class="currency-select">
+            <option value="usd" selected>USD — US Dollar</option>
+            <option value="jpy">JPY — Japanese Yen</option>
+            <option value="eur">EUR — Euro</option>
+            <option value="gbp">GBP — British Pound</option>
+            <option value="aud">AUD — Australian Dollar</option>
+          </select>
+          <small>The PaymentIntent and the wallet sheet use the selected currency (amount is fixed server-side).</small>
+        </fieldset>
+
         <button type="submit" id="render-btn">Render</button>
 
         <p id="error-msg" role="alert" hidden></p>
@@ -252,7 +283,9 @@
       // =====================================================================
       async function mountDemo(publishableKey, container) {
         // Express Checkout requires a PaymentIntent clientSecret.
-        const clientSecret = await fetchPaymentIntentClientSecret(publishableKey, 'usd');
+        const currencyInput = document.getElementById('currency-input');
+        const currency = currencyInput ? currencyInput.value : 'usd';
+        const clientSecret = await fetchPaymentIntentClientSecret(publishableKey, currency);
 
         // @Watch('publishableKey') in the component triggers initStripe() automatically
         // once the publishable-key attribute is set.
@@ -260,7 +293,7 @@
         el.setAttribute('publishable-key', publishableKey);
         el.setAttribute('client-secret', clientSecret);
         el.setAttribute('amount', '1099');
-        el.setAttribute('currency', 'usd');
+        el.setAttribute('currency', currency);
         container.appendChild(el);
 
         // Status output for the result of the default confirm action. Without

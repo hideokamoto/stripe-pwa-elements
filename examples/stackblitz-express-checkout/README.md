@@ -33,9 +33,10 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 1. Get a Stripe **test** publishable key (starts with `pk_test_`) from the
    [Stripe Dashboard](https://dashboard.stripe.com) → **Test mode** →
    **Developers → API keys**. Never use a live key (`pk_live_`) here.
-2. Paste the `pk_test_` key into the input and click **Render**.
-3. The demo fetches a PaymentIntent `clientSecret` and mounts
-   `<stripe-express-checkout-element>`. In test mode the available wallet
+2. Paste the `pk_test_` key into the input, pick a currency (USD, JPY, EUR, GBP,
+   or AUD), and click **Render**.
+3. The demo fetches a PaymentIntent `clientSecret` in the selected currency and
+   mounts `<stripe-express-checkout-element>`. In test mode the available wallet
    buttons (most commonly **Link**) appear.
 
 ---
