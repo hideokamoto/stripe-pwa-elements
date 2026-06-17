@@ -28,7 +28,10 @@ export const GET: APIRoute = ({ request }) => {
   let publishableKey: string;
   try {
     publishableKey = getPublishableKey(env);
-  } catch {
+  } catch (error) {
+    // Logged to the Worker logs (not the response) to aid debugging a missing/invalid
+    // STRIPE_PUBLISHABLE_KEY. The error message never contains the key value.
+    console.error('Failed to retrieve publishable key:', error);
     return json({ error: 'Server configuration error.' }, 500, cors);
   }
 
