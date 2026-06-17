@@ -31,8 +31,11 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 ## Usage
 
 1. Get a Stripe **test** publishable key (starts with `pk_test_`) from the
-   [Stripe Dashboard](https://dashboard.stripe.com) → **Test mode** →
-   **Developers → API keys**. Never use a live key (`pk_live_`) here.
+   [Stripe Dashboard](https://dashboard.stripe.com) (**Test mode → Developers →
+   API keys**). Any `pk_test_` key renders the wallet buttons; confirming a real
+   payment requires the key that matches the demo account — see
+   [About the demo clientSecret](#about-the-demo-clientsecret). Never use a live
+   key (`pk_live_`) here.
 2. Paste the `pk_test_` key into the input, pick a currency (USD, JPY, EUR, GBP,
    or AUD), and click **Render**.
 3. The demo fetches a PaymentIntent `clientSecret` in the selected currency and
@@ -60,12 +63,13 @@ that is expected, not an error.
 
 ## About the demo clientSecret
 
-The demo API server at `stripe-pwa-elements-docs.workers.dev` runs under the
-Stripe **test** account owned by this project, so the `clientSecret` it returns
-belongs to that account. To confirm a payment end-to-end you must use the
-matching `pk_test_` key (the project's own test key). If you want to test with
-your own Stripe account, run your own backend — the library itself is
-account-agnostic.
+The `clientSecret` is created by the demo API server
+(`stripe-pwa-elements-docs.workers.dev`), which runs under **this project's own
+Stripe test account**. To confirm a payment end-to-end you must use the matching
+`pk_test_` key from that same account. With a publishable key from a different
+Stripe account the wallet buttons still render, but confirmation will fail
+because the key and the `clientSecret` belong to different accounts. To test with
+your own account, run your own backend — the library itself is account-agnostic.
 
 ---
 
