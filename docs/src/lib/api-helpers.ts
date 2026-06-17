@@ -21,6 +21,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   // Wildcard: any StackBlitz preview subdomain (e.g. https://abc123.stackblitz.io).
   // Entries beginning with `*.` are matched as a host suffix (see matchesOrigin).
   '*.stackblitz.io',
+  // StackBlitz WebContainer previews (served via `serve`) use *.webcontainer.io.
+  '*.webcontainer.io',
 ];
 
 /** Minimal env shape needed by API helpers. */
