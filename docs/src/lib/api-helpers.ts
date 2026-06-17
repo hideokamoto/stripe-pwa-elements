@@ -26,6 +26,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 /** Minimal env shape needed by API helpers. */
 export interface ApiEnv {
   STRIPE_SECRET_KEY: string;
+  STRIPE_PUBLISHABLE_KEY?: string;
   ALLOWED_ORIGINS?: string;
 }
 
@@ -74,7 +75,7 @@ export function corsHeaders(origin: string | null, env: ApiEnv): Record<string, 
   }
   return {
     'Access-Control-Allow-Origin': origin as string,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
@@ -120,4 +121,24 @@ export function getStripe(env: ApiEnv): Stripe {
     apiVersion: '2026-05-27.dahlia',
   });
   return cachedStripe;
+}
+
+/**
+ * Returns the demo account's publishable key from the environment.
+ *
+ * Publishable keys are public by design, so exposing this value to the browser is safe.
+ * Serving it from the same account as STRIPE_SECRET_KEY guarantees that the publishable
+ * key and any clientSecret created by the demo endpoints belong to the same Stripe account,
+ * which Stripe.js requires (a clientSecret cannot be used with a key from another account).
+ * Throws (without leaking the value) if the key is missing or is not a test publishable key.
+ */
+export function getPublishableKey(env: ApiEnv): string {
+  const key = env.STRIPE_PUBLISHABLE_KEY;
+  if (!key) {
+    throw new Error('STRIPE_PUBLISHABLE_KEY is not configured.');
+  }
+  if (!key.startsWith('pk_test_')) {
+    throw new Error('Only Stripe test publishable keys (pk_test_) are allowed.');
+  }
+  return key;
 }

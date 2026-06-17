@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>stripe-pwa-elements — StackBlitz template</title>
 
-    <!-- Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required) -->
+    <!--
+      Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required).
+      The version is pinned to @3.2.0 so the bytes are immutable on unpkg. SRI (integrity)
+      is intentionally omitted: the Stencil ESM entry is a loader that dynamically imports
+      separately-hashed chunks which an integrity hash on this tag would not cover, so it
+      adds fragility without protecting the actual component code.
+    -->
     <script
       type="module"
       src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
-      integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
       crossorigin="anonymous"
     ></script>
 
@@ -134,39 +139,32 @@
   <body>
     <header>
       <h1>stripe-pwa-elements demo</h1>
-      <p>Enter your Stripe test publishable key to render the element.</p>
+      <p>This demo uses the project's shared Stripe test account — just click Render.</p>
     </header>
 
     <div class="card">
-      <form id="setup-form" novalidate>
-        <fieldset>
-          <legend>Stripe publishable key</legend>
-          <input
-            id="pk-input"
-            type="text"
-            name="publishable-key"
-            placeholder="pk_test_..."
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <small>Must start with <code>pk_test_</code>. Never use a live key here.</small>
-        </fieldset>
+      <fieldset>
+        <legend>Demo publishable key</legend>
+        <p id="key-status">Loading demo key…</p>
+        <small>
+          Fetched from the demo server (<code>/api/config</code>) so it matches the account that
+          issues the payment <code>clientSecret</code>s. No key entry required.
+        </small>
+      </fieldset>
 
-        <button type="submit" id="render-btn">Render</button>
+      <button type="button" id="render-btn" disabled>Render</button>
 
-        <p id="error-msg" role="alert" hidden></p>
-      </form>
+      <p id="error-msg" role="alert" hidden></p>
     </div>
 
     <!-- Stripe element mounts here -->
     <div id="demo-container" hidden></div>
 
     <script type="module">
-      // helpers.js exports are available here for demos that need a clientSecret.
-      // The default mountDemo() does not need them (stripe-address-element is
-      // clientSecret-free), but they are imported so forked demos can use them
-      // without adding another import line.
-      import { fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
+      // helpers.js provides the demo publishable key and (for payment demos) clientSecrets.
+      // The default mountDemo() only needs the publishable key, but the clientSecret helpers
+      // are imported so forked demos can use them without adding another import line.
+      import { fetchPublishableKey, fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
 
       // =====================================================================
       // EXTENSION POINT
@@ -174,17 +172,17 @@
       // mountDemo() below.
       //
       // Parameters:
-      //   publishableKey {string}   – validated pk_test_… key from the form
+      //   publishableKey {string}      – demo account's pk_test_… key (already fetched)
       //   container      {HTMLElement} – the #demo-container div (already empty)
       //
       // Available helpers (imported above):
-      //   fetchPaymentIntentClientSecret(publishableKey, currency?)
+      //   fetchPaymentIntentClientSecret(currency?)
       //     → Promise<string>  (POST /api/create-payment-intent)
-      //   fetchCheckoutSessionClientSecret(publishableKey, currency?)
+      //   fetchCheckoutSessionClientSecret(currency?)
       //     → Promise<string>  (POST /api/create-checkout-session)
       //
-      // Example — payment-element demo (see docs/fork-procedure.md):
-      //   const clientSecret = await fetchPaymentIntentClientSecret(publishableKey);
+      // Example — payment-element demo (see README.md):
+      //   const clientSecret = await fetchPaymentIntentClientSecret();
       //   const el = document.createElement('stripe-payment-element');
       //   el.setAttribute('publishable-key', publishableKey);
       //   el.setAttribute('intent-client-secret', clientSecret);
@@ -199,12 +197,14 @@
         container.appendChild(el);
       }
 
-      // ---- form wiring (do not modify below this line in forked demos) ----
+      // ---- wiring (do not modify below this line in forked demos) ----
 
-      const form = document.getElementById('setup-form');
       const renderBtn = document.getElementById('render-btn');
+      const keyStatus = document.getElementById('key-status');
       const errorMsg = document.getElementById('error-msg');
       const demoContainer = document.getElementById('demo-container');
+
+      let publishableKey = null;
 
       function showError(message) {
         errorMsg.textContent = message;
@@ -216,23 +216,37 @@
         errorMsg.hidden = true;
       }
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        clearError();
+      // Mask all but the last 4 characters so the key is recognizable but not fully echoed.
+      function maskKey(key) {
+        return key.length > 12 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key;
+      }
 
-        const pk = e.target.elements['publishable-key'].value.trim();
+      // Fetch the demo publishable key on load so the user only has to click Render.
+      (async () => {
+        try {
+          publishableKey = await fetchPublishableKey();
+          keyStatus.textContent = `Using demo key: ${maskKey(publishableKey)}`;
+          renderBtn.disabled = false;
+        } catch (err) {
+          keyStatus.textContent = 'Could not load the demo key.';
+          showError(
+            `${err.message} — the demo server must have STRIPE_PUBLISHABLE_KEY configured ` +
+              '(see examples/stackblitz/README.md).',
+          );
+        }
+      })();
 
-        if (!pk.startsWith('pk_test_')) {
-          showError('Please enter a Stripe test publishable key (starts with pk_test_).');
+      renderBtn.addEventListener('click', async () => {
+        if (!publishableKey) {
           return;
         }
-
+        clearError();
         renderBtn.disabled = true;
         demoContainer.innerHTML = '';
         demoContainer.hidden = false;
 
         try {
-          await mountDemo(pk, demoContainer);
+          await mountDemo(publishableKey, demoContainer);
         } catch (err) {
           demoContainer.innerHTML = '';
           demoContainer.hidden = true;
