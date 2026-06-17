@@ -1,0 +1,10 @@
+{
+  "name": "stripe-pwa-elements-stackblitz-payment-element",
+  "private": true,
+  "scripts": {
+    "start": "serve . --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
