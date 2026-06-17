@@ -17,8 +17,55 @@
 
 const DEMO_API_BASE = 'https://stripe-pwa-elements-docs.workers.dev/api';
 
+/** Abort the demo API request after this many milliseconds so a hung network
+ *  request rejects instead of leaving the demo form stuck. */
+const REQUEST_TIMEOUT_MS = 10000;
+
 /** @type {ReadonlyArray<string>} */
 const ALLOWED_CURRENCIES = ['usd', 'jpy', 'eur', 'gbp', 'aud'];
+
+/**
+ * POST to a demo API endpoint and return its clientSecret, with an
+ * AbortController-based timeout so a stalled request fails fast.
+ *
+ * @param {string} path     Endpoint path, e.g. '/create-payment-intent'.
+ * @param {object} payload  JSON request body.
+ * @param {string} label    Human-readable endpoint name for error messages.
+ * @returns {Promise<string>}  The clientSecret from the response.
+ */
+async function postForClientSecret(path, payload, label) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${DEMO_API_BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`${label} failed (HTTP ${res.status})${body ? ': ' + body : ''}`);
+    }
+
+    const { clientSecret } = await res.json();
+
+    if (!clientSecret) {
+      throw new Error(`${label} response did not include a clientSecret`);
+    }
+
+    return clientSecret;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`${label} timed out after ${REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * Fetch a PaymentIntent clientSecret from the demo API.
@@ -37,24 +84,7 @@ export async function fetchPaymentIntentClientSecret(publishableKey, currency = 
     throw new Error(`Unsupported currency "${currency}". Use one of: ${ALLOWED_CURRENCIES.join(', ')}.`);
   }
 
-  const res = await fetch(`${DEMO_API_BASE}/create-payment-intent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currency, publishableKey }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`create-payment-intent failed (HTTP ${res.status})${body ? ': ' + body : ''}`);
-  }
-
-  const { clientSecret } = await res.json();
-
-  if (!clientSecret) {
-    throw new Error('create-payment-intent response did not include a clientSecret');
-  }
-
-  return clientSecret;
+  return postForClientSecret('/create-payment-intent', { currency, publishableKey }, 'create-payment-intent');
 }
 
 /**
@@ -76,22 +106,5 @@ export async function fetchCheckoutSessionClientSecret(publishableKey, currency 
     throw new Error(`Unsupported currency "${currency}". Use one of: ${ALLOWED_CURRENCIES.join(', ')}.`);
   }
 
-  const res = await fetch(`${DEMO_API_BASE}/create-checkout-session`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currency, publishableKey }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`create-checkout-session failed (HTTP ${res.status})${body ? ': ' + body : ''}`);
-  }
-
-  const { clientSecret } = await res.json();
-
-  if (!clientSecret) {
-    throw new Error('create-checkout-session response did not include a clientSecret');
-  }
-
-  return clientSecret;
+  return postForClientSecret('/create-checkout-session', { currency, publishableKey }, 'create-checkout-session');
 }

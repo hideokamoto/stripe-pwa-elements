@@ -65,6 +65,13 @@
         padding: 0 4px;
       }
 
+      label[for] {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.85rem;
+        color: #6b7c93;
+      }
+
       input[type='text'] {
         display: block;
         width: 100%;
@@ -214,6 +221,7 @@
       <form id="setup-form" novalidate>
         <fieldset>
           <legend>Stripe publishable key</legend>
+          <label for="pk-input">Publishable key</label>
           <input
             id="pk-input"
             type="text"
@@ -358,7 +366,8 @@
         } catch (err) {
           demoContainer.innerHTML = '';
           demoContainer.hidden = true;
-          showError(`Error: ${err.message}`);
+          const message = err instanceof Error ? err.message : String(err);
+          showError(`Error: ${message}`);
         } finally {
           renderBtn.disabled = false;
         }
