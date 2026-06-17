@@ -3,12 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stripe-express-checkout-element — Apple Pay / Google Pay / Link demo</title>
+    <title>stripe-express-checkout-element — wallet demo (StackBlitz)</title>
 
-    <!-- Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required) -->
+    <!--
+      Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required).
+      The version is pinned to @3.2.0 so the bytes are immutable on unpkg. SRI (integrity)
+      is intentionally omitted: the Stencil ESM entry is a loader that dynamically imports
+      separately-hashed chunks which an integrity hash on this tag would not cover, so it
+      adds fragility without protecting the actual component code.
+    -->
     <script
       type="module"
       src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
+      crossorigin="anonymous"
     ></script>
 
     <style>
@@ -63,13 +70,6 @@
         font-weight: 600;
         color: #32325d;
         padding: 0 4px;
-      }
-
-      label[for] {
-        display: block;
-        margin-bottom: 6px;
-        font-size: 0.85rem;
-        color: #6b7c93;
       }
 
       input[type='text'] {
@@ -135,25 +135,6 @@
         max-width: 560px;
       }
 
-      select.currency-select {
-        display: block;
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #cfd7df;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        font-family: inherit;
-        color: #32325d;
-        background: #fff;
-        outline: none;
-        cursor: pointer;
-      }
-
-      select.currency-select:focus {
-        border-color: #635bff;
-        box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.15);
-      }
-
       .demo-result {
         margin-top: 16px;
         padding: 12px 14px;
@@ -179,33 +160,28 @@
         margin-top: 24px;
         background: #fffbe6;
         border: 1px solid #f0e3a0;
-        border-radius: 8px;
-        padding: 8px 16px;
+        border-radius: 6px;
+        padding: 14px 16px;
+        font-size: 0.85rem;
+        color: #5b5320;
       }
 
       .note summary {
-        cursor: pointer;
         font-weight: 600;
-        color: #8a6d3b;
-        padding: 8px 0;
-        font-size: 0.95rem;
+        cursor: pointer;
       }
 
       .note ul {
-        margin: 8px 0 12px;
+        margin: 10px 0 0;
         padding-left: 20px;
-        font-size: 0.875rem;
-        color: #6b5b2e;
       }
 
       .note li {
-        margin-bottom: 6px;
+        margin: 4px 0;
       }
 
       .note code {
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: 0.825rem;
-        background: rgba(138, 109, 59, 0.1);
+        background: rgba(0, 0, 0, 0.06);
         padding: 1px 4px;
         border-radius: 3px;
       }
@@ -214,65 +190,51 @@
   <body>
     <header>
       <h1>stripe-express-checkout-element demo</h1>
-      <p>One-click wallets (Apple Pay / Google Pay / Link). Enter your Stripe test publishable key to render the wallet buttons.</p>
+      <p>
+        One-click wallets (Apple Pay, Google Pay, Link) using the project's shared Stripe test
+        account — just click Render. Available buttons depend on your browser/device (see note below).
+      </p>
     </header>
 
     <div class="card">
-      <form id="setup-form" novalidate>
-        <fieldset>
-          <legend>Stripe publishable key</legend>
-          <label for="pk-input">Publishable key</label>
-          <input
-            id="pk-input"
-            type="text"
-            name="publishable-key"
-            placeholder="pk_test_..."
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <small>Must start with <code>pk_test_</code>. Never use a live key here.</small>
-        </fieldset>
+      <fieldset>
+        <legend>Demo publishable key</legend>
+        <p id="key-status">Loading demo key…</p>
+        <small>
+          Fetched from the demo server (<code>/api/config</code>) so it matches the account that
+          issues the payment <code>clientSecret</code>s. No key entry required.
+        </small>
+      </fieldset>
 
-        <fieldset>
-          <legend>Currency</legend>
-          <select id="currency-input" name="currency" class="currency-select">
-            <option value="usd" selected>USD — US Dollar</option>
-            <option value="jpy">JPY — Japanese Yen</option>
-            <option value="eur">EUR — Euro</option>
-            <option value="gbp">GBP — British Pound</option>
-            <option value="aud">AUD — Australian Dollar</option>
-          </select>
-          <small>The PaymentIntent and the wallet sheet use the selected currency (amount is fixed server-side).</small>
-        </fieldset>
+      <button type="button" id="render-btn" disabled>Render</button>
 
-        <button type="submit" id="render-btn">Render</button>
-
-        <p id="error-msg" role="alert" hidden></p>
-      </form>
+      <p id="error-msg" role="alert" hidden></p>
     </div>
 
     <!-- Stripe element mounts here -->
     <div id="demo-container" hidden></div>
 
-    <!-- Troubleshooting note: wallet buttons are environment-dependent -->
     <details class="note">
       <summary>Wallet buttons not showing?</summary>
+      <p>
+        The Express Checkout Element only renders wallets the current browser/device actually
+        supports, so it is normal to see only some — or none — of them:
+      </p>
       <ul>
-        <li>The page must be served over <strong>HTTPS</strong>. StackBlitz serves over HTTPS, so that requirement is already met.</li>
-        <li><strong>Apple Pay</strong> only appears in <strong>Safari</strong> on a Mac or iOS device that has a card saved in Wallet.</li>
-        <li><strong>Google Pay</strong> only appears in <strong>Chrome</strong> signed in to a Google account that has a saved card.</li>
-        <li><strong>Link</strong> renders for most browsers in <strong>test mode</strong>, so it is usually the wallet you will see first.</li>
-        <li>In <strong>live mode</strong> some wallets require a verified domain in the Stripe Dashboard. Test mode is lenient and does not require domain verification.</li>
-        <li>If no wallet is available for your browser/device, the Express Checkout Element renders nothing — that is expected behavior, not an error.</li>
+        <li>The page must be served over <strong>HTTPS</strong> (StackBlitz already is).</li>
+        <li><strong>Apple Pay</strong> appears only in <strong>Safari</strong> on a Mac/iOS device with a card in Wallet.</li>
+        <li><strong>Google Pay</strong> appears only in <strong>Chrome</strong> signed in to a Google account with a saved card.</li>
+        <li><strong>Link</strong> renders for most browsers in <strong>test mode</strong>, so it is usually visible first.</li>
+        <li>In <strong>live mode</strong> some wallets require a verified domain; <strong>test mode</strong> does not.</li>
       </ul>
+      <p>If no wallet is supported, the element renders nothing — that is expected, not an error.</p>
     </details>
 
     <script type="module">
-      // helpers.js exports are available here for demos that need a clientSecret.
-      // This Express Checkout demo uses fetchPaymentIntentClientSecret(); the
-      // checkout-session helper is imported as well so forked demos can use it
-      // without adding another import line.
-      import { fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
+      // helpers.js provides the demo publishable key and (for payment demos) clientSecrets.
+      // The default mountDemo() only needs the publishable key, but the clientSecret helpers
+      // are imported so forked demos can use them without adding another import line.
+      import { fetchPublishableKey, fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
 
       // =====================================================================
       // EXTENSION POINT
@@ -280,32 +242,36 @@
       // mountDemo() below.
       //
       // Parameters:
-      //   publishableKey {string}   – validated pk_test_… key from the form
+      //   publishableKey {string}      – demo account's pk_test_… key (already fetched)
       //   container      {HTMLElement} – the #demo-container div (already empty)
       //
       // Available helpers (imported above):
-      //   fetchPaymentIntentClientSecret(publishableKey, currency?)
+      //   fetchPaymentIntentClientSecret(currency?)
       //     → Promise<string>  (POST /api/create-payment-intent)
-      //   fetchCheckoutSessionClientSecret(publishableKey, currency?)
+      //   fetchCheckoutSessionClientSecret(currency?)
       //     → Promise<string>  (POST /api/create-checkout-session)
+      //
+      // Example — payment-element demo (see README.md):
+      //   const clientSecret = await fetchPaymentIntentClientSecret();
+      //   const el = document.createElement('stripe-payment-element');
+      //   el.setAttribute('publishable-key', publishableKey);
+      //   el.setAttribute('intent-client-secret', clientSecret);
+      //   container.appendChild(el);
       // =====================================================================
       async function mountDemo(publishableKey, container) {
-        // Express Checkout requires a PaymentIntent clientSecret.
-        const currencyInput = document.getElementById('currency-input');
-        const currency = currencyInput ? currencyInput.value : 'usd';
-        const clientSecret = await fetchPaymentIntentClientSecret(publishableKey, currency);
+        // Express Checkout requires a PaymentIntent clientSecret from the same
+        // Stripe test account as the publishable key.
+        const clientSecret = await fetchPaymentIntentClientSecret('usd');
 
-        // @Watch('publishableKey') in the component triggers initStripe() automatically
-        // once the publishable-key attribute is set.
         const el = document.createElement('stripe-express-checkout-element');
         el.setAttribute('publishable-key', publishableKey);
         el.setAttribute('client-secret', clientSecret);
         el.setAttribute('amount', '1099');
-        el.setAttribute('currency', currency);
+        el.setAttribute('currency', 'usd');
         container.appendChild(el);
 
-        // Status output for the result of the default confirm action. Without
-        // this, the wallet sheet just closes and the page gives no feedback.
+        // Status output for the result of the default confirm action. Without this,
+        // the wallet sheet just closes and the page gives no feedback.
         const result = document.createElement('div');
         result.className = 'demo-result';
         result.hidden = true;
@@ -314,8 +280,8 @@
         el.addEventListener('defaultConfirmResult', ({ detail }) => {
           result.hidden = false;
 
-          // detail is either an Error or a Stripe PaymentIntent result; a
-          // failed payment comes back as { error: StripeError }, not an Error.
+          // detail is either an Error or a Stripe PaymentIntent result; a failed
+          // payment comes back as { error: StripeError }, not an Error instance.
           const error = detail instanceof Error ? detail : detail && detail.error;
 
           if (error) {
@@ -329,12 +295,14 @@
         });
       }
 
-      // ---- form wiring (do not modify below this line in forked demos) ----
+      // ---- wiring (do not modify below this line in forked demos) ----
 
-      const form = document.getElementById('setup-form');
       const renderBtn = document.getElementById('render-btn');
+      const keyStatus = document.getElementById('key-status');
       const errorMsg = document.getElementById('error-msg');
       const demoContainer = document.getElementById('demo-container');
+
+      let publishableKey = null;
 
       function showError(message) {
         errorMsg.textContent = message;
@@ -346,28 +314,41 @@
         errorMsg.hidden = true;
       }
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        clearError();
+      // Mask all but the last 4 characters so the key is recognizable but not fully echoed.
+      function maskKey(key) {
+        return key.length > 12 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key;
+      }
 
-        const pk = e.target.elements['publishable-key'].value.trim();
+      // Fetch the demo publishable key on load so the user only has to click Render.
+      (async () => {
+        try {
+          publishableKey = await fetchPublishableKey();
+          keyStatus.textContent = `Using demo key: ${maskKey(publishableKey)}`;
+          renderBtn.disabled = false;
+        } catch (err) {
+          keyStatus.textContent = 'Could not load the demo key.';
+          showError(
+            `${err.message} — the demo server must have STRIPE_PUBLISHABLE_KEY configured ` +
+              '(see examples/stackblitz/README.md).',
+          );
+        }
+      })();
 
-        if (!pk.startsWith('pk_test_')) {
-          showError('Please enter a Stripe test publishable key (starts with pk_test_).');
+      renderBtn.addEventListener('click', async () => {
+        if (!publishableKey) {
           return;
         }
-
+        clearError();
         renderBtn.disabled = true;
         demoContainer.innerHTML = '';
         demoContainer.hidden = false;
 
         try {
-          await mountDemo(pk, demoContainer);
+          await mountDemo(publishableKey, demoContainer);
         } catch (err) {
           demoContainer.innerHTML = '';
           demoContainer.hidden = true;
-          const message = err instanceof Error ? err.message : String(err);
-          showError(`Error: ${message}`);
+          showError(`Error: ${err.message}`);
         } finally {
           renderBtn.disabled = false;
         }

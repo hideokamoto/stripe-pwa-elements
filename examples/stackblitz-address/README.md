@@ -1,38 +1,20 @@
 # stripe-address-element — StackBlitz demo
 
-An interactive demo for [`<stripe-address-element>`](https://github.com/hideokamoto/stripe-pwa-elements),
-the address-collection component from **stripe-pwa-elements**.
+Interactive demo for [`<stripe-address-element>`](https://github.com/hideokamoto/stripe-pwa-elements)
+from [stripe-pwa-elements](https://github.com/hideokamoto/stripe-pwa-elements).
+The library is loaded directly from unpkg (CDN) — no npm install, no bundler,
+and no build step.
 
-This is the **lightest** demo in the project: it needs **only** a Stripe test
-publishable key (`pk_test_…`). There is **no backend** and **no clientSecret**
-required.
+## What this demo shows
 
-## What it shows
+- Collecting a **billing** or **shipping** address (switchable via the mode
+  selector) with Stripe's built-in address **autocomplete**.
+- Reading the entered values from the `formSubmit` event and displaying them on
+  the page.
+- The **lightest** demo: it needs **no `clientSecret`** — only the demo
+  account's publishable key, which is fetched automatically.
 
-- Collecting a complete address with Stripe's Address Element.
-- Both **billing** and **shipping** modes (pick one before rendering).
-- Built-in address **autocomplete**, provided automatically by Stripe.
-- Surfacing the entered values: when you click **Save**, the demo listens to the
-  `formSubmit` event and prints `detail.address` (`{ value, complete }`) on screen.
-
-The library is loaded via **Method A (static / CDN)** from unpkg — no npm
-install, no bundler, and no build step.
-
----
-
-## Quick start
-
-### 1. Get a Stripe test publishable key
-
-1. Log in to the [Stripe Dashboard](https://dashboard.stripe.com).
-2. Switch to **Test mode** (toggle in the top-left corner).
-3. Go to **Developers → API keys**.
-4. Copy the **Publishable key** — it starts with `pk_test_`.
-
-> **Never use a live key (`pk_live_`) in this demo.** The demo is public; live
-> keys must not appear in browser-visible code.
-
-### 2. Open the demo in StackBlitz
+## Open in StackBlitz
 
 ```
 https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples/stackblitz-address
@@ -40,42 +22,22 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 
 > If you are working on a feature branch, replace `main` with the branch name.
 
-### 3. Use the demo
+## How to use
 
-1. Enter your `pk_test_` key.
-2. Pick a mode — **Billing** (default) or **Shipping**.
+1. Open the demo. It fetches the demo account's publishable key from
+   `/api/config` automatically — **no key entry required** — and enables the
+   **Render** button.
+2. Pick **Billing** or **Shipping** mode.
 3. Click **Render** to mount `<stripe-address-element>`.
-4. Fill in the address form (autocomplete kicks in as you type).
-5. Click **Save** — the submitted address values appear below the element.
+4. Fill in the address (autocomplete suggestions appear as you type) and click
+   **Save**. The submitted values are shown below the form as JSON.
 
----
+## Notes
 
-## How it works
+The publishable key is fetched from the demo server (`/api/config`); the Address
+Element does not require a `clientSecret`, so this key alone is enough to render
+it. To run against your own Stripe account, just swap in your own `pk_test_`
+key — no backend is required for this element.
 
-```js
-const el = document.createElement('stripe-address-element');
-el.setAttribute('publishable-key', publishableKey);
-el.setAttribute('mode', 'billing'); // or 'shipping'
-el.setAttribute('sheet-title', 'Billing address');
-container.appendChild(el);
-
-el.addEventListener('formSubmit', event => {
-  const { address } = event.detail; // { value: {...}, complete: boolean }
-  console.log(address);
-});
-```
-
-Setting the `publishable-key` attribute triggers `@Watch('publishableKey')` →
-`initStripe()` in the component, so the element initializes automatically.
-
-## CDN path reference
-
-```html
-<script
-  type="module"
-  src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
-></script>
-```
-
-The correct path inside the package is `dist/stripe-elements/stripe-elements.esm.js`.
-Any path containing `dist/wpkyoto/` is incorrect and will result in a 404.
+> **Never use a live key (`pk_live_`).** These demos are public and run in the
+> browser.

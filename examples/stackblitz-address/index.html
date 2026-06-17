@@ -3,12 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stripe-address-element — StackBlitz demo</title>
+    <title>stripe-address-element — address demo (StackBlitz)</title>
 
-    <!-- Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required) -->
+    <!--
+      Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required).
+      The version is pinned to @3.2.0 so the bytes are immutable on unpkg. SRI (integrity)
+      is intentionally omitted: the Stencil ESM entry is a loader that dynamically imports
+      separately-hashed chunks which an integrity hash on this tag would not cover, so it
+      adds fragility without protecting the actual component code.
+    -->
     <script
       type="module"
       src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
+      crossorigin="anonymous"
     ></script>
 
     <style>
@@ -65,13 +72,6 @@
         padding: 0 4px;
       }
 
-      label[for] {
-        display: block;
-        margin-bottom: 6px;
-        font-size: 0.85rem;
-        color: #6b7c93;
-      }
-
       input[type='text'] {
         display: block;
         width: 100%;
@@ -88,24 +88,6 @@
       input[type='text']:focus {
         border-color: #635bff;
         box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.15);
-      }
-
-      .mode-options {
-        display: flex;
-        gap: 20px;
-      }
-
-      .mode-options label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.95rem;
-        cursor: pointer;
-      }
-
-      .mode-options input[type='radio'] {
-        accent-color: #635bff;
-        cursor: pointer;
       }
 
       small {
@@ -153,25 +135,37 @@
         max-width: 560px;
       }
 
-      .result {
-        margin-top: 16px;
+      .mode-options {
+        display: flex;
+        gap: 20px;
       }
 
-      .result h2 {
-        margin: 0 0 8px;
-        font-size: 1rem;
-        color: #32325d;
+      .mode-options label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+
+      .result {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background: #effaf3;
+        border: 1px solid #9adcb6;
+        color: #1a7f4b;
       }
 
       .result pre {
-        background: #32325d;
-        color: #f6f9fc;
-        padding: 14px 16px;
-        border-radius: 6px;
+        margin: 8px 0 0;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
         overflow-x: auto;
         font-size: 0.8rem;
-        line-height: 1.5;
-        margin: 0;
+        color: #32325d;
       }
     </style>
   </head>
@@ -179,67 +173,68 @@
     <header>
       <h1>stripe-address-element demo</h1>
       <p>
-        Collect a billing or shipping address with Stripe's built-in autocomplete.
-        Needs only a <code>pk_test_</code> key — no backend and no clientSecret (the lightest demo).
+        Collect a billing or shipping address with built-in autocomplete. No clientSecret needed —
+        pick a mode and click Render, then Save to see the entered values.
       </p>
     </header>
 
     <div class="card">
-      <form id="setup-form" novalidate>
-        <fieldset>
-          <legend>Stripe publishable key</legend>
-          <label for="pk-input">Publishable key</label>
-          <input
-            id="pk-input"
-            type="text"
-            name="publishable-key"
-            placeholder="pk_test_..."
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <small>Must start with <code>pk_test_</code>. Never use a live key here.</small>
-        </fieldset>
+      <fieldset>
+        <legend>Demo publishable key</legend>
+        <p id="key-status">Loading demo key…</p>
+        <small>
+          Fetched from the demo server (<code>/api/config</code>). The Address Element needs no
+          clientSecret, so this key alone is enough. No key entry required.
+        </small>
+      </fieldset>
 
-        <fieldset>
-          <legend>Address mode</legend>
-          <div class="mode-options">
-            <label>
-              <input type="radio" name="mode" value="billing" checked />
-              Billing
-            </label>
-            <label>
-              <input type="radio" name="mode" value="shipping" />
-              Shipping
-            </label>
-          </div>
-          <small>Choose which address the element collects.</small>
-        </fieldset>
+      <fieldset>
+        <legend>Address mode</legend>
+        <div class="mode-options">
+          <label><input type="radio" name="mode" value="billing" checked /> Billing</label>
+          <label><input type="radio" name="mode" value="shipping" /> Shipping</label>
+        </div>
+      </fieldset>
 
-        <button type="submit" id="render-btn">Render</button>
+      <button type="button" id="render-btn" disabled>Render</button>
 
-        <p id="error-msg" role="alert" hidden></p>
-      </form>
+      <p id="error-msg" role="alert" hidden></p>
     </div>
 
     <!-- Stripe element mounts here -->
     <div id="demo-container" hidden></div>
 
     <script type="module">
+      // helpers.js provides the demo publishable key and (for payment demos) clientSecrets.
+      // The default mountDemo() only needs the publishable key, but the clientSecret helpers
+      // are imported so forked demos can use them without adding another import line.
+      import { fetchPublishableKey, fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
+
       // =====================================================================
       // EXTENSION POINT
       // When forking this template to create a new demo, replace the body of
       // mountDemo() below.
       //
       // Parameters:
-      //   publishableKey {string}   – validated pk_test_… key from the form
+      //   publishableKey {string}      – demo account's pk_test_… key (already fetched)
       //   container      {HTMLElement} – the #demo-container div (already empty)
       //
-      // stripe-address-element needs no clientSecret and no backend — it only
-      // requires a publishable key. Setting the publishable-key attribute
-      // triggers @Watch('publishableKey') → initStripe() in the component.
+      // Available helpers (imported above):
+      //   fetchPaymentIntentClientSecret(currency?)
+      //     → Promise<string>  (POST /api/create-payment-intent)
+      //   fetchCheckoutSessionClientSecret(currency?)
+      //     → Promise<string>  (POST /api/create-checkout-session)
+      //
+      // Example — payment-element demo (see README.md):
+      //   const clientSecret = await fetchPaymentIntentClientSecret();
+      //   const el = document.createElement('stripe-payment-element');
+      //   el.setAttribute('publishable-key', publishableKey);
+      //   el.setAttribute('intent-client-secret', clientSecret);
+      //   container.appendChild(el);
       // =====================================================================
       async function mountDemo(publishableKey, container) {
-        // Read the selected mode from the form (default 'billing').
+        // stripe-address-element needs no clientSecret. @Watch('publishableKey') in the
+        // component triggers initStripe() automatically once the attribute is set.
         const modeInput = document.querySelector('input[name="mode"]:checked');
         const mode = modeInput ? modeInput.value : 'billing';
         const sheetTitle = mode === 'shipping' ? 'Shipping address' : 'Billing address';
@@ -277,12 +272,14 @@
         });
       }
 
-      // ---- form wiring (do not modify below this line in forked demos) ----
+      // ---- wiring (do not modify below this line in forked demos) ----
 
-      const form = document.getElementById('setup-form');
       const renderBtn = document.getElementById('render-btn');
+      const keyStatus = document.getElementById('key-status');
       const errorMsg = document.getElementById('error-msg');
       const demoContainer = document.getElementById('demo-container');
+
+      let publishableKey = null;
 
       function showError(message) {
         errorMsg.textContent = message;
@@ -294,28 +291,41 @@
         errorMsg.hidden = true;
       }
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        clearError();
+      // Mask all but the last 4 characters so the key is recognizable but not fully echoed.
+      function maskKey(key) {
+        return key.length > 12 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key;
+      }
 
-        const pk = e.target.elements['publishable-key'].value.trim();
+      // Fetch the demo publishable key on load so the user only has to click Render.
+      (async () => {
+        try {
+          publishableKey = await fetchPublishableKey();
+          keyStatus.textContent = `Using demo key: ${maskKey(publishableKey)}`;
+          renderBtn.disabled = false;
+        } catch (err) {
+          keyStatus.textContent = 'Could not load the demo key.';
+          showError(
+            `${err.message} — the demo server must have STRIPE_PUBLISHABLE_KEY configured ` +
+              '(see examples/stackblitz/README.md).',
+          );
+        }
+      })();
 
-        if (!pk.startsWith('pk_test_')) {
-          showError('Please enter a Stripe test publishable key (starts with pk_test_).');
+      renderBtn.addEventListener('click', async () => {
+        if (!publishableKey) {
           return;
         }
-
+        clearError();
         renderBtn.disabled = true;
         demoContainer.innerHTML = '';
         demoContainer.hidden = false;
 
         try {
-          await mountDemo(pk, demoContainer);
+          await mountDemo(publishableKey, demoContainer);
         } catch (err) {
           demoContainer.innerHTML = '';
           demoContainer.hidden = true;
-          const message = err instanceof Error ? err.message : String(err);
-          showError(`Error: ${message}`);
+          showError(`Error: ${err.message}`);
         } finally {
           renderBtn.disabled = false;
         }

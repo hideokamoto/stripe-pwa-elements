@@ -24,24 +24,26 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 
 ## How to use
 
-1. Enter your Stripe test publishable key (starts with `pk_test_`), pick a
-   currency (USD, JPY, EUR, GBP, or AUD), and click **Render**.
-2. The demo fetches a PaymentIntent `clientSecret` in the selected currency from
-   the demo API and mounts the Payment Element.
+1. Open the demo. It fetches the demo account's publishable key from
+   `/api/config` automatically — **no key entry required** — and enables the
+   **Render** button.
+2. Click **Render**. The demo fetches a PaymentIntent `clientSecret` from the
+   demo API and mounts the Payment Element.
 3. Fill in the test card `4242 4242 4242 4242` — any future expiry date, any
    CVC, and any ZIP code.
 4. Click **Pay**. The result (success JSON or error message) appears below the
-   form.
+   element.
 
-> **Never use a live key (`pk_live_`) in this demo.** It is public and runs in
-> the browser.
+## Why the key comes from the server
 
-## About the clientSecret
+A `clientSecret` is tied to the Stripe account that created it, and Stripe.js
+only accepts a `clientSecret` together with a publishable key from the **same**
+account. The demo server owns the secret key, so it also serves the matching
+publishable key via `/api/config` (see `helpers.js`'s `fetchPublishableKey()`).
+That is why the demo never asks you to paste your own key — a key from a
+different account could not confirm this `clientSecret`. To run the flow against
+your own Stripe account, fork the demo and point `helpers.js` at your own
+backend; the library itself is account-agnostic.
 
-The `clientSecret` is created by the demo API server
-(`stripe-pwa-elements-docs.workers.dev`), which runs under **this project's own
-Stripe test account**. To confirm a payment end-to-end you must use the matching
-`pk_test_` key from that same account. With a publishable key from a different
-Stripe account the element still renders, but confirmation will fail because the
-key and the `clientSecret` belong to different accounts. To test with your own
-account, run your own backend — the library itself is account-agnostic.
+> **Never use a live key (`pk_live_`).** These demos are public and run in the
+> browser; the demo server only ever serves a `pk_test_` key.

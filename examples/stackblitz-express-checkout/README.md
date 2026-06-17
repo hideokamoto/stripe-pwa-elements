@@ -2,21 +2,16 @@
 
 Interactive demo for [`<stripe-express-checkout-element>`](https://github.com/hideokamoto/stripe-pwa-elements),
 the one-click wallet element (Apple Pay, Google Pay, and Stripe Link) from
-[stripe-pwa-elements](https://github.com/hideokamoto/stripe-pwa-elements).
-
-This demo uses **Method A (static / CDN)**: the library is loaded directly from
-unpkg — no npm install, no bundler, and no build step required.
-
----
+[stripe-pwa-elements](https://github.com/hideokamoto/stripe-pwa-elements). The
+library is loaded directly from unpkg (CDN) — no npm install, no bundler, and no
+build step.
 
 ## What this demo shows
 
 The Express Checkout Element renders **one-click payment wallets** — Apple Pay,
 Google Pay, and Link — based on what the visitor's browser and device support.
 It requires a PaymentIntent `clientSecret`, which the demo fetches from the
-project's demo API server.
-
----
+project's demo API server, and reports the outcome via `defaultConfirmResult`.
 
 ## Open in StackBlitz
 
@@ -26,23 +21,14 @@ https://stackblitz.com/github/hideokamoto/stripe-pwa-elements/tree/main/examples
 
 > If you are working on a feature branch, replace `main` with the branch name.
 
----
+## How to use
 
-## Usage
-
-1. Get a Stripe **test** publishable key (starts with `pk_test_`) from the
-   [Stripe Dashboard](https://dashboard.stripe.com) (**Test mode → Developers →
-   API keys**). Any `pk_test_` key renders the wallet buttons; confirming a real
-   payment requires the key that matches the demo account — see
-   [About the demo clientSecret](#about-the-demo-clientsecret). Never use a live
-   key (`pk_live_`) here.
-2. Paste the `pk_test_` key into the input, pick a currency (USD, JPY, EUR, GBP,
-   or AUD), and click **Render**.
-3. The demo fetches a PaymentIntent `clientSecret` in the selected currency and
-   mounts `<stripe-express-checkout-element>`. In test mode the available wallet
+1. Open the demo. It fetches the demo account's publishable key from
+   `/api/config` automatically — **no key entry required** — and enables the
+   **Render** button.
+2. Click **Render**. The demo fetches a PaymentIntent `clientSecret` and mounts
+   `<stripe-express-checkout-element>`. In test mode the available wallet
    buttons (most commonly **Link**) appear.
-
----
 
 ## Wallet buttons not showing?
 
@@ -59,28 +45,15 @@ actually supports, so it is normal to see only some — or none — of them:
 If no wallet is supported by your browser/device, the element renders nothing —
 that is expected, not an error.
 
----
+## Why the key comes from the server
 
-## About the demo clientSecret
+A `clientSecret` is tied to the Stripe account that created it, and Stripe.js
+only accepts a `clientSecret` together with a publishable key from the **same**
+account. The demo server owns the secret key, so it also serves the matching
+publishable key via `/api/config` (see `helpers.js`'s `fetchPublishableKey()`).
+That is why the demo never asks you to paste your own key. To run the flow
+against your own Stripe account, fork the demo and point `helpers.js` at your own
+backend; the library itself is account-agnostic.
 
-The `clientSecret` is created by the demo API server
-(`stripe-pwa-elements-docs.workers.dev`), which runs under **this project's own
-Stripe test account**. To confirm a payment end-to-end you must use the matching
-`pk_test_` key from that same account. With a publishable key from a different
-Stripe account the wallet buttons still render, but confirmation will fail
-because the key and the `clientSecret` belong to different accounts. To test with
-your own account, run your own backend — the library itself is account-agnostic.
-
----
-
-## CDN path reference
-
-```html
-<script
-  type="module"
-  src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
-></script>
-```
-
-The correct path inside the package is `dist/stripe-elements/stripe-elements.esm.js`.
-Any path containing `dist/wpkyoto/` is incorrect and will result in a 404.
+> **Never use a live key (`pk_live_`).** These demos are public and run in the
+> browser; the demo server only ever serves a `pk_test_` key.
