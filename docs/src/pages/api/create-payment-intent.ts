@@ -40,7 +40,9 @@ export const POST: APIRoute = async ({ request }) => {
   let stripe: ReturnType<typeof getStripe>;
   try {
     stripe = getStripe(env);
-  } catch {
+  } catch (error) {
+    // Logged to the Worker logs (not the response) to aid debugging configuration issues.
+    console.error('Stripe configuration error:', error);
     return json({ error: 'Server configuration error.' }, 500, cors);
   }
 
@@ -52,7 +54,8 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     return json({ clientSecret: paymentIntent.client_secret }, 200, cors);
-  } catch {
+  } catch (error) {
+    console.error('Failed to create PaymentIntent:', error);
     return json({ error: 'Failed to create PaymentIntent.' }, 500, cors);
   }
 };

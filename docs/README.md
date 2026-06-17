@@ -25,13 +25,33 @@ npm run docs:build
 
 ## Serverless API Endpoints
 
-The docs site exposes two API endpoints that allow demo HTML (e.g. StackBlitz embeds) to obtain a Stripe
-`clientSecret` using only a public `pk_test_` key in the browser. The secret key stays on the server.
+The docs site exposes API endpoints that let demo HTML (e.g. StackBlitz embeds) obtain the demo
+account's public `pk_test_` key and a Stripe `clientSecret`, all without any key in the page source.
+The secret key stays on the server.
 
 > **WARNING**: Only Stripe test keys (`sk_test_*` or `rk_test_*`) are permitted. Never configure a live key (`sk_live_*` / `rk_live_*`).
 > The server validates the key prefix and will refuse to start if a live key is found.
 
 ### Endpoints
+
+#### `GET /api/config`
+
+Returns the demo account's Stripe **publishable** key. Browser demos call this so they never need to
+hardcode or ask the user to paste a key. The returned key belongs to the same account as
+`STRIPE_SECRET_KEY`, so any `clientSecret` from the endpoints below is usable with it (Stripe.js
+requires the publishable key and the `clientSecret` to come from the same account).
+
+**Response** (200):
+
+```json
+{ "publishableKey": "pk_test_xxx" }
+```
+
+**Error responses**:
+- `403` — origin not allowed
+- `500` — `STRIPE_PUBLISHABLE_KEY` not configured or not a `pk_test_` key
+
+---
 
 #### `POST /api/create-payment-intent`
 
@@ -121,8 +141,12 @@ entries are no longer trusted unless you include them). Each entry may be an exa
 
    ```bash
    STRIPE_SECRET_KEY=sk_test_or_rk_test_your_key_here
+   STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
    ALLOWED_ORIGINS=http://localhost:4321
    ```
+
+   `STRIPE_PUBLISHABLE_KEY` must be the **publishable** key from the **same Stripe account** as the
+   secret key above. The `/api/config` endpoint serves it to browser demos.
 
    The `@astrojs/cloudflare` adapter reads `.dev.vars` automatically during `astro dev` — no extra
    configuration is needed.
@@ -142,7 +166,13 @@ Set the secret via Wrangler — never commit it to the repository:
 ```bash
 wrangler secret put STRIPE_SECRET_KEY
 # When prompted, paste your sk_test_ or rk_test_ key
+
+wrangler secret put STRIPE_PUBLISHABLE_KEY
+# When prompted, paste the pk_test_ key from the SAME Stripe account
 ```
+
+> The publishable key is public by design, so it can also be set as a plain `var` instead of a secret
+> if you prefer. It must belong to the same account as `STRIPE_SECRET_KEY`.
 
 Then deploy:
 
