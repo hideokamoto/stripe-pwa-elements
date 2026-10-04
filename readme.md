@@ -118,6 +118,16 @@ Used in production as the web layer of [`@capacitor-community/stripe`](https://g
 npm install stripe-pwa-elements
 ```
 
+### Upgrading from Stripe.js 8
+
+This package now uses Stripe.js 9 (Dahlia). Component methods and event names are unchanged, but Stripe objects exposed through events follow the [Dahlia breaking changes](https://docs.stripe.com/changelog/dahlia):
+
+- Replace direct `stripe.initCheckout()` calls and `StripeCheckout` imports with `initCheckoutElementsSdk()` and `StripeCheckoutElementsSdk`. The component's `initStripeWithCheckoutSession()` handles this internally.
+- Handle the Promise returned by `elements.update()` and replace boolean `layout.radios` options with supported string values.
+- Replace legacy Sources/Intent methods (including `createSource` in older examples) with current Payment Methods/Intent APIs. Direct Embedded Checkout integrations must use `createEmbeddedCheckoutPage()`.
+- The Address component explicitly requests localized values to preserve its existing `getValue()` and submit results. Raw Stripe Address Element change events now return Latin-formatted `address.state` values.
+- If you load Stripe.js manually, use `https://js.stripe.com/dahlia/stripe.js` and align other Stripe.js dependencies to v9. Server API versions are managed separately; on Dahlia, this component's Checkout Sessions use `ui_mode: 'elements'`.
+
 ### Script tag
 
 ```html

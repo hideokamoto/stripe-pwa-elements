@@ -73,6 +73,27 @@ describe('stripe-address-element unit tests', () => {
     jest.restoreAllMocks();
   });
 
+  describe('#getValue', () => {
+    it('preserves localized state values after the Dahlia default changed to Latin', async () => {
+      const localized = { complete: true, value: { address: { country: 'JP', state: '東京都' } } };
+      const latin = { complete: true, value: { address: { country: 'JP', state: 'Tokyo' } } };
+      const getValue = jest.fn(options => Promise.resolve(options?.format === 'localized' ? localized : latin));
+
+      mockAddressElementManager.getElement.mockReturnValue({ getValue } as any);
+
+      const element = new StripeAddressElement();
+
+      await expect(element.getValue()).resolves.toEqual(localized);
+      expect(getValue).toHaveBeenCalledWith({ format: 'localized' });
+    });
+
+    it('rejects when the address element is not initialized', async () => {
+      const element = new StripeAddressElement();
+
+      await expect(element.getValue()).rejects.toThrow('Address element not initialized');
+    });
+  });
+
   describe('#componentWillRender', () => {
     let element: StripeAddressElement;
 
