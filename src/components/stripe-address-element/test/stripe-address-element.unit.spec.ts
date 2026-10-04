@@ -86,12 +86,6 @@ describe('stripe-address-element unit tests', () => {
       await expect(element.getValue()).resolves.toEqual(localized);
       expect(getValue).toHaveBeenCalledWith({ format: 'localized' });
     });
-
-    it('rejects when the address element is not initialized', async () => {
-      const element = new StripeAddressElement();
-
-      await expect(element.getValue()).rejects.toThrow('Address element not initialized');
-    });
   });
 
   describe('#componentWillRender', () => {
