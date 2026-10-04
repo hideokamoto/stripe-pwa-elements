@@ -1,4 +1,4 @@
-import type { Stripe, StripeElements, StripeCheckout, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
+import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
 import type { IntentType, ProgressStatus } from '../../interfaces';
 import { StripeAPIError } from '../../utils/error';
 import type { PaymentElementSubmitEvent } from './stripe-payment-element';
@@ -67,7 +67,7 @@ export const confirmPaymentOrSetup = async (stripe: Stripe, elements: StripeElem
  * @returns the confirmation result
  * @throws StripeAPIError when loading actions or confirming fails
  */
-export const confirmCheckoutSession = async (checkout: StripeCheckout, returnUrl: string): Promise<StripeCheckoutConfirmResult> => {
+export const confirmCheckoutSession = async (checkout: StripeCheckoutElementsSdk, returnUrl: string): Promise<StripeCheckoutConfirmResult> => {
   // Load actions from the checkout session
   const loadActionsResult = await checkout.loadActions();
 
@@ -115,7 +115,7 @@ export const confirmCheckoutSession = async (checkout: StripeCheckout, returnUrl
 export const buildSubmitEventProps = (params: {
   stripe: Stripe;
   isCheckoutSession: boolean;
-  checkout?: StripeCheckout;
+  checkout?: StripeCheckoutElementsSdk;
   checkoutSessionClientSecret?: string;
   elements?: StripeElements;
   intentClientSecret?: string;

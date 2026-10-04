@@ -13,7 +13,7 @@ import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IPaymentElementManager, CheckoutSessionOptions } from '../../services/interfaces';
 import { confirmCheckoutSession, confirmPaymentOrSetup, isSubmitButtonDisabled, buildSubmitEventProps } from './stripe-payment-element.helpers';
 
-import type { Stripe, StripeElements, StripeCheckout, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
+import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
 
 /**
  * Payment Element submit event
@@ -22,7 +22,7 @@ export type PaymentElementSubmitEvent = {
   stripe: Stripe;
   elements?: StripeElements;
   intentClientSecret?: string;
-  checkout?: StripeCheckout;
+  checkout?: StripeCheckoutElementsSdk;
   checkoutSessionClientSecret?: string;
 };
 
@@ -493,7 +493,7 @@ export class StripePaymentElement {
    * @param event
    * @param checkout - The Stripe Checkout instance
    */
-  private async checkoutSessionFormSubmitAction(event: Event, checkout: StripeCheckout) {
+  private async checkoutSessionFormSubmitAction(event: Event, checkout: StripeCheckoutElementsSdk) {
     event.preventDefault();
     try {
       // Get current page URL for return_url

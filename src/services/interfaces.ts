@@ -13,7 +13,7 @@ import {
   StripeExpressCheckoutElementClickEvent,
   StripeExpressCheckoutElementShippingAddressChangeEvent,
   StripeExpressCheckoutElementShippingRateChangeEvent,
-  StripeCheckout,
+  StripeCheckoutElementsSdk,
   StripeCheckoutElementsOptions,
 } from '@stripe/stripe-js';
 import { ProgressStatus } from '../interfaces';
@@ -38,7 +38,7 @@ export type StripeServiceState = {
   /**
    * Checkout instance for Checkout Session mode
    */
-  checkout?: StripeCheckout;
+  checkout?: StripeCheckoutElementsSdk;
   /**
    * Whether the service is initialized with Checkout Session
    */
@@ -130,7 +130,7 @@ export interface IStripeService {
   /**
    * Get Checkout instance (for Checkout Session mode)
    */
-  getCheckout(): StripeCheckout | undefined;
+  getCheckout(): StripeCheckoutElementsSdk | undefined;
 
   /**
    * Reset service (for testing)

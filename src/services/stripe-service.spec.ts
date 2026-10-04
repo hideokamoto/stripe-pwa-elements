@@ -74,7 +74,7 @@ describe('StripeServiceClass', () => {
 
     mockStripe = {
       elements: jest.fn().mockReturnValue(mockElements),
-      initCheckout: jest.fn().mockReturnValue(mockCheckout),
+      initCheckoutElementsSdk: jest.fn().mockReturnValue(mockCheckout),
       registerAppInfo: jest.fn(),
     };
 
@@ -218,18 +218,18 @@ describe('StripeServiceClass', () => {
     it('initializes checkout with client secret', async () => {
       await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
 
-      expect(mockStripe.initCheckout).toHaveBeenCalledWith({
+      expect(mockStripe.initCheckoutElementsSdk).toHaveBeenCalledWith({
         clientSecret: 'cs_test_secret',
         elementsOptions: undefined,
       });
     });
 
-    it('passes elementsOptions to initCheckout', async () => {
+    it('passes elementsOptions to initCheckoutElementsSdk', async () => {
       const elementsOptions = { appearance: { theme: 'stripe' as const } };
 
       await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { elementsOptions });
 
-      expect(mockStripe.initCheckout).toHaveBeenCalledWith({
+      expect(mockStripe.initCheckoutElementsSdk).toHaveBeenCalledWith({
         clientSecret: 'cs_test_secret',
         elementsOptions,
       });

@@ -18,8 +18,8 @@ importers:
         specifier: ^4.38.3
         version: 4.43.5
       '@stripe/stripe-js':
-        specifier: ^8.6.0
-        version: 8.11.0
+        specifier: ^9.17.0
+        version: 9.17.0
       i18next:
         specifier: ^25.6.2
         version: 25.10.10(typescript@5.9.3)
@@ -1685,8 +1685,8 @@ packages:
     peerDependencies:
       '@stencil/core': '>=2.0.0 || >=3.0.0 || >= 4.0.0-beta.0 || >= 4.0.0'
 
-  '@stripe/stripe-js@8.11.0':
-    resolution: {integrity: sha512-3fVF4z3efsgwgyj64nFK+6F4/vMw0mUXD2TBbOfftJtKVNx4JNv3CSfe1fY4DCtCk0JFp8/YPNcRkzgV0HJ8cg==}
+  '@stripe/stripe-js@9.17.0':
+    resolution: {integrity: sha512-uidL4OJum5kivsOAQnVfQmYLJ2zdgirtmT0zWgskASZ4TPXxpXQ0MNrzW4NsXB90uEqmPHpSEtciLFbF1QQvNA==}
     engines: {node: '>=12.16'}
 
   '@tootallnate/quickjs-emscripten@0.23.0':
@@ -8275,7 +8275,7 @@ snapshots:
     dependencies:
       '@stencil/core': 4.43.5
 
-  '@stripe/stripe-js@8.11.0': {}
+  '@stripe/stripe-js@9.17.0': {}
 
   '@tootallnate/quickjs-emscripten@0.23.0': {}
 
