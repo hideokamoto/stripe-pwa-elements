@@ -78,7 +78,10 @@
     "rdlabo",
     "hideokamoto"
   ],
-  "author": "Hidetaka Okamoto <info@wp-kyoto.net> (https://wp-kyoto.net)",
+  "author": {
+    "name": "Hidetaka Okamoto",
+    "url": "https://github.com/hideokamoto"
+  },
   "license": "MIT",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
