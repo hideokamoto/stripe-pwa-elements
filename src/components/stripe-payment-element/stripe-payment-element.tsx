@@ -56,6 +56,9 @@ export class StripePaymentElement {
   // Form submit handler (bound to this instance)
   private _submitHandler: (e: Event) => Promise<void>;
 
+  // Incremented on every initStripe call so that a superseded call stops after its awaits
+  private initGeneration = 0;
+
   /**
    * Default submit handle type.
    * If you want to use `setupIntent`, should update this attribute.
@@ -98,27 +101,16 @@ export class StripePaymentElement {
    */
   @Method()
   public async initStripe(publishableKey: string, options?: InitStripeOptions) {
+    const generation = ++this.initGeneration;
+
     await this.stripeService.initialize(publishableKey, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
+      // Payment Element needs the client secret when the Elements group is created
+      clientSecret: this.intentClientSecret,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
-      this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    await this.mountWhenLoaded(generation);
   }
 
   /**
@@ -142,28 +134,15 @@ export class StripePaymentElement {
    */
   @Method()
   public async initStripeWithCheckoutSession(publishableKey: string, checkoutSessionClientSecret: string, options?: InitCheckoutSessionOptions) {
+    const generation = ++this.initGeneration;
+
     await this.stripeService.initializeWithCheckoutSession(publishableKey, checkoutSessionClientSecret, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
       elementsOptions: options?.elementsOptions,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
-      this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    await this.mountWhenLoaded(generation);
   }
 
   /**
@@ -223,6 +202,12 @@ export class StripePaymentElement {
     options.stripeAccount = this.stripeService.state.stripeAccount;
     const hasOptionValue = Object.values(options).filter(value => value != null && value !== '').length > 0;
 
+    if (this.hasCheckoutSessionClientSecret()) {
+      this.initStripeWithCheckoutSession(publishableKey, this.checkoutSessionClientSecret, { stripeAccount: options.stripeAccount });
+
+      return;
+    }
+
     this.initStripe(publishableKey, hasOptionValue ? options : undefined);
   }
 
@@ -234,6 +219,12 @@ export class StripePaymentElement {
 
   @Watch('stripeAccount')
   updateStripeAccountId(stripeAccount: string) {
+    if (this.hasCheckoutSessionClientSecret()) {
+      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, { stripeAccount });
+
+      return;
+    }
+
     this.initStripe(this.stripeService.state.publishableKey, {
       stripeAccount: stripeAccount,
     });
@@ -268,10 +259,19 @@ export class StripePaymentElement {
 
   @Watch('intentClientSecret')
   async updateIntentClientSecret() {
-    // Re-initialize the payment element when client secret changes
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
+    // Checkout Session mode takes precedence (same rule as startStripe); an intent secret must not switch the mode
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      return;
     }
+
+    // The Elements group is bound to its client secret, so it has to be recreated when the secret changes
+    const { publishableKey, stripeAccount } = this.stripeService.state;
+
+    if (publishableKey == null || publishableKey === '') {
+      return;
+    }
+
+    await this.initStripe(publishableKey, { stripeAccount });
   }
 
   /**
@@ -460,6 +460,15 @@ export class StripePaymentElement {
       return;
     }
 
+    // Retry in the same mode as the initial start
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, {
+        stripeAccount: this.stripeService.state.stripeAccount,
+      });
+
+      return;
+    }
+
     this.initStripe(this.stripeService.state.publishableKey, {
       stripeAccount: this.stripeService.state.stripeAccount,
     });
@@ -513,11 +522,81 @@ export class StripePaymentElement {
     this.stripeService = serviceFactory.createStripeService();
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
 
-    if (this.publishableKey != null && this.publishableKey !== '') {
-      this.initStripe(this.publishableKey, {
+    this.startStripe();
+  }
+
+  /**
+   * Mount the element once Stripe.js has loaded, unless a newer init call (of either mode) has superseded this one.
+   * @param generation - The value of `initGeneration` taken when the init call started
+   */
+  private async mountWhenLoaded(generation: number) {
+    // A newer init call supersedes this one
+    if (generation !== this.initGeneration) {
+      return;
+    }
+
+    // If already successfully loaded, initialize elements immediately
+    if (this.stripeService.state.loadStripeStatus === 'success') {
+      await this.initElement();
+
+      if (generation !== this.initGeneration) {
+        return;
+      }
+
+      this.stripeLoadedEventHandler();
+
+      return;
+    }
+
+    // Otherwise, wait for successful load
+    const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
+      if (generation !== this.initGeneration) {
+        unsubscribe();
+
+        return;
+      }
+
+      if (newState !== 'success') {
+        return;
+      }
+
+      await this.initElement();
+
+      if (generation !== this.initGeneration) {
+        unsubscribe();
+
+        return;
+      }
+
+      this.stripeLoadedEventHandler();
+      unsubscribe(); // Clean up listener after first success
+    });
+  }
+
+  private hasCheckoutSessionClientSecret(): boolean {
+    return this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '';
+  }
+
+  /**
+   * Start Stripe.js in the mode that matches the given props.
+   * Checkout Session mode when `checkoutSessionClientSecret` is set, PaymentIntent / SetupIntent mode otherwise.
+   */
+  private startStripe() {
+    if (this.publishableKey == null || this.publishableKey === '') {
+      return;
+    }
+
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      this.initStripeWithCheckoutSession(this.publishableKey, this.checkoutSessionClientSecret, {
         stripeAccount: this.stripeAccount,
       });
+
+      return;
     }
+
+    this.initStripe(this.publishableKey, {
+      stripeAccount: this.stripeAccount,
+    });
   }
 
   /**

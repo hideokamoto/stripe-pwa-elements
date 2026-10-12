@@ -190,6 +190,66 @@ describe('StripeServiceClass', () => {
       consoleSpy.mockRestore();
     });
 
+    it('creates elements without options when clientSecret is not given', async () => {
+      await service.initialize('pk_test_xxx');
+
+      expect(mockStripe.elements).toHaveBeenCalledWith();
+    });
+
+    it('passes clientSecret to stripe.elements()', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_xxx_secret_xxx' });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_xxx_secret_xxx' });
+    });
+
+    it('recreates elements when clientSecret changes', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_2_secret_2' });
+
+      expect(mockStripe.elements).toHaveBeenCalledTimes(2);
+      expect(mockStripe.elements).toHaveBeenLastCalledWith({ clientSecret: 'pi_2_secret_2' });
+    });
+
+    it('skips re-initialization when clientSecret is unchanged', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+
+      expect(loadStripe).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-initializes elements when switching back from Checkout Session mode', async () => {
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_xxx_secret_xxx');
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_1_secret_1' });
+      expect(service.getElements()).toBe(mockElements);
+    });
+
+    it('ignores a stale initialize that finishes after a newer one', async () => {
+      const staleElements = { stale: true };
+      const freshElements = { fresh: true };
+      let resolveStale: (v: any) => void = () => undefined;
+      const staleStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => staleElements) };
+      const freshStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => freshElements) };
+
+      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve))).mockResolvedValueOnce(freshStripe);
+
+      const stale = service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_2_secret_2' });
+      resolveStale(staleStripe);
+      await stale;
+
+      expect(freshStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_2_secret_2' });
+      expect(staleStripe.elements).not.toHaveBeenCalled();
+      expect(service.getElements()).toBe(freshElements);
+    });
+
     it('skips re-initialization with same config', async () => {
       // First init
       await service.initialize('pk_test_xxx');
