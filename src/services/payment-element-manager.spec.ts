@@ -1,13 +1,13 @@
 import { PaymentElementManager } from './payment-element-manager';
 import type { IStripeService } from './interfaces';
-import type { StripePaymentElement, StripeCheckout } from '@stripe/stripe-js';
+import type { StripePaymentElement, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 
 describe('PaymentElementManager', () => {
   let manager: PaymentElementManager;
   let mockStripeService: jest.Mocked<IStripeService>;
   let mockElements: any;
   let mockPaymentElement: jest.Mocked<StripePaymentElement>;
-  let mockCheckout: jest.Mocked<StripeCheckout>;
+  let mockCheckout: jest.Mocked<StripeCheckoutElementsSdk>;
 
   beforeEach(() => {
     // Create mock payment element

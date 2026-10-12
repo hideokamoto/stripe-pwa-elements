@@ -118,6 +118,16 @@ Used in production as the web layer of [`@capacitor-community/stripe`](https://g
 npm install stripe-pwa-elements
 ```
 
+### Upgrading from Stripe.js 8
+
+This package now uses Stripe.js 9 (Dahlia). Component methods and event names are unchanged, but Stripe objects exposed through events follow the [Dahlia breaking changes](https://docs.stripe.com/changelog/dahlia):
+
+- Replace direct `stripe.initCheckout()` calls and `StripeCheckout` imports with `initCheckoutElementsSdk()` and `StripeCheckoutElementsSdk`. The component's `initStripeWithCheckoutSession()` handles this internally.
+- Handle the Promise returned by `elements.update()` and replace boolean `layout.radios` options with supported string values.
+- Replace legacy Sources/Intent methods (including `createSource` in older examples) with current Payment Methods/Intent APIs. Direct Embedded Checkout integrations must use `createEmbeddedCheckoutPage()`.
+- The Address component explicitly requests localized values to preserve its existing `getValue()` and submit results. Raw Stripe Address Element change events now return Latin-formatted `address.state` values.
+- If you load Stripe.js manually, use `https://js.stripe.com/dahlia/stripe.js` and align other Stripe.js dependencies to v9. Server API versions are managed separately; on Dahlia, this component's Checkout Sessions use `ui_mode: 'elements'`.
+
 ### Script tag
 
 ```html
@@ -143,7 +153,7 @@ import 'stripe-pwa-elements/dist/components/stripe-payment-element';
 
 This avoids the runtime dynamic import the lazy `loader` relies on, which can fail
 with `Failed to fetch dynamically imported module` under Vite. See the
-[Bundler Integration guide](https://stripe-pwa-elements-docs.workers.dev/en/guides/bundler-integration/)
+[Bundler Integration guide](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/bundler-integration/)
 for Vite/webpack/Rollup and Capacitor setup examples.
 
 ## Components
@@ -281,9 +291,9 @@ The documentation site publishes machine-readable plain-text files that AI codin
 
 | File | Purpose |
 | --- | --- |
-| [`/llms.txt`](https://stripe-pwa-elements-docs.workers.dev/llms.txt) | Index — links to the full and compact documentation sets |
-| [`/llms-full.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-full.txt) | Full API reference for all components |
-| [`/llms-small.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-small.txt) | Compact version with non-essential content removed |
+| [`/llms.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms.txt) | Index — links to the full and compact documentation sets |
+| [`/llms-full.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms-full.txt) | Full API reference for all components |
+| [`/llms-small.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms-small.txt) | Compact version with non-essential content removed |
 
 These files are generated automatically from the documentation source at build time using the [`starlight-llms-txt`](https://github.com/HiDeoo/starlight-llms-txt) plugin and always reflect the latest published docs.
 

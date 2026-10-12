@@ -174,7 +174,8 @@ export class StripeAddressElement {
       throw new Error('Address element not initialized');
     }
 
-    const result = await addressElement.getValue();
+    // Dahlia defaults to Latin; preserve the component's browser-localized values.
+    const result = await addressElement.getValue({ format: 'localized' });
 
     return result;
   }

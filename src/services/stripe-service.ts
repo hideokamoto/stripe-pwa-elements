@@ -1,4 +1,4 @@
-import { Stripe, StripeElements, StripeCheckout } from '@stripe/stripe-js';
+import { Stripe, StripeElements, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { loadStripe } from '@stripe/stripe-js';
 import type { IStripeService, StripeServiceState, CheckoutSessionOptions } from './interfaces';
@@ -125,7 +125,7 @@ class StripeServiceClass implements IStripeService {
       this.store.state.stripe = stripe;
 
       // Initialize Checkout instance instead of Elements
-      const checkout = stripe.initCheckout({
+      const checkout = stripe.initCheckoutElementsSdk({
         clientSecret: checkoutSessionClientSecret,
         elementsOptions: options?.elementsOptions,
       });
@@ -156,7 +156,7 @@ class StripeServiceClass implements IStripeService {
   /**
    * Get the current Checkout instance (for Checkout Session mode)
    */
-  getCheckout(): StripeCheckout | undefined {
+  getCheckout(): StripeCheckoutElementsSdk | undefined {
     return this.store.state.checkout;
   }
 

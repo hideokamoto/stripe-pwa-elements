@@ -98,7 +98,7 @@ Creates an embedded Stripe Checkout Session (`ui_mode: 'embedded'`).
 Same allowed currencies and demo amounts as above.
 
 The `return_url` is set to the `Origin` header of the incoming request (falling back to the production
-docs URL `https://stripe-pwa-elements-docs.workers.dev`) with `?session_id={CHECKOUT_SESSION_ID}` appended.
+docs URL `https://stripe-pwa-elements-docs.wp-kyoto.workers.dev`) with `?session_id={CHECKOUT_SESSION_ID}` appended.
 
 **Response** (200):
 
@@ -118,7 +118,7 @@ CORS headers are emitted only when the `Origin` request header matches the allow
 requests receive a `204` response with the appropriate headers.
 
 **Default allowed origins** (when `ALLOWED_ORIGINS` is not set):
-- `https://stripe-pwa-elements-docs.workers.dev`
+- `https://stripe-pwa-elements-docs.wp-kyoto.workers.dev`
 - `http://localhost:4321`
 - `https://stackblitz.com`
 - Any `*.stackblitz.io` subdomain

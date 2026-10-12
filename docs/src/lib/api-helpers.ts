@@ -12,7 +12,7 @@ export const DEMO_AMOUNTS: Record<string, number> = {
 /** Currencies allowed for demo requests — derived from DEMO_AMOUNTS keys. */
 export const ALLOWED_CURRENCIES = new Set(Object.keys(DEMO_AMOUNTS));
 
-const PRODUCTION_DOCS_ORIGIN = 'https://stripe-pwa-elements-docs.workers.dev';
+const PRODUCTION_DOCS_ORIGIN = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   PRODUCTION_DOCS_ORIGIN,
@@ -21,6 +21,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   // Wildcard: any StackBlitz preview subdomain (e.g. https://abc123.stackblitz.io).
   // Entries beginning with `*.` are matched as a host suffix (see matchesOrigin).
   '*.stackblitz.io',
+  // StackBlitz WebContainer previews (served via `serve`) use *.webcontainer.io.
+  '*.webcontainer.io',
 ];
 
 /** Minimal env shape needed by API helpers. */

@@ -7,7 +7,7 @@ import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://stripe-pwa-elements-docs.workers.dev',
+	site: 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev',
 	adapter: cloudflare({ prerenderEnvironment: 'node' }),
 	integrations: [
 		mermaid({
@@ -31,12 +31,12 @@ export default defineConfig({
 				{
 					label: 'Guides',
 					translations: { ja: 'ガイド' },
-					autogenerate: { directory: 'guides' },
+					items: [{ autogenerate: { directory: 'guides' } }],
 				},
 				{
 					label: 'Components',
 					translations: { ja: 'コンポーネント' },
-					autogenerate: { directory: 'components' },
+					items: [{ autogenerate: { directory: 'components' } }],
 				},
 			],
 		}),

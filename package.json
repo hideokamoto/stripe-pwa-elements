@@ -1,6 +1,6 @@
 {
   "name": "stripe-pwa-elements",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "Framework-agnostic Stripe Payment Elements as Web Components",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@stencil/core": "^4.38.3",
-    "@stripe/stripe-js": "^8.6.0",
+    "@stripe/stripe-js": "^9.17.0",
     "i18next": "^25.6.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "ionicons": "^8.0.13"
@@ -78,7 +78,10 @@
     "rdlabo",
     "hideokamoto"
   ],
-  "author": "Hidetaka Okamoto <info@wp-kyoto.net> (https://wp-kyoto.net)",
+  "author": {
+    "name": "Hidetaka Okamoto",
+    "url": "https://github.com/hideokamoto"
+  },
   "license": "MIT",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
@@ -109,7 +112,19 @@
       "tmp": "^0.2.5",
       "esbuild": ">=0.28.1",
       "ws": ">=8.21.0",
-      "astro": ">=6.4.6"
+      "astro": ">=7.3.8",
+      "undici": ">=7.29.1",
+      "js-yaml": "^4.3.2",
+      "nanoid": ">=3.3.18",
+      "postcss": ">=8.5.23",
+      "svgo": ">=4.1.0",
+      "immutable": ">=5.1.8",
+      "smol-toml": ">=1.9.0",
+      "devalue": ">=5.9.3",
+      "source-map-js": ">=1.2.2",
+      "dompurify": ">=3.4.13",
+      "postcss-selector-parser": ">=7.1.6",
+      "http-cache-semantics": ">=4.3.0"
     }
   },
   "packageManager": "pnpm@10.33.0"
