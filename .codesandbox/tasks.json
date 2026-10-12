@@ -17,7 +17,7 @@
   "tasks": {
     "demo-card": {
       "name": "Demo: card element (port 3000)",
-      "command": "npm --prefix examples/codesandbox start",
+      "command": "npm --prefix examples/codesandbox install --no-audit --no-fund && npm --prefix examples/codesandbox start",
       "runAtStart": true,
       "preview": {
         "port": 3000
@@ -25,7 +25,7 @@
     },
     "demo-address": {
       "name": "Demo: address element (port 3001)",
-      "command": "npm --prefix examples/codesandbox-address start",
+      "command": "npm --prefix examples/codesandbox-address install --no-audit --no-fund && npm --prefix examples/codesandbox-address start",
       "runAtStart": true,
       "preview": {
         "port": 3001
@@ -33,7 +33,7 @@
     },
     "demo-express-checkout": {
       "name": "Demo: express checkout (port 3002)",
-      "command": "npm --prefix examples/codesandbox-express-checkout start",
+      "command": "npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund && npm --prefix examples/codesandbox-express-checkout start",
       "runAtStart": true,
       "preview": {
         "port": 3002
