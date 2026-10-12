@@ -18,10 +18,11 @@ Open in CodeSandbox:
 https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox
 ```
 
-1. Wait for the devbox to install dependencies (`npm install`) and start Vite
-   (`npm start` on port 3000 — `vite.config.js` already allows the `*.csb.app` /
-   `*.csb.run` preview hosts). The preview lives at
-   `https://<sandbox-id>-3000.csb.app`.
+1. Wait for the devbox to install dependencies (`pnpm install`, CodeSandbox's
+   default package manager) and start Vite (`pnpm start` on port 3000 —
+   `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
+   The preview lives at `https://<sandbox-id>-3000.csb.app`. The preview list may
+   also show a port 2222 entry on an old devbox; it only returns 502 — use 3000.
 2. The landing page links to each demo; open a page and click **Render …**.
 3. Card demo: fill `4242 4242 4242 4242`, any future expiry, any CVC, **Pay now**.
 

@@ -3,13 +3,13 @@
   "setupTasks": [
     {
       "name": "Install dependencies",
-      "command": "npm install --no-audit --no-fund"
+      "command": "pnpm install"
     }
   ],
   "tasks": {
     "start": {
       "name": "Start demo server",
-      "command": "npm start",
+      "command": "pnpm start",
       "runAtStart": true,
       "preview": {
         "port": 3000
