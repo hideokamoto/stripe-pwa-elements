@@ -270,6 +270,11 @@ export class StripePaymentElement {
 
   @Watch('intentClientSecret')
   async updateIntentClientSecret() {
+    // Checkout Session mode takes precedence (same rule as startStripe); an intent secret must not switch the mode
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      return;
+    }
+
     // The Elements group is bound to its client secret, so it has to be recreated when the secret changes
     const { publishableKey, stripeAccount } = this.stripeService.state;
 
@@ -463,6 +468,15 @@ export class StripePaymentElement {
     }
 
     if (['success', 'loading'].includes(this.stripeService.state.loadStripeStatus)) {
+      return;
+    }
+
+    // Retry in the same mode as the initial start
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, {
+        stripeAccount: this.stripeService.state.stripeAccount,
+      });
+
       return;
     }
 

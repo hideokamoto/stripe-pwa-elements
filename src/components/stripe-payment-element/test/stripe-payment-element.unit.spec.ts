@@ -189,10 +189,35 @@ describe('stripe-payment-element unit tests', () => {
       expect(mockPaymentElementManager.initialize).toHaveBeenCalled();
     });
 
+    it('#updateIntentClientSecret should keep Checkout Session mode while checkout-session-client-secret is set', async () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      (element as any).intentClientSecret = 'pi_new_secret_new';
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).not.toHaveBeenCalled();
+    });
+
     it('#updateIntentClientSecret should do nothing before the publishable key is known', async () => {
       await element.updateIntentClientSecret();
 
       expect(mockStripeService.initialize).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('#componentWillRender retry mode', () => {
+    it('retries in Checkout Session mode after a failure when checkout-session-client-secret is set', () => {
+      const element = new StripePaymentElement();
+
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      mockStripeService.state.loadStripeStatus = 'failure';
+      element.componentWillRender();
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: undefined });
+      expect(element.initStripe).not.toHaveBeenCalled();
     });
   });
 

@@ -231,6 +231,25 @@ describe('StripeServiceClass', () => {
       expect(service.getElements()).toBe(mockElements);
     });
 
+    it('ignores a stale initialize that finishes after a newer one', async () => {
+      const staleElements = { stale: true };
+      const freshElements = { fresh: true };
+      let resolveStale: (v: any) => void = () => undefined;
+      const staleStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => staleElements) };
+      const freshStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => freshElements) };
+
+      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve))).mockResolvedValueOnce(freshStripe);
+
+      const stale = service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_2_secret_2' });
+      resolveStale(staleStripe);
+      await stale;
+
+      expect(freshStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_2_secret_2' });
+      expect(staleStripe.elements).not.toHaveBeenCalled();
+      expect(service.getElements()).toBe(freshElements);
+    });
+
     it('skips re-initialization with same config', async () => {
       // First init
       await service.initialize('pk_test_xxx');

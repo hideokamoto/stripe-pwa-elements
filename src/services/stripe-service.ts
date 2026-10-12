@@ -17,6 +17,9 @@ class StripeServiceClass implements IStripeService {
 
   private intentClientSecret?: string;
 
+  /** Incremented on every init so that a slower, older call cannot overwrite newer state */
+  private initGeneration = 0;
+
   private changeListeners: Map<string, Array<() => void>> = new Map();
 
   /**
@@ -52,6 +55,8 @@ class StripeServiceClass implements IStripeService {
    * @param options - Optional configuration (`clientSecret` is the PaymentIntent / SetupIntent client secret)
    */
   async initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string }): Promise<void> {
+    const generation = ++this.initGeneration;
+
     // Capture the previous config before overwriting it, so we can detect real changes
     const isUpToDate =
       this.store.state.stripe != null &&
@@ -84,6 +89,10 @@ class StripeServiceClass implements IStripeService {
         stripeAccount: options?.stripeAccount,
       });
 
+      if (generation !== this.initGeneration) {
+        return;
+      }
+
       // Register app info
       stripe.registerAppInfo({
         name: this.store.state.applicationName,
@@ -111,6 +120,8 @@ class StripeServiceClass implements IStripeService {
     checkoutSessionClientSecret: string,
     options?: { stripeAccount?: string; applicationName?: string } & CheckoutSessionOptions
   ): Promise<void> {
+    const generation = ++this.initGeneration;
+
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = true;
@@ -128,6 +139,10 @@ class StripeServiceClass implements IStripeService {
       const stripe = await loadStripe(publishableKey, {
         stripeAccount: options?.stripeAccount,
       });
+
+      if (generation !== this.initGeneration) {
+        return;
+      }
 
       // Register app info
       stripe.registerAppInfo({
