@@ -1,0 +1,16 @@
+{
+  "name": "stripe-pwa-elements-codesandbox-address-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite --host 0.0.0.0 --port 3000",
+    "dev": "vite --host 0.0.0.0 --port 3000"
+  },
+  "dependencies": {
+    "stripe-pwa-elements": "4.0.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
