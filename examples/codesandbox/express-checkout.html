@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stripe-pwa-elements — Address Element demo</title>
+    <title>stripe-pwa-elements — Express Checkout demo</title>
     <style>
       *,
       *::before,
@@ -119,7 +119,7 @@
   <body>
     <header>
       <h1>stripe-pwa-elements demo</h1>
-      <p>Stripe Address Element on a shared Stripe test account — fill the form and Save to see the <code>formSubmit</code> event payload.</p>
+      <p>Stripe Express Checkout (Apple Pay / Google Pay / Link) on a shared Stripe test account. Wallet buttons only appear when your browser/device offers them.</p>
     </header>
 
     <div class="card">
@@ -127,17 +127,27 @@
         <legend>Demo publishable key</legend>
         <p id="key-status">Loading demo key…</p>
         <small>
-          Fetched from the demo server (<code>/api/config</code>) so it matches the account that initializes the elements. No key entry required.
+          Fetched from the demo server (<code>/api/config</code>) so it matches the account that issues the payment
+          <code>clientSecret</code>s. No key entry required.
         </small>
       </fieldset>
 
-      <button type="submit" id="render-btn" disabled>Render address form</button>
+      <label for="currency">Currency</label>
+      <select id="currency">
+        <option value="usd" selected>usd</option>
+        <option value="jpy">jpy</option>
+        <option value="eur">eur</option>
+        <option value="gbp">gbp</option>
+        <option value="aud">aud</option>
+      </select>
+
+      <button type="submit" id="render-btn" disabled>Render express checkout</button>
       <div id="error-msg" hidden></div>
     </div>
 
     <div id="demo-container" hidden></div>
     <pre id="result-log"></pre>
 
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="./express-checkout.js"></script>
   </body>
 </html>
