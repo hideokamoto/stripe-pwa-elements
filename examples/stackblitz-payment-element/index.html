@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-payment-element — PaymentIntent demo (StackBlitz)</title>
+
+    <!--
+      Load stripe-pwa-elements via CDN (Method A: static/CDN, no bundler required).
+      The version is pinned to @3.2.0 so the bytes are immutable on unpkg. SRI (integrity)
+      is intentionally omitted: the Stencil ESM entry is a loader that dynamically imports
+      separately-hashed chunks which an integrity hash on this tag would not cover, so it
+      adds fragility without protecting the actual component code.
+    -->
+    <script
+      type="module"
+      src="https://unpkg.com/stripe-pwa-elements@3.2.0/dist/stripe-elements/stripe-elements.esm.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f6f9fc;
+        color: #32325d;
+        line-height: 1.6;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+        color: #32325d;
+      }
+
+      header p {
+        margin: 0;
+        color: #6b7c93;
+        font-size: 0.9rem;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(50, 50, 93, 0.1);
+        padding: 24px;
+        max-width: 560px;
+      }
+
+      fieldset {
+        border: 1px solid #e6ebf1;
+        border-radius: 6px;
+        padding: 14px 16px;
+        margin: 0 0 16px;
+      }
+
+      legend {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #32325d;
+        padding: 0 4px;
+      }
+
+      input[type='text'] {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cfd7df;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #32325d;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      input[type='text']:focus {
+        border-color: #635bff;
+        box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.15);
+      }
+
+      small {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: #8898aa;
+      }
+
+      button[type='submit'] {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #635bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      button[type='submit']:hover {
+        background: #5145e5;
+      }
+
+      button[type='submit']:disabled {
+        background: #aab7c4;
+        cursor: not-allowed;
+      }
+
+      #error-msg {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #fff0f0;
+        border: 1px solid #f4a8a8;
+        border-radius: 4px;
+        color: #c0392b;
+        font-size: 0.875rem;
+      }
+
+      #demo-container {
+        margin-top: 24px;
+        max-width: 560px;
+      }
+
+      .demo-result {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        word-break: break-word;
+      }
+
+      .demo-result--success {
+        background: #effaf3;
+        border: 1px solid #9adcb6;
+        color: #1a7f4b;
+      }
+
+      .demo-result--error {
+        background: #fff0f0;
+        border: 1px solid #f4a8a8;
+        color: #c0392b;
+      }
+
+      .demo-result pre {
+        margin: 8px 0 0;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>stripe-payment-element demo</h1>
+      <p>
+        PaymentIntent mode, using the project's shared Stripe test account — just click Render, then
+        pay with test card <code>4242 4242 4242 4242</code> (any future expiry, any CVC, any ZIP).
+      </p>
+    </header>
+
+    <div class="card">
+      <fieldset>
+        <legend>Demo publishable key</legend>
+        <p id="key-status">Loading demo key…</p>
+        <small>
+          Fetched from the demo server (<code>/api/config</code>) so it matches the account that
+          issues the payment <code>clientSecret</code>s. No key entry required.
+        </small>
+      </fieldset>
+
+      <button type="button" id="render-btn" disabled>Render</button>
+
+      <p id="error-msg" role="alert" hidden></p>
+    </div>
+
+    <!-- Stripe element mounts here -->
+    <div id="demo-container" hidden></div>
+
+    <script type="module">
+      // helpers.js provides the demo publishable key and (for payment demos) clientSecrets.
+      // The default mountDemo() only needs the publishable key, but the clientSecret helpers
+      // are imported so forked demos can use them without adding another import line.
+      import { fetchPublishableKey, fetchPaymentIntentClientSecret, fetchCheckoutSessionClientSecret } from './helpers.js';
+
+      // =====================================================================
+      // EXTENSION POINT
+      // When forking this template to create a new demo, replace the body of
+      // mountDemo() below.
+      //
+      // Parameters:
+      //   publishableKey {string}      – demo account's pk_test_… key (already fetched)
+      //   container      {HTMLElement} – the #demo-container div (already empty)
+      //
+      // Available helpers (imported above):
+      //   fetchPaymentIntentClientSecret(currency?)
+      //     → Promise<string>  (POST /api/create-payment-intent)
+      //   fetchCheckoutSessionClientSecret(currency?)
+      //     → Promise<string>  (POST /api/create-checkout-session)
+      //
+      // Example — payment-element demo (see README.md):
+      //   const clientSecret = await fetchPaymentIntentClientSecret();
+      //   const el = document.createElement('stripe-payment-element');
+      //   el.setAttribute('publishable-key', publishableKey);
+      //   el.setAttribute('intent-client-secret', clientSecret);
+      //   container.appendChild(el);
+      // =====================================================================
+      async function mountDemo(publishableKey, container) {
+        // PaymentIntent-mode Payment Element. Fetch a clientSecret from the demo API
+        // (same Stripe test account as the publishable key), then mount the element.
+        // should-use-default-form-submit-action is left at its default (true), so the
+        // component renders its own Pay button and calls stripe.confirmPayment() on submit.
+        const clientSecret = await fetchPaymentIntentClientSecret('usd');
+
+        const el = document.createElement('stripe-payment-element');
+        el.setAttribute('publishable-key', publishableKey);
+        el.setAttribute('intent-client-secret', clientSecret);
+        container.appendChild(el);
+
+        // Status output for the result of the default form submission.
+        const result = document.createElement('div');
+        result.className = 'demo-result';
+        result.hidden = true;
+        container.appendChild(result);
+
+        el.addEventListener('defaultFormSubmitResult', ({ detail }) => {
+          result.hidden = false;
+
+          // detail is either an Error (unexpected runtime error) or a Stripe
+          // PaymentIntent/SetupIntent result. A card decline / validation failure
+          // comes back as { error: StripeError }, which is NOT an Error instance.
+          const error = detail instanceof Error ? detail : detail && detail.error;
+
+          if (error) {
+            result.className = 'demo-result demo-result--error';
+            result.textContent = `Payment failed: ${error.message}`;
+            return;
+          }
+
+          result.className = 'demo-result demo-result--success';
+          result.innerHTML = '';
+
+          const heading = document.createElement('strong');
+          heading.textContent = 'Payment succeeded!';
+          result.appendChild(heading);
+
+          const pre = document.createElement('pre');
+          pre.textContent = JSON.stringify(detail, null, 2);
+          result.appendChild(pre);
+        });
+      }
+
+      // ---- wiring (do not modify below this line in forked demos) ----
+
+      const renderBtn = document.getElementById('render-btn');
+      const keyStatus = document.getElementById('key-status');
+      const errorMsg = document.getElementById('error-msg');
+      const demoContainer = document.getElementById('demo-container');
+
+      let publishableKey = null;
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.hidden = false;
+      }
+
+      function clearError() {
+        errorMsg.textContent = '';
+        errorMsg.hidden = true;
+      }
+
+      // Mask all but the last 4 characters so the key is recognizable but not fully echoed.
+      function maskKey(key) {
+        return key.length > 12 ? `${key.slice(0, 8)}…${key.slice(-4)}` : key;
+      }
+
+      // Fetch the demo publishable key on load so the user only has to click Render.
+      (async () => {
+        try {
+          publishableKey = await fetchPublishableKey();
+          keyStatus.textContent = `Using demo key: ${maskKey(publishableKey)}`;
+          renderBtn.disabled = false;
+        } catch (err) {
+          keyStatus.textContent = 'Could not load the demo key.';
+          showError(
+            `${err.message} — the demo server must have STRIPE_PUBLISHABLE_KEY configured ` +
+              '(see examples/stackblitz/README.md).',
+          );
+        }
+      })();
+
+      renderBtn.addEventListener('click', async () => {
+        if (!publishableKey) {
+          return;
+        }
+        clearError();
+        renderBtn.disabled = true;
+        demoContainer.innerHTML = '';
+        demoContainer.hidden = false;
+
+        try {
+          await mountDemo(publishableKey, demoContainer);
+        } catch (err) {
+          demoContainer.innerHTML = '';
+          demoContainer.hidden = true;
+          showError(`Error: ${err.message}`);
+        } finally {
+          renderBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
