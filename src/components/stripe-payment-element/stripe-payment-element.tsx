@@ -56,6 +56,9 @@ export class StripePaymentElement {
   // Form submit handler (bound to this instance)
   private _submitHandler: (e: Event) => Promise<void>;
 
+  // Incremented on every initStripe call so that a superseded call stops after its awaits
+  private initGeneration = 0;
+
   /**
    * Default submit handle type.
    * If you want to use `setupIntent`, should update this attribute.
@@ -98,6 +101,8 @@ export class StripePaymentElement {
    */
   @Method()
   public async initStripe(publishableKey: string, options?: InitStripeOptions) {
+    const generation = ++this.initGeneration;
+
     await this.stripeService.initialize(publishableKey, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
@@ -105,18 +110,41 @@ export class StripePaymentElement {
       clientSecret: this.intentClientSecret,
     });
 
+    // A newer initStripe call supersedes this one
+    if (generation !== this.initGeneration) {
+      return;
+    }
+
     // If already successfully loaded, initialize elements immediately
     if (this.stripeService.state.loadStripeStatus === 'success') {
       await this.initElement();
+
+      if (generation !== this.initGeneration) {
+        return;
+      }
+
       this.stripeLoadedEventHandler();
     } else {
       // Otherwise, wait for successful load
       const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
+        if (generation !== this.initGeneration) {
+          unsubscribe();
+
+          return;
+        }
+
         if (newState !== 'success') {
           return;
         }
 
         await this.initElement();
+
+        if (generation !== this.initGeneration) {
+          unsubscribe();
+
+          return;
+        }
+
         this.stripeLoadedEventHandler();
         unsubscribe(); // Clean up listener after first success
       });
@@ -225,6 +253,12 @@ export class StripePaymentElement {
     options.stripeAccount = this.stripeService.state.stripeAccount;
     const hasOptionValue = Object.values(options).filter(value => value != null && value !== '').length > 0;
 
+    if (this.hasCheckoutSessionClientSecret()) {
+      this.initStripeWithCheckoutSession(publishableKey, this.checkoutSessionClientSecret, { stripeAccount: options.stripeAccount });
+
+      return;
+    }
+
     this.initStripe(publishableKey, hasOptionValue ? options : undefined);
   }
 
@@ -236,6 +270,12 @@ export class StripePaymentElement {
 
   @Watch('stripeAccount')
   updateStripeAccountId(stripeAccount: string) {
+    if (this.hasCheckoutSessionClientSecret()) {
+      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, { stripeAccount });
+
+      return;
+    }
+
     this.initStripe(this.stripeService.state.publishableKey, {
       stripeAccount: stripeAccount,
     });
@@ -534,6 +574,10 @@ export class StripePaymentElement {
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
 
     this.startStripe();
+  }
+
+  private hasCheckoutSessionClientSecret(): boolean {
+    return this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '';
   }
 
   /**

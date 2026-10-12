@@ -247,6 +247,55 @@ describe('stripe-payment-element unit tests', () => {
     });
   });
 
+  describe('watchers in Checkout Session mode', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+    });
+
+    it('#updatePublishableKey keeps Checkout Session mode', () => {
+      mockStripeService.state.stripeAccount = 'acct_xxx';
+      element.updatePublishableKey('pk_test_new');
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_new', 'cs_test_secret', { stripeAccount: 'acct_xxx' });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+
+    it('#updateStripeAccountId keeps Checkout Session mode', () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      element.updateStripeAccountId('acct_new');
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: 'acct_new' });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('overlapping #initStripe calls', () => {
+    it('only the latest call mounts the element and emits stripeLoaded', async () => {
+      const element = new StripePaymentElement();
+
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+
+      let releaseFirst: () => void = () => undefined;
+
+      mockStripeService.initialize.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve))).mockResolvedValueOnce(undefined);
+
+      const first = element.initStripe('pk_test_xxx');
+      const second = element.initStripe('pk_test_xxx');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('#updateStripeAccountId', () => {
     let element: StripePaymentElement;
 
