@@ -160,6 +160,68 @@ describe('stripe-payment-element unit tests', () => {
     });
   });
 
+  describe('intent client secret handling', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+    });
+
+    it('#initStripe should pass intentClientSecret to stripeService.initialize', async () => {
+      (element as any).intentClientSecret = 'pi_xxx_secret_xxx';
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', {
+        stripeAccount: undefined,
+        applicationName: 'stripe-pwa-elements',
+        clientSecret: 'pi_xxx_secret_xxx',
+      });
+    });
+
+    it('#updateIntentClientSecret should re-initialize Elements with the new secret', async () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      (element as any).intentClientSecret = 'pi_new_secret_new';
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', expect.objectContaining({ clientSecret: 'pi_new_secret_new' }));
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalled();
+    });
+
+    it('#updateIntentClientSecret should do nothing before the publishable key is known', async () => {
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('startup mode', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).publishableKey = 'pk_test_xxx';
+    });
+
+    it('uses Checkout Session mode when only checkout-session-client-secret is set', () => {
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      (element as any).startStripe();
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: undefined });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+
+    it('uses PaymentIntent mode otherwise', () => {
+      (element as any).startStripe();
+
+      expect(element.initStripe).toHaveBeenCalledWith('pk_test_xxx', { stripeAccount: undefined });
+      expect(element.initStripeWithCheckoutSession).not.toHaveBeenCalled();
+    });
+  });
+
   describe('#updateStripeAccountId', () => {
     let element: StripePaymentElement;
 

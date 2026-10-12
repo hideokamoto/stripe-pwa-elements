@@ -101,6 +101,8 @@ export class StripePaymentElement {
     await this.stripeService.initialize(publishableKey, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
+      // Payment Element needs the client secret when the Elements group is created
+      clientSecret: this.intentClientSecret,
     });
 
     // If already successfully loaded, initialize elements immediately
@@ -268,10 +270,14 @@ export class StripePaymentElement {
 
   @Watch('intentClientSecret')
   async updateIntentClientSecret() {
-    // Re-initialize the payment element when client secret changes
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
+    // The Elements group is bound to its client secret, so it has to be recreated when the secret changes
+    const { publishableKey, stripeAccount } = this.stripeService.state;
+
+    if (publishableKey == null || publishableKey === '') {
+      return;
     }
+
+    await this.initStripe(publishableKey, { stripeAccount });
   }
 
   /**
@@ -513,11 +519,29 @@ export class StripePaymentElement {
     this.stripeService = serviceFactory.createStripeService();
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
 
-    if (this.publishableKey != null && this.publishableKey !== '') {
-      this.initStripe(this.publishableKey, {
+    this.startStripe();
+  }
+
+  /**
+   * Start Stripe.js in the mode that matches the given props.
+   * Checkout Session mode when `checkoutSessionClientSecret` is set, PaymentIntent / SetupIntent mode otherwise.
+   */
+  private startStripe() {
+    if (this.publishableKey == null || this.publishableKey === '') {
+      return;
+    }
+
+    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
+      this.initStripeWithCheckoutSession(this.publishableKey, this.checkoutSessionClientSecret, {
         stripeAccount: this.stripeAccount,
       });
+
+      return;
     }
+
+    this.initStripe(this.publishableKey, {
+      stripeAccount: this.stripeAccount,
+    });
   }
 
   /**
