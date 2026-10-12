@@ -2,22 +2,14 @@
   "$schema": "https://codesandbox.io/schemas/tasks.json",
   "setupTasks": [
     {
-      "name": "Install card demo deps",
-      "command": "npm --prefix examples/codesandbox install --no-audit --no-fund"
-    },
-    {
-      "name": "Install address demo deps",
-      "command": "npm --prefix examples/codesandbox-address install --no-audit --no-fund"
-    },
-    {
-      "name": "Install express-checkout demo deps",
-      "command": "npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund"
+      "name": "Install demo deps (all)",
+      "command": "npm --prefix examples/codesandbox install --no-audit --no-fund && npm --prefix examples/codesandbox-address install --no-audit --no-fund && npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund"
     }
   ],
   "tasks": {
     "demo-card": {
       "name": "Demo: card element (port 3000)",
-      "command": "npm --prefix examples/codesandbox install --no-audit --no-fund && npm --prefix examples/codesandbox start",
+      "command": "for i in 1 2 3 4 5; do npm --prefix examples/codesandbox install --no-audit --no-fund && break; sleep 5; done; npm --prefix examples/codesandbox start",
       "runAtStart": true,
       "preview": {
         "port": 3000
@@ -25,7 +17,7 @@
     },
     "demo-address": {
       "name": "Demo: address element (port 3001)",
-      "command": "npm --prefix examples/codesandbox-address install --no-audit --no-fund && npm --prefix examples/codesandbox-address start",
+      "command": "sleep 3; for i in 1 2 3 4 5; do npm --prefix examples/codesandbox-address install --no-audit --no-fund && break; sleep 5; done; npm --prefix examples/codesandbox-address start",
       "runAtStart": true,
       "preview": {
         "port": 3001
@@ -33,7 +25,7 @@
     },
     "demo-express-checkout": {
       "name": "Demo: express checkout (port 3002)",
-      "command": "npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund && npm --prefix examples/codesandbox-express-checkout start",
+      "command": "sleep 6; for i in 1 2 3 4 5; do npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund && break; sleep 5; done; npm --prefix examples/codesandbox-express-checkout start",
       "runAtStart": true,
       "preview": {
         "port": 3002
