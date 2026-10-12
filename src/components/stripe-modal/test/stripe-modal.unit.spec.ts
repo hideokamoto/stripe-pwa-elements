@@ -31,7 +31,7 @@ describe('stripe-modal unit tests', () => {
         expect(component.open).toEqual(false);
       });
 
-      it('When the closeModal method called, should called close event at once', async () => {
+      it('should not emit the close event directly; emission is handled by the open watcher', async () => {
         const component = new StripeModal();
 
         component.open = true;
@@ -41,7 +41,24 @@ describe('stripe-modal unit tests', () => {
           emit: mockEmitter,
         };
         await component.closeModal();
+        expect(mockEmitter).toBeCalledTimes(0);
+      });
+    });
+
+    describe('#onOpenChange', () => {
+      it('should emit close event once and hide the modal when open becomes false', () => {
+        const component = new StripeModal();
+        const mockEmitter = jest.fn();
+
+        component.close = {
+          emit: mockEmitter,
+        };
+        component.renderedOpen = true;
+
+        component.onOpenChange(false);
+
         expect(mockEmitter).toBeCalledTimes(1);
+        expect(component.renderedOpen).toBe(false);
       });
     });
 
@@ -59,9 +76,9 @@ describe('stripe-modal unit tests', () => {
           };
         });
 
-        it('should execute the close event', async () => {
+        it('should not emit the close event directly; emission is handled by the open watcher', async () => {
           await component.toggleModal();
-          expect(mockEmitter).toBeCalledTimes(1);
+          expect(mockEmitter).toBeCalledTimes(0);
         });
 
         it('Should change the open props to be false', async () => {
@@ -117,7 +134,7 @@ describe('stripe-modal unit tests', () => {
       expect(component.open).toBe(false);
     });
 
-    it('should handle multiple closeModal calls', async () => {
+    it('should handle multiple closeModal calls without emitting close directly', async () => {
       const component = new StripeModal();
       const mockEmitter = jest.fn();
       component.close = {
@@ -129,7 +146,7 @@ describe('stripe-modal unit tests', () => {
       await component.closeModal();
       await component.closeModal();
 
-      expect(mockEmitter).toBeCalledTimes(3);
+      expect(mockEmitter).toBeCalledTimes(0);
       expect(component.open).toBe(false);
     });
 
