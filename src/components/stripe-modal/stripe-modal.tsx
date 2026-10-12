@@ -32,6 +32,7 @@ export class StripeModal {
       this.openModalAnimation();
     } else {
       this.renderedOpen = false;
+      this.close.emit();
     }
   }
 
@@ -57,8 +58,6 @@ export class StripeModal {
   @Method()
   public async closeModal() {
     this.open = false;
-    this.renderedOpen = false;
-    this.close.emit();
   }
 
   /**

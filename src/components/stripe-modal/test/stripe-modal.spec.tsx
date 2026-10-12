@@ -177,6 +177,40 @@ describe('stripe-modal component tests', () => {
 
       expect(eventEmitted).toBe(false);
     });
+
+    it('should emit close event when the open prop is set to false after load', async () => {
+      const page = await newSpecPage({
+        components: [StripeModal],
+        html: `<stripe-modal open="true"></stripe-modal>`,
+      });
+
+      let emitCount = 0;
+      page.root.addEventListener('close', () => {
+        emitCount++;
+      });
+
+      page.root.open = false;
+      await page.waitForChanges();
+
+      expect(emitCount).toBe(1);
+    });
+
+    it('should emit close event only once when closeModal is called', async () => {
+      const page = await newSpecPage({
+        components: [StripeModal],
+        html: `<stripe-modal open="true"></stripe-modal>`,
+      });
+
+      let emitCount = 0;
+      page.root.addEventListener('close', () => {
+        emitCount++;
+      });
+
+      await page.rootInstance.closeModal();
+      await page.waitForChanges();
+
+      expect(emitCount).toBe(1);
+    });
   });
 
   describe('Props reactivity', () => {
