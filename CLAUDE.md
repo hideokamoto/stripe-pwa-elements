@@ -6,19 +6,20 @@ This document provides comprehensive guidance for AI assistants working with the
 
 **stripe-pwa-elements** is a web component library that provides Stripe payment elements for Progressive Web Apps. It uses Stencil.js (version 4.38+) to build framework-agnostic web components that can be used across any web platform.
 
-- **Repository**: https://github.com/wpkyoto/stripe-pwa-elements
+- **Repository**: https://github.com/hideokamoto/stripe-pwa-elements
 - **License**: MIT
-- **Version**: 3.2.0
+- **Version**: 4.0.0
 - **Main Technology**: Stencil.js 4.x (web components framework)
-- **Primary Dependencies**: @stripe/stripe-js ^8.6.0, i18next for internationalization, ionicons
+- **Primary Dependencies**: @stripe/stripe-js ^9.17.0, i18next for internationalization, ionicons
 
 ## Repository Structure
 
 ```text
 stripe-pwa-elements/
-├── .github/                    # GitHub configuration
-│   ├── workflows/
-│   │   └── ci.yml             # CI/CD pipeline (lint, type-check, tests, build)
+├── .circleci/                  # CircleCI configuration
+│   ├── config.yml             # CI pipeline (lint, type-check, tests, build)
+│   └── test-suites.yml        # Test suite definitions for `circleci run testsuite`
+├── .github/                    # GitHub configuration (no workflows; CI runs on CircleCI)
 │   ├── CODE_OF_CONDUCT.md
 │   └── CONTRIBUTING.md         # Contribution guidelines with commit conventions
 ├── docs/                       # Astro/Starlight documentation site
@@ -29,6 +30,10 @@ stripe-pwa-elements/
 │   ├── example4.html          # Link Authentication
 │   ├── address-example.html   # Address Element
 │   └── example-express-checkout.html  # Express Checkout
+├── examples/
+│   └── codesandbox/           # Vite demo app for CodeSandbox devboxes (card, address, express checkout)
+├── scripts/
+│   └── run-stencil-tests.sh   # Test runner invoked by .circleci/test-suites.yml
 ├── src/                        # Source code
 │   ├── components/            # Web components (9 components)
 │   │   ├── stripe-address-element/        # Address collection form
@@ -132,7 +137,7 @@ Payment Request API button component (Apple Pay / Google Pay).
 ## Development Workflows
 
 ### Environment Requirements
-- Node.js >= 18.x (CI tests against Node.js 20.x and 22.x)
+- Node.js >= 18.x (CI tests against Node.js 20 and 22 on CircleCI)
 - pnpm
 - Package manager: pnpm (package.json `packageManager`: pnpm@10.33.0)
 
@@ -169,14 +174,16 @@ pnpm run generate     # Generate new Stencil component
 - Test environment configured in `src/utils/test-setup.ts`
 
 ### CI/CD Pipeline
-- Platform: GitHub Actions
-- Workflow file: `.github/workflows/ci.yml`
-- Triggers: On push and pull_request
+- Platform: CircleCI
+- Config files: `.circleci/config.yml` (workflow `ci`) and `.circleci/test-suites.yml`
+- Triggers: On push (no branch filters in the config)
 - Jobs:
-  1. **lint** — Node 20.x: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
-  2. **type-check** — Node 20.x: `pnpm exec tsc --noEmit`
-  3. **test** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run test:unit -- --coverage` + `pnpm run test:component`
-  4. **build** (matrix: 20.x, 22.x; needs lint+type-check): `pnpm run build`
+  1. **lint** — Node 22: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
+  2. **type-check** — Node 22: `pnpm exec tsc --noEmit`
+  3. **test-unit** (matrix: Node 20, 22; parallelism 4; needs lint+type-check): `circleci run testsuite "unit tests"` → `scripts/run-stencil-tests.sh stencil.config.unit.ts`
+  4. **test-component** (matrix: Node 20, 22; parallelism 2; needs lint+type-check): `circleci run testsuite "component tests"` → `scripts/run-stencil-tests.sh stencil.config.component.ts`
+  5. **build** (matrix: Node 20, 22; needs lint+type-check): `pnpm run build`
+- Local equivalent: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run test:unit`, `pnpm run test:component`, `pnpm run build`
 
 ### Publishing
 - Uses `np` package for releases
@@ -507,6 +514,6 @@ Be aware of Stencil 4 breaking changes when making updates.
 
 ---
 
-**Last Updated**: 2026-06-05
-**Stencil Version**: 4.38.3
-**Node Version (CI)**: 20.x / 22.x
+**Last Updated**: 2026-10-12
+**Stencil Version**: ^4.38.3 (pnpm-lock.yaml resolves 4.43.5)
+**Node Version (CI)**: 20 / 22 (CircleCI)
