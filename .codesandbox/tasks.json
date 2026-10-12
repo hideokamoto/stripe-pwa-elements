@@ -1,0 +1,43 @@
+{
+  "$schema": "https://codesandbox.io/schemas/tasks.json",
+  "setupTasks": [
+    {
+      "name": "Install card demo deps",
+      "command": "npm --prefix examples/codesandbox install --no-audit --no-fund"
+    },
+    {
+      "name": "Install address demo deps",
+      "command": "npm --prefix examples/codesandbox-address install --no-audit --no-fund"
+    },
+    {
+      "name": "Install express-checkout demo deps",
+      "command": "npm --prefix examples/codesandbox-express-checkout install --no-audit --no-fund"
+    }
+  ],
+  "tasks": {
+    "demo-card": {
+      "name": "Demo: card element",
+      "command": "npm --prefix examples/codesandbox start",
+      "runAtStart": true,
+      "preview": {
+        "port": 3000
+      }
+    },
+    "demo-address": {
+      "name": "Demo: address element",
+      "command": "npm --prefix examples/codesandbox-address start -- --port 3001",
+      "runAtStart": true,
+      "preview": {
+        "port": 3001
+      }
+    },
+    "demo-express-checkout": {
+      "name": "Demo: express checkout",
+      "command": "npm --prefix examples/codesandbox-express-checkout start -- --port 3002",
+      "runAtStart": true,
+      "preview": {
+        "port": 3002
+      }
+    }
+  }
+}
