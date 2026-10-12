@@ -12,8 +12,8 @@ Open in CodeSandbox:
 https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox-address
 ```
 
-1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start` on port 3000 — `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
-   The preview lives at `https://<sandbox-id>-3000.csb.app`.
+1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start` on port 3001 — `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
+   The preview lives at `https://<sandbox-id>-3001.csb.app`.
 2. Click **Render address form**.
 3. Fill the address form and click **Save** — the submitted address appears in the log panel.
 

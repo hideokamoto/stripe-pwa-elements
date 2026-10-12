@@ -12,8 +12,8 @@ Open in CodeSandbox:
 https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox-express-checkout
 ```
 
-1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start` on port 3000 — `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
-   The preview lives at `https://<sandbox-id>-3000.csb.app`.
+1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start` on port 3002 — `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
+   The preview lives at `https://<sandbox-id>-3002.csb.app`.
 2. Click **Render express checkout**.
 3. Wallet buttons (Apple Pay / Google Pay / Link) appear **only when your
    browser and device actually offer them** — on a plain desktop browser the
