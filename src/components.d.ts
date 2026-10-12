@@ -576,6 +576,13 @@ export namespace Components {
          */
         "updateProgress": (progress: ProgressStatus) => Promise<this>;
     }
+    /**
+     * @deprecated `stripe-payment-request-button` is deprecated and will be removed in a future release.
+     * `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated as of 2025-09-30 / 2026-03-25).
+     * Please migrate to `<stripe-express-checkout-element>` which supports Apple Pay, Google Pay, Link, PayPal,
+     * and more via the modern Express Checkout Element API.
+     * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
+     */
     interface StripePaymentRequestButton {
         /**
           * Overwrite the application name that registered For wrapper library (like Capacitor)
@@ -844,6 +851,13 @@ declare global {
     interface HTMLStripePaymentRequestButtonElementEventMap {
         "stripeLoaded": StripeLoadedEvent;
     }
+    /**
+     * @deprecated `stripe-payment-request-button` is deprecated and will be removed in a future release.
+     * `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated as of 2025-09-30 / 2026-03-25).
+     * Please migrate to `<stripe-express-checkout-element>` which supports Apple Pay, Google Pay, Link, PayPal,
+     * and more via the modern Express Checkout Element API.
+     * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
+     */
     interface HTMLStripePaymentRequestButtonElement extends Components.StripePaymentRequestButton, HTMLStencilElement {
         addEventListener<K extends keyof HTMLStripePaymentRequestButtonElementEventMap>(type: K, listener: (this: HTMLStripePaymentRequestButtonElement, ev: StripePaymentRequestButtonCustomEvent<HTMLStripePaymentRequestButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
         addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -1334,6 +1348,13 @@ declare namespace LocalJSX {
          */
         "stripeDidLoaded"?: StripeDidLoadedHandler;
     }
+    /**
+     * @deprecated `stripe-payment-request-button` is deprecated and will be removed in a future release.
+     * `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated as of 2025-09-30 / 2026-03-25).
+     * Please migrate to `<stripe-express-checkout-element>` which supports Apple Pay, Google Pay, Link, PayPal,
+     * and more via the modern Express Checkout Element API.
+     * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
+     */
     interface StripePaymentRequestButton {
         /**
           * Overwrite the application name that registered For wrapper library (like Capacitor)
@@ -1497,6 +1518,13 @@ declare module "@stencil/core" {
             "stripe-link-authentication-element": LocalJSX.IntrinsicElements["stripe-link-authentication-element"] & JSXBase.HTMLAttributes<HTMLStripeLinkAuthenticationElementElement>;
             "stripe-modal": LocalJSX.IntrinsicElements["stripe-modal"] & JSXBase.HTMLAttributes<HTMLStripeModalElement>;
             "stripe-payment-element": LocalJSX.IntrinsicElements["stripe-payment-element"] & JSXBase.HTMLAttributes<HTMLStripePaymentElementElement>;
+            /**
+             * @deprecated `stripe-payment-request-button` is deprecated and will be removed in a future release.
+             * `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated as of 2025-09-30 / 2026-03-25).
+             * Please migrate to `<stripe-express-checkout-element>` which supports Apple Pay, Google Pay, Link, PayPal,
+             * and more via the modern Express Checkout Element API.
+             * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
+             */
             "stripe-payment-request-button": LocalJSX.IntrinsicElements["stripe-payment-request-button"] & JSXBase.HTMLAttributes<HTMLStripePaymentRequestButtonElement>;
         }
     }
