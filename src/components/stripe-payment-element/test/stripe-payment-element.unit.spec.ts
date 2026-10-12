@@ -296,6 +296,45 @@ describe('stripe-payment-element unit tests', () => {
     });
   });
 
+  describe('overlapping mode switches', () => {
+    let element: StripePaymentElement;
+    let releaseFirst: () => void;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+      (mockStripeService as any).initializeWithCheckoutSession = jest.fn().mockResolvedValue(undefined);
+      releaseFirst = () => undefined;
+    });
+
+    it('initStripe superseded by initStripeWithCheckoutSession does not mount', async () => {
+      mockStripeService.initialize.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve)));
+
+      const first = element.initStripe('pk_test_xxx');
+      const second = element.initStripeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+
+    it('initStripeWithCheckoutSession superseded by initStripe does not mount', async () => {
+      (mockStripeService as any).initializeWithCheckoutSession.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve)));
+
+      const first = element.initStripeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+      const second = element.initStripe('pk_test_xxx');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('#updateStripeAccountId', () => {
     let element: StripePaymentElement;
 

@@ -110,45 +110,7 @@ export class StripePaymentElement {
       clientSecret: this.intentClientSecret,
     });
 
-    // A newer initStripe call supersedes this one
-    if (generation !== this.initGeneration) {
-      return;
-    }
-
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
-
-      if (generation !== this.initGeneration) {
-        return;
-      }
-
-      this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (generation !== this.initGeneration) {
-          unsubscribe();
-
-          return;
-        }
-
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-
-        if (generation !== this.initGeneration) {
-          unsubscribe();
-
-          return;
-        }
-
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    await this.mountWhenLoaded(generation);
   }
 
   /**
@@ -172,28 +134,15 @@ export class StripePaymentElement {
    */
   @Method()
   public async initStripeWithCheckoutSession(publishableKey: string, checkoutSessionClientSecret: string, options?: InitCheckoutSessionOptions) {
+    const generation = ++this.initGeneration;
+
     await this.stripeService.initializeWithCheckoutSession(publishableKey, checkoutSessionClientSecret, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
       elementsOptions: options?.elementsOptions,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
-      await this.initElement();
-      this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    await this.mountWhenLoaded(generation);
   }
 
   /**
@@ -574,6 +523,54 @@ export class StripePaymentElement {
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
 
     this.startStripe();
+  }
+
+  /**
+   * Mount the element once Stripe.js has loaded, unless a newer init call (of either mode) has superseded this one.
+   * @param generation - The value of `initGeneration` taken when the init call started
+   */
+  private async mountWhenLoaded(generation: number) {
+    // A newer init call supersedes this one
+    if (generation !== this.initGeneration) {
+      return;
+    }
+
+    // If already successfully loaded, initialize elements immediately
+    if (this.stripeService.state.loadStripeStatus === 'success') {
+      await this.initElement();
+
+      if (generation !== this.initGeneration) {
+        return;
+      }
+
+      this.stripeLoadedEventHandler();
+
+      return;
+    }
+
+    // Otherwise, wait for successful load
+    const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
+      if (generation !== this.initGeneration) {
+        unsubscribe();
+
+        return;
+      }
+
+      if (newState !== 'success') {
+        return;
+      }
+
+      await this.initElement();
+
+      if (generation !== this.initGeneration) {
+        unsubscribe();
+
+        return;
+      }
+
+      this.stripeLoadedEventHandler();
+      unsubscribe(); // Clean up listener after first success
+    });
   }
 
   private hasCheckoutSessionClientSecret(): boolean {
