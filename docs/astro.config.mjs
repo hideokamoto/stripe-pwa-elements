@@ -31,12 +31,12 @@ export default defineConfig({
 				{
 					label: 'Guides',
 					translations: { ja: 'ガイド' },
-					autogenerate: { directory: 'guides' },
+					items: [{ autogenerate: { directory: 'guides' } }],
 				},
 				{
 					label: 'Components',
 					translations: { ja: 'コンポーネント' },
-					autogenerate: { directory: 'components' },
+					items: [{ autogenerate: { directory: 'components' } }],
 				},
 			],
 		}),
