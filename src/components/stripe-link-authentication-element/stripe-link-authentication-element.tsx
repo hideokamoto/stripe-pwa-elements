@@ -277,7 +277,14 @@ export class StripeLinkAuthenticationElement {
     // Dependency Injection via factory
     this.stripeService = serviceFactory.createStripeService();
     this.linkAuthenticationElementManager = serviceFactory.createLinkAuthenticationElementManager(this.stripeService);
+  }
 
+  /**
+   * Props are not yet populated inside the constructor when the component is registered via
+   * the custom-elements build (`dist/components/*`), so initialization that depends on them
+   * must run in `componentWillLoad`, where both the lazy and custom-elements builds have them set.
+   */
+  componentWillLoad() {
     if (this.publishableKey) {
       this.initStripe(this.publishableKey, {
         stripeAccount: this.stripeAccount,
