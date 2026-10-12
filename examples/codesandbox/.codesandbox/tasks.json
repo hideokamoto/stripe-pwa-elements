@@ -1,0 +1,19 @@
+{
+  "$schema": "https://codesandbox.io/schemas/tasks.json",
+  "setupTasks": [
+    {
+      "name": "Install deps",
+      "command": "cd examples/codesandbox 2>/dev/null; npm install --no-audit --no-fund"
+    }
+  ],
+  "tasks": {
+    "demo": {
+      "name": "Demo server (port 3000)",
+      "command": "cd examples/codesandbox 2>/dev/null; npm install --no-audit --no-fund && npm start",
+      "runAtStart": true,
+      "preview": {
+        "port": 3000
+      }
+    }
+  }
+}
