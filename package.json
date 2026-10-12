@@ -124,7 +124,17 @@
       "source-map-js": ">=1.2.2",
       "dompurify": ">=3.4.13",
       "postcss-selector-parser": ">=7.1.6",
-      "http-cache-semantics": ">=4.3.0"
+      "http-cache-semantics": ">=4.3.0",
+      "brace-expansion@^1.0.0": "^1.1.21",
+      "brace-expansion@^2.0.0": "^2.1.7",
+      "brace-expansion@^5.0.0": "^5.0.12",
+      "browserslist": ">=4.28.7",
+      "baseline-browser-mapping": ">=2.11.0",
+      "fast-uri": "^3.1.8",
+      "form-data": ">=4.0.6",
+      "ip-address": ">=10.7.1",
+      "minimatch@^9.0.0": "^9.0.9",
+      "yaml@^2.0.0": ">=2.8.3"
     }
   },
   "packageManager": "pnpm@10.33.0"
