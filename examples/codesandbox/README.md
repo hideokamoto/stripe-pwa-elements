@@ -12,7 +12,8 @@ Open in CodeSandbox:
 https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox
 ```
 
-1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start`).
+1. Wait for the devbox to install dependencies (`npm install`) and start Vite (`npm start` on port 3000 — `vite.config.js` already allows the `*.csb.app` / `*.csb.run` preview hosts).
+   The preview lives at `https://<sandbox-id>-3000.csb.app`.
 2. Click **Render payment form**.
 3. Fill the form with test card `4242 4242 4242 4242`, any future expiry, any CVC.
 4. Click **Pay now** — the result appears in the log panel.
