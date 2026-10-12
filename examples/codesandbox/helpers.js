@@ -1,10 +1,10 @@
 /**
- * helpers.js — Demo API client for stripe-pwa-elements StackBlitz demos.
+ * helpers.js — Demo API client for stripe-pwa-elements CodeSandbox demos.
  *
  * The demo server (stripe-pwa-elements-docs.wp-kyoto.workers.dev) runs in Stripe test
  * mode and holds its own Stripe test account credentials. Its CORS policy allows
- * requests from stackblitz.com and *.stackblitz.io, so no additional setup is
- * needed when running demos from StackBlitz.
+ * requests from CodeSandbox preview hosts (*.csb.app), so no additional setup is
+ * needed when running demos from a CodeSandbox devbox.
  *
  * Why the publishable key comes from the server:
  * A clientSecret (PaymentIntent / Checkout Session) is tied to the Stripe account
