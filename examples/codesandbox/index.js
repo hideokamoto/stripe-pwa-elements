@@ -1,6 +1,11 @@
-// Same import a Vite / webpack / Capacitor project uses — see
-// docs/guides/bundler-integration. Registers <stripe-payment-element>.
-import 'stripe-pwa-elements/dist/components/stripe-payment-element';
+// The package's self-registering ESM bundle — same file the CDN `unpkg`
+// field points at, loaded through npm. Registers <stripe-card-element> (and
+// all other components) with no extra calls.
+//
+// NOTE: the per-component `dist/components/<tag>` build currently renders the
+// component shell but never mounts the inner Stripe element, so prefer this
+// bundle until that is fixed.
+import 'stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js';
 import { fetchPublishableKey, fetchPaymentIntentClientSecret } from './helpers.js';
 
 const renderBtn = document.getElementById('render-btn');
@@ -57,7 +62,7 @@ renderBtn.addEventListener('click', async () => {
     // the clientSecret to the component. Here the demo server does it for you.
     const clientSecret = await fetchPaymentIntentClientSecret(currencySelect.value);
 
-    const el = document.createElement('stripe-payment-element');
+    const el = document.createElement('stripe-card-element');
     el.setAttribute('publishable-key', publishableKey);
     el.setAttribute('intent-client-secret', clientSecret);
     el.setAttribute('intent-type', 'payment');

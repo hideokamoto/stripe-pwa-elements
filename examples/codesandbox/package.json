@@ -2,14 +2,15 @@
   "name": "stripe-pwa-elements-codesandbox-demo",
   "version": "1.0.0",
   "private": true,
-  "main": "index.html",
+  "type": "module",
   "scripts": {
-    "start": "parcel index.html --port 3000"
+    "start": "vite --port 3000",
+    "dev": "vite --port 3000"
   },
   "dependencies": {
     "stripe-pwa-elements": "4.0.0"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.12.5"
+    "vite": "^6.3.5"
   }
 }
