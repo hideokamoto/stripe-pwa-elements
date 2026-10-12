@@ -1,4 +1,4 @@
-import { Component, Host, h, Prop, Method, Element, Event, EventEmitter, State } from '@stencil/core';
+import { Component, Host, h, Prop, Method, Element, Event, EventEmitter, State, Watch } from '@stencil/core';
 import { checkPlatform } from '../../utils/utils';
 
 @Component({
@@ -18,13 +18,22 @@ export class StripeModal {
    * Modal state.
    * If true, the modal will open
    */
-  @Prop() open = false;
+  @Prop({ mutable: true }) open = false;
 
   /**
    * Effect `this.open`. This is for animation.
    * Ionic Ref: https://github.com/ionic-team/ionic-framework/blob/main/core/src/components/accordion/accordion.tsx#L83
    */
   @State() renderedOpen = false;
+
+  @Watch('open')
+  onOpenChange(open: boolean) {
+    if (open) {
+      this.openModalAnimation();
+    } else {
+      this.renderedOpen = false;
+    }
+  }
 
   /**
    * Toggle modal state
@@ -40,7 +49,6 @@ export class StripeModal {
   @Method()
   public async openModal() {
     this.open = true;
-    this.openModalAnimation();
   }
 
   /**
@@ -89,7 +97,7 @@ export class StripeModal {
       { once: true },
     );
     requestAnimationFrame(() => {
-      this.renderedOpen = true
+      this.renderedOpen = this.open;
     });
   }
 
