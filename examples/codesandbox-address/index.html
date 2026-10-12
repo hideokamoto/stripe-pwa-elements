@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-pwa-elements — Address Element demo</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f6f9fc;
+        color: #32325d;
+        line-height: 1.6;
+      }
+      header {
+        margin-bottom: 24px;
+      }
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.4rem;
+      }
+      header p {
+        margin: 0;
+        color: #6b7c93;
+        font-size: 0.9rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(50, 50, 93, 0.1);
+        padding: 24px;
+        max-width: 560px;
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      select {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cfd7df;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #32325d;
+        background: #fff;
+        margin-bottom: 16px;
+      }
+      button[type='submit'] {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #635bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      button[type='submit']:hover {
+        background: #5145e5;
+      }
+      button[type='submit']:disabled {
+        background: #aab7c4;
+        cursor: not-allowed;
+      }
+      small {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: #8898aa;
+      }
+      code {
+        background: #eef2f7;
+        border-radius: 3px;
+        padding: 1px 4px;
+      }
+      #error-msg {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #fff0f0;
+        border: 1px solid #f4a8a8;
+        border-radius: 4px;
+        color: #c0392b;
+        font-size: 0.875rem;
+      }
+      #demo-container {
+        margin-top: 24px;
+        max-width: 560px;
+      }
+      #result-log {
+        margin-top: 16px;
+        max-width: 560px;
+        padding: 12px 14px;
+        background: #0b2537;
+        color: #d6ecff;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      #result-log:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>stripe-pwa-elements demo</h1>
+      <p>Stripe Address Element on a shared Stripe test account — fill the form and Save to see the <code>formSubmit</code> event payload.</p>
+    </header>
+
+    <div class="card">
+      <fieldset>
+        <legend>Demo publishable key</legend>
+        <p id="key-status">Loading demo key…</p>
+        <small>
+          Fetched from the demo server (<code>/api/config</code>) so it matches the account that initializes the elements. No key entry required.
+        </small>
+      </fieldset>
+
+      <button type="submit" id="render-btn" disabled>Render address form</button>
+      <div id="error-msg" hidden></div>
+    </div>
+
+    <div id="demo-container" hidden></div>
+    <pre id="result-log"></pre>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
