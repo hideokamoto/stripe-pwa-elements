@@ -2,9 +2,10 @@
 // field points at, loaded through npm. Registers <stripe-card-element> (and
 // all other components) with no extra calls.
 //
-// NOTE: the per-component `dist/components/<tag>` build currently renders the
-// component shell but never mounts the inner Stripe element, so prefer this
-// bundle until that is fixed.
+// NOTE: in the published 4.0.0 the per-component `dist/components/<tag>` build
+// renders the component shell but never mounts the inner Stripe element, so
+// prefer this bundle. The fix (initialization moved to componentWillLoad) is
+// merged but not yet released; revisit once a release includes it.
 import 'stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js';
 import { fetchPublishableKey, fetchPaymentIntentClientSecret } from './helpers.js';
 
