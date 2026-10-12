@@ -12,7 +12,7 @@ export const DEMO_AMOUNTS: Record<string, number> = {
 /** Currencies allowed for demo requests — derived from DEMO_AMOUNTS keys. */
 export const ALLOWED_CURRENCIES = new Set(Object.keys(DEMO_AMOUNTS));
 
-const PRODUCTION_DOCS_ORIGIN = 'https://stripe-pwa-elements-docs.workers.dev';
+const PRODUCTION_DOCS_ORIGIN = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   PRODUCTION_DOCS_ORIGIN,

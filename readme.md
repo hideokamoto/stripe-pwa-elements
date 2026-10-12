@@ -153,7 +153,7 @@ import 'stripe-pwa-elements/dist/components/stripe-payment-element';
 
 This avoids the runtime dynamic import the lazy `loader` relies on, which can fail
 with `Failed to fetch dynamically imported module` under Vite. See the
-[Bundler Integration guide](https://stripe-pwa-elements-docs.workers.dev/en/guides/bundler-integration/)
+[Bundler Integration guide](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/bundler-integration/)
 for Vite/webpack/Rollup and Capacitor setup examples.
 
 ## Components
@@ -291,9 +291,9 @@ The documentation site publishes machine-readable plain-text files that AI codin
 
 | File | Purpose |
 | --- | --- |
-| [`/llms.txt`](https://stripe-pwa-elements-docs.workers.dev/llms.txt) | Index — links to the full and compact documentation sets |
-| [`/llms-full.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-full.txt) | Full API reference for all components |
-| [`/llms-small.txt`](https://stripe-pwa-elements-docs.workers.dev/llms-small.txt) | Compact version with non-essential content removed |
+| [`/llms.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms.txt) | Index — links to the full and compact documentation sets |
+| [`/llms-full.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms-full.txt) | Full API reference for all components |
+| [`/llms-small.txt`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/llms-small.txt) | Compact version with non-essential content removed |
 
 These files are generated automatically from the documentation source at build time using the [`starlight-llms-txt`](https://github.com/HiDeoo/starlight-llms-txt) plugin and always reflect the latest published docs.
 

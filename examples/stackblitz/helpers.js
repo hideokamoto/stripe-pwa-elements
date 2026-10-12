@@ -1,7 +1,7 @@
 /**
  * helpers.js — Demo API client for stripe-pwa-elements StackBlitz demos.
  *
- * The demo server (stripe-pwa-elements-docs.workers.dev) runs in Stripe test
+ * The demo server (stripe-pwa-elements-docs.wp-kyoto.workers.dev) runs in Stripe test
  * mode and holds its own Stripe test account credentials. Its CORS policy allows
  * requests from stackblitz.com and *.stackblitz.io, so no additional setup is
  * needed when running demos from StackBlitz.
@@ -17,7 +17,7 @@
  * and it must be one of the values in ALLOWED_CURRENCIES.
  */
 
-const DEMO_API_BASE = 'https://stripe-pwa-elements-docs.workers.dev/api';
+const DEMO_API_BASE = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
 
 /** @type {ReadonlyArray<string>} */
 const ALLOWED_CURRENCIES = ['usd', 'jpy', 'eur', 'gbp', 'aud'];

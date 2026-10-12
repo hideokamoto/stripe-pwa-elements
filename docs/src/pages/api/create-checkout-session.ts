@@ -4,7 +4,7 @@ import { corsHeaders, isAllowedOrigin, DEMO_AMOUNTS, ALLOWED_CURRENCIES, json, g
 
 export const prerender = false;
 
-const PRODUCTION_RETURN_URL = 'https://stripe-pwa-elements-docs.workers.dev';
+const PRODUCTION_RETURN_URL = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev';
 
 export const OPTIONS: APIRoute = ({ request }) => {
   const origin = request.headers.get('origin');
