@@ -98,7 +98,7 @@ export interface IStripeService {
   /**
    * Initialize Stripe.js with Payment Intent mode
    */
-  initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string }): Promise<void>;
+  initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string }): Promise<void>;
 
   /**
    * Initialize Stripe.js with Checkout Session mode

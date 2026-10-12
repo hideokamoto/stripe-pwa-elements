@@ -15,6 +15,11 @@ class StripeServiceClass implements IStripeService {
     isCheckoutSession: false,
   });
 
+  private intentClientSecret?: string;
+
+  /** Incremented on every init so that a slower, older call cannot overwrite newer state */
+  private initGeneration = 0;
+
   private changeListeners: Map<string, Array<() => void>> = new Map();
 
   /**
@@ -47,12 +52,23 @@ class StripeServiceClass implements IStripeService {
   /**
    * Initialize Stripe.js client with Payment Intent mode
    * @param publishableKey - Your Stripe publishable API key
-   * @param options - Optional configuration
+   * @param options - Optional configuration (`clientSecret` is the PaymentIntent / SetupIntent client secret)
    */
-  async initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string }): Promise<void> {
+  async initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string }): Promise<void> {
+    const generation = ++this.initGeneration;
+
+    // Capture the previous config before overwriting it, so we can detect real changes
+    const isUpToDate =
+      this.store.state.stripe != null &&
+      !this.store.state.isCheckoutSession &&
+      this.store.state.publishableKey === publishableKey &&
+      this.store.state.stripeAccount === options?.stripeAccount &&
+      this.intentClientSecret === options?.clientSecret;
+
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = false;
+    this.intentClientSecret = options?.clientSecret;
     if (options?.stripeAccount != null && options?.stripeAccount !== '') {
       this.store.state.stripeAccount = options.stripeAccount;
     }
@@ -62,7 +78,7 @@ class StripeServiceClass implements IStripeService {
     }
 
     // If Stripe.js already loaded with same config, do nothing
-    if (this.store.state.stripe && this.store.state.publishableKey === publishableKey && this.store.state.stripeAccount === options?.stripeAccount && !this.store.state.isCheckoutSession) {
+    if (isUpToDate) {
       return;
     }
 
@@ -73,13 +89,18 @@ class StripeServiceClass implements IStripeService {
         stripeAccount: options?.stripeAccount,
       });
 
+      if (generation !== this.initGeneration) {
+        return;
+      }
+
       // Register app info
       stripe.registerAppInfo({
         name: this.store.state.applicationName,
       });
 
       this.store.state.stripe = stripe;
-      this.store.state.elements = stripe.elements();
+      // Payment Element requires the client secret at Elements creation time
+      this.store.state.elements = options?.clientSecret != null && options.clientSecret !== '' ? stripe.elements({ clientSecret: options.clientSecret }) : stripe.elements();
       this.store.state.checkout = undefined;
       this.store.state.loadStripeStatus = 'success';
     } catch (e) {
@@ -92,13 +113,15 @@ class StripeServiceClass implements IStripeService {
    * Initialize Stripe.js client with Checkout Session mode
    * @param publishableKey - Your Stripe publishable API key
    * @param checkoutSessionClientSecret - The client secret from Checkout Session
-   * @param options - Optional configuration
+   * @param options - Optional configuration (`clientSecret` is the PaymentIntent / SetupIntent client secret)
    */
   async initializeWithCheckoutSession(
     publishableKey: string,
     checkoutSessionClientSecret: string,
     options?: { stripeAccount?: string; applicationName?: string } & CheckoutSessionOptions
   ): Promise<void> {
+    const generation = ++this.initGeneration;
+
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = true;
@@ -116,6 +139,10 @@ class StripeServiceClass implements IStripeService {
       const stripe = await loadStripe(publishableKey, {
         stripeAccount: options?.stripeAccount,
       });
+
+      if (generation !== this.initGeneration) {
+        return;
+      }
 
       // Register app info
       stripe.registerAppInfo({

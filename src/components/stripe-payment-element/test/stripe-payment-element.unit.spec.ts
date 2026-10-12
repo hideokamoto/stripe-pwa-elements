@@ -160,6 +160,181 @@ describe('stripe-payment-element unit tests', () => {
     });
   });
 
+  describe('intent client secret handling', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+    });
+
+    it('#initStripe should pass intentClientSecret to stripeService.initialize', async () => {
+      (element as any).intentClientSecret = 'pi_xxx_secret_xxx';
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', {
+        stripeAccount: undefined,
+        applicationName: 'stripe-pwa-elements',
+        clientSecret: 'pi_xxx_secret_xxx',
+      });
+    });
+
+    it('#updateIntentClientSecret should re-initialize Elements with the new secret', async () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      (element as any).intentClientSecret = 'pi_new_secret_new';
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', expect.objectContaining({ clientSecret: 'pi_new_secret_new' }));
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalled();
+    });
+
+    it('#updateIntentClientSecret should keep Checkout Session mode while checkout-session-client-secret is set', async () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      (element as any).intentClientSecret = 'pi_new_secret_new';
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).not.toHaveBeenCalled();
+    });
+
+    it('#updateIntentClientSecret should do nothing before the publishable key is known', async () => {
+      await element.updateIntentClientSecret();
+
+      expect(mockStripeService.initialize).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('#componentWillRender retry mode', () => {
+    it('retries in Checkout Session mode after a failure when checkout-session-client-secret is set', () => {
+      const element = new StripePaymentElement();
+
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      mockStripeService.state.loadStripeStatus = 'failure';
+      element.componentWillRender();
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: undefined });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('startup mode', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).publishableKey = 'pk_test_xxx';
+    });
+
+    it('uses Checkout Session mode when only checkout-session-client-secret is set', () => {
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+      (element as any).startStripe();
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: undefined });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+
+    it('uses PaymentIntent mode otherwise', () => {
+      (element as any).startStripe();
+
+      expect(element.initStripe).toHaveBeenCalledWith('pk_test_xxx', { stripeAccount: undefined });
+      expect(element.initStripeWithCheckoutSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('watchers in Checkout Session mode', () => {
+    let element: StripePaymentElement;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      element.initStripe = jest.fn();
+      element.initStripeWithCheckoutSession = jest.fn();
+      (element as any).checkoutSessionClientSecret = 'cs_test_secret';
+    });
+
+    it('#updatePublishableKey keeps Checkout Session mode', () => {
+      mockStripeService.state.stripeAccount = 'acct_xxx';
+      element.updatePublishableKey('pk_test_new');
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_new', 'cs_test_secret', { stripeAccount: 'acct_xxx' });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+
+    it('#updateStripeAccountId keeps Checkout Session mode', () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      element.updateStripeAccountId('acct_new');
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: 'acct_new' });
+      expect(element.initStripe).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('overlapping #initStripe calls', () => {
+    it('only the latest call mounts the element and emits stripeLoaded', async () => {
+      const element = new StripePaymentElement();
+
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+
+      let releaseFirst: () => void = () => undefined;
+
+      mockStripeService.initialize.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve))).mockResolvedValueOnce(undefined);
+
+      const first = element.initStripe('pk_test_xxx');
+      const second = element.initStripe('pk_test_xxx');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('overlapping mode switches', () => {
+    let element: StripePaymentElement;
+    let releaseFirst: () => void;
+
+    beforeEach(() => {
+      element = new StripePaymentElement();
+      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      mockStripeService.state.loadStripeStatus = 'success';
+      (mockStripeService as any).initializeWithCheckoutSession = jest.fn().mockResolvedValue(undefined);
+      releaseFirst = () => undefined;
+    });
+
+    it('initStripe superseded by initStripeWithCheckoutSession does not mount', async () => {
+      mockStripeService.initialize.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve)));
+
+      const first = element.initStripe('pk_test_xxx');
+      const second = element.initStripeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+
+    it('initStripeWithCheckoutSession superseded by initStripe does not mount', async () => {
+      (mockStripeService as any).initializeWithCheckoutSession.mockReturnValueOnce(new Promise<void>(resolve => (releaseFirst = resolve)));
+
+      const first = element.initStripeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+      const second = element.initStripe('pk_test_xxx');
+
+      await second;
+      releaseFirst();
+      await first;
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('#updateStripeAccountId', () => {
     let element: StripePaymentElement;
 
