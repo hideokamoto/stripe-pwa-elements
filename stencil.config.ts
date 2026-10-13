@@ -19,8 +19,10 @@ const ciReporters: Config['testing'] = process.env.CI
 
 export const config: Config = {
   namespace: 'stripe-elements',
-  // CircleCI medium = 2 vCPUs; cap workers to avoid memory pressure with jsdom
-  maxConcurrentWorkers: process.env.CI ? 2 : undefined,
+  // CircleCI medium = 2 vCPUs / 4 GB RAM; 2 concurrent Jest workers (main +
+  // 2 child processes) exhausts memory when heavy JSDOM tests run in parallel.
+  // Use 1 worker so tests run sequentially and stay within the container limit.
+  maxConcurrentWorkers: process.env.CI ? 1 : undefined,
   outputTargets: [
     {
       type: 'dist',
