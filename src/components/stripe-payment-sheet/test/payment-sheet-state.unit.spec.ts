@@ -19,10 +19,12 @@ const run = (events: SheetEvent[], from: SheetState = initialSheetState) => {
   );
 };
 
-const effectsOf = (state: SheetState, event: SheetEvent) => transition(state, event).effects;
-
 /** State right after a successful load of a PaymentIntent secret */
-const readyState = () => run([{ type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadSucceeded', generation: 1 }]).state;
+const readyState = () =>
+  run([
+    { type: 'secretChanged', clientSecret: PI_SECRET },
+    { type: 'loadSucceeded', generation: 1 },
+  ]).state;
 const presentedState = () => run([{ type: 'presentRequested' }], readyState()).state;
 const confirmingState = () => run([{ type: 'submitted' }], presentedState()).state;
 
@@ -62,7 +64,10 @@ describe('payment sheet state transitions', () => {
     });
 
     it('becomes ready and emits paymentSheetLoaded when the current load succeeds', () => {
-      const { state, effects } = run([{ type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadSucceeded', generation: 1 }]);
+      const { state, effects } = run([
+        { type: 'secretChanged', clientSecret: PI_SECRET },
+        { type: 'loadSucceeded', generation: 1 },
+      ]);
 
       expect(state.phase).toBe('ready');
       expect(effects).toContainEqual({ type: 'emit', event: 'paymentSheetLoaded' });
@@ -80,7 +85,10 @@ describe('payment sheet state transitions', () => {
     });
 
     it('emits paymentSheetFailedToLoad when the current load fails', () => {
-      const { state, effects } = run([{ type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadFailed', generation: 1 }]);
+      const { state, effects } = run([
+        { type: 'secretChanged', clientSecret: PI_SECRET },
+        { type: 'loadFailed', generation: 1 },
+      ]);
 
       expect(state.phase).toBe('loadFailed');
       expect(effects).toContainEqual({ type: 'emit', event: 'paymentSheetFailedToLoad' });
@@ -97,11 +105,7 @@ describe('payment sheet state transitions', () => {
     });
 
     it('opens the sheet once loading finishes when called before the load', () => {
-      const { state, effects } = run([
-        { type: 'presentRequested' },
-        { type: 'secretChanged', clientSecret: PI_SECRET },
-        { type: 'loadSucceeded', generation: 1 },
-      ]);
+      const { state, effects } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadSucceeded', generation: 1 }]);
 
       expect(state.phase).toBe('presented');
       expect(state.pendingPresent).toBe(true);
@@ -109,11 +113,7 @@ describe('payment sheet state transitions', () => {
     });
 
     it('resolves with paymentSheetFailed when the load it waits for fails', () => {
-      const { state, effects } = run([
-        { type: 'secretChanged', clientSecret: PI_SECRET },
-        { type: 'presentRequested' },
-        { type: 'loadFailed', generation: 1 },
-      ]);
+      const { state, effects } = run([{ type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'presentRequested' }, { type: 'loadFailed', generation: 1 }]);
 
       expect(state.pendingPresent).toBe(false);
       expect(effects).toContainEqual({ type: 'resolvePresent', result: 'paymentSheetFailed' });
@@ -174,11 +174,7 @@ describe('payment sheet state transitions', () => {
 
       expect(state.phase).toBe('completed');
       expect(effects).toEqual(
-        expect.arrayContaining([
-          { type: 'hide' },
-          { type: 'emit', event: 'paymentSheetCompleted' },
-          { type: 'resolvePresent', result: 'paymentSheetCompleted' },
-        ]),
+        expect.arrayContaining([{ type: 'hide' }, { type: 'emit', event: 'paymentSheetCompleted' }, { type: 'resolvePresent', result: 'paymentSheetCompleted' }]),
       );
     });
 
@@ -194,9 +190,7 @@ describe('payment sheet state transitions', () => {
       const { state, effects } = transition(confirmingState(), { type: 'confirmFailed', generation: 1, message: 'boom' });
 
       expect(state.phase).toBe('errored');
-      expect(effects).toEqual(
-        expect.arrayContaining([{ type: 'hide' }, { type: 'emit', event: 'paymentSheetFailed' }, { type: 'resolvePresent', result: 'paymentSheetFailed' }]),
-      );
+      expect(effects).toEqual(expect.arrayContaining([{ type: 'hide' }, { type: 'emit', event: 'paymentSheetFailed' }, { type: 'resolvePresent', result: 'paymentSheetFailed' }]));
     });
   });
 
@@ -310,7 +304,10 @@ describe('payment sheet properties over every event order', () => {
         steps.push({ event: { type: 'confirmSucceeded', generation: confirm.generation }, stripeSucceeds: true });
       }
 
-      steps.push({ event: { type: 'confirmDeclined', generation: confirm.generation, message: 'declined' } }, { event: { type: 'confirmFailed', generation: confirm.generation, message: 'failed' } });
+      steps.push(
+        { event: { type: 'confirmDeclined', generation: confirm.generation, message: 'declined' } },
+        { event: { type: 'confirmFailed', generation: confirm.generation, message: 'failed' } },
+      );
     });
 
     return steps;
@@ -327,7 +324,8 @@ describe('payment sheet properties over every event order', () => {
       created,
       secretKind: step.secretKind ?? world.secretKind,
       secretChanges: step.secretKind != null ? world.secretChanges + 1 : world.secretChanges,
-      loads: step.event.type === 'loadSucceeded' || step.event.type === 'loadFailed' ? world.loads.filter(g => g !== (step.event as { generation: number }).generation) : world.loads,
+      loads:
+        step.event.type === 'loadSucceeded' || step.event.type === 'loadFailed' ? world.loads.filter(g => g !== (step.event as { generation: number }).generation) : world.loads,
       confirms:
         step.event.type === 'confirmSucceeded' || step.event.type === 'confirmDeclined' || step.event.type === 'confirmFailed'
           ? world.confirms.filter(c => c.generation !== (step.event as { generation: number }).generation)
