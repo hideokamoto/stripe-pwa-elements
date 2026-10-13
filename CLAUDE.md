@@ -18,7 +18,7 @@ This document provides comprehensive guidance for AI assistants working with the
 stripe-pwa-elements/
 ├── .circleci/                  # CircleCI configuration
 │   ├── config.yml             # CI pipeline (lint, type-check, tests, build)
-│   └── test-suites.yml        # Test suite definitions for `circleci run testsuite`
+│   └── test-suites.yml        # Test suite definitions for `circleci testsuite run`
 ├── .github/                    # GitHub configuration (no workflows; CI runs on CircleCI)
 │   ├── CODE_OF_CONDUCT.md
 │   └── CONTRIBUTING.md         # Contribution guidelines with commit conventions
@@ -180,8 +180,8 @@ pnpm run generate     # Generate new Stencil component
 - Jobs:
   1. **lint** — Node 22: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
   2. **type-check** — Node 22: `pnpm exec tsc --noEmit`
-  3. **test-unit** (matrix: Node 20, 22; parallelism 4; needs lint+type-check): `circleci run testsuite "unit tests"` → `scripts/run-stencil-tests.sh stencil.config.unit.ts`
-  4. **test-component** (matrix: Node 20, 22; parallelism 2; needs lint+type-check): `circleci run testsuite "component tests"` → `scripts/run-stencil-tests.sh stencil.config.component.ts`
+  3. **test-unit** (matrix: Node 20, 22; parallelism 4; needs lint+type-check): `circleci testsuite run "unit tests"` → `scripts/run-stencil-tests.sh stencil.config.unit.ts`
+  4. **test-component** (matrix: Node 20, 22; parallelism 2; needs lint+type-check): `circleci testsuite run "component tests"` → `scripts/run-stencil-tests.sh stencil.config.component.ts`
   5. **build** (matrix: Node 20, 22; needs lint+type-check): `pnpm run build`
 - Local equivalent: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run test:unit`, `pnpm run test:component`, `pnpm run build`
 

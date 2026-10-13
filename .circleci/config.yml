@@ -74,7 +74,7 @@ jobs:
 
   # ── Unit tests ─────────────────────────────────────────────────────────────
   #
-  # `circleci run testsuite` is the CircleCI Smarter Testing entrypoint.
+  # `circleci testsuite run` is the CircleCI Smarter Testing entrypoint.
   # It reads .circleci/test-suites.yml and handles:
   #
   #   1. Discovery  – runs the `discover` command to enumerate all test files.
@@ -112,7 +112,7 @@ jobs:
           name: Unit tests — CircleCI Smarter Testing
           command: |
             mkdir -p test-reports/unit coverage
-            circleci run testsuite "unit tests"
+            circleci testsuite run "unit tests"
       - store_test_results:
           path: test-reports
       - store_artifacts:
@@ -138,7 +138,7 @@ jobs:
           name: Component tests — CircleCI Smarter Testing
           command: |
             mkdir -p test-reports/component
-            circleci run testsuite "component tests"
+            circleci testsuite run "component tests"
       - store_test_results:
           path: test-reports
 
@@ -173,7 +173,7 @@ workflows:
       # Tests and build run on both active LTS lines (Node 20 & 22).
       # Each job fans out once per node-version via the matrix.
       # Test jobs additionally fan out across parallel containers; within
-      # each container `circleci run testsuite` narrows work via Smarter
+      # each container `circleci testsuite run` narrows work via Smarter
       # Testing (selective execution + dynamic splitting + failed-only reruns).
       - test-unit:
           matrix:
