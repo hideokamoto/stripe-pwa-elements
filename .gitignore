@@ -36,3 +36,6 @@ test-reports/
 
 # Per-container V8 coverage files produced by CIRCLECI_COVERAGE during CI runs
 coverage/
+
+# Local AI assistant tooling
+.claude/
