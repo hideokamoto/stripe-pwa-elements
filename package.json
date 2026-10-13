@@ -1,6 +1,6 @@
 {
   "name": "stripe-pwa-elements",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Framework-agnostic Stripe Payment Elements as Web Components",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
