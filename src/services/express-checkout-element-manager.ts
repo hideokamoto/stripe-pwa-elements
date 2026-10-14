@@ -51,8 +51,12 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       this.unmount();
     }
 
+    // mode / amount / currency belong to stripe.elements(), not to elements.create('expressCheckout')
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { mode, amount, currency, ...restOptions } = options;
+    const createOptions: any = { ...restOptions };
+
     // Convert buttonHeight from string to number if present
-    const createOptions: any = { ...options };
 
     if (createOptions.buttonHeight && typeof createOptions.buttonHeight === 'string') {
       const height = parseInt(createOptions.buttonHeight.replace('px', ''), 10);

@@ -202,6 +202,39 @@ describe('StripeServiceClass', () => {
       expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_xxx_secret_xxx' });
     });
 
+    it('passes elementsOptions to stripe.elements() when clientSecret is not given', async () => {
+      const elementsOptions = { mode: 'payment' as const, amount: 1000, currency: 'usd' };
+
+      await service.initialize('pk_test_xxx', { elementsOptions });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith(elementsOptions);
+    });
+
+    it('prefers clientSecret over elementsOptions', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_xxx_secret_xxx', elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_xxx_secret_xxx' });
+    });
+
+    it('recreates elements when elementsOptions change', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+
+      expect(mockStripe.elements).toHaveBeenCalledTimes(2);
+      expect(mockStripe.elements).toHaveBeenLastCalledWith({ mode: 'payment', amount: 2000, currency: 'usd' });
+    });
+
+    it('skips re-initialization when elementsOptions are unchanged', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+
+      expect(loadStripe).toHaveBeenCalledTimes(1);
+    });
+
     it('recreates elements when clientSecret changes', async () => {
       await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
       mockStoreState.stripe = mockStripe;

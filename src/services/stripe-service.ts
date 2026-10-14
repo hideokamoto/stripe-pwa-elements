@@ -1,4 +1,4 @@
-import { Stripe, StripeElements, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
+import { Stripe, StripeElements, StripeElementsOptionsMode, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { loadStripe } from '@stripe/stripe-js';
 import type { IStripeService, StripeServiceState, CheckoutSessionOptions } from './interfaces';
@@ -16,6 +16,9 @@ class StripeServiceClass implements IStripeService {
   });
 
   private intentClientSecret?: string;
+
+  /** Serialized `elementsOptions` of the last init, used to detect real changes */
+  private elementsOptionsKey?: string;
 
   /** Incremented on every init so that a slower, older call cannot overwrite newer state */
   private initGeneration = 0;
@@ -52,10 +55,16 @@ class StripeServiceClass implements IStripeService {
   /**
    * Initialize Stripe.js client with Payment Intent mode
    * @param publishableKey - Your Stripe publishable API key
-   * @param options - Optional configuration (`clientSecret` is the PaymentIntent / SetupIntent client secret)
+   * @param options - Optional configuration. `clientSecret` is the PaymentIntent / SetupIntent client secret;
+   * `elementsOptions` (mode / amount / currency) is used to create Elements when there is no client secret.
+   * `clientSecret` takes priority when both are given.
    */
-  async initialize(publishableKey: string, options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string }): Promise<void> {
+  async initialize(
+    publishableKey: string,
+    options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string; elementsOptions?: StripeElementsOptionsMode },
+  ): Promise<void> {
     const generation = ++this.initGeneration;
+    const elementsOptionsKey = options?.elementsOptions != null ? JSON.stringify(options.elementsOptions) : undefined;
 
     // Capture the previous config before overwriting it, so we can detect real changes
     const isUpToDate =
@@ -63,12 +72,14 @@ class StripeServiceClass implements IStripeService {
       !this.store.state.isCheckoutSession &&
       this.store.state.publishableKey === publishableKey &&
       this.store.state.stripeAccount === options?.stripeAccount &&
-      this.intentClientSecret === options?.clientSecret;
+      this.intentClientSecret === options?.clientSecret &&
+      this.elementsOptionsKey === elementsOptionsKey;
 
     // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = false;
     this.intentClientSecret = options?.clientSecret;
+    this.elementsOptionsKey = elementsOptionsKey;
     if (options?.stripeAccount != null && options?.stripeAccount !== '') {
       this.store.state.stripeAccount = options.stripeAccount;
     }
@@ -99,8 +110,15 @@ class StripeServiceClass implements IStripeService {
       });
 
       this.store.state.stripe = stripe;
-      // Payment Element requires the client secret at Elements creation time
-      this.store.state.elements = options?.clientSecret != null && options.clientSecret !== '' ? stripe.elements({ clientSecret: options.clientSecret }) : stripe.elements();
+      // Elements must be created with a client secret, or with mode / amount / currency, depending on the element type
+      if (options?.clientSecret != null && options.clientSecret !== '') {
+        this.store.state.elements = stripe.elements({ clientSecret: options.clientSecret });
+      } else if (options?.elementsOptions != null) {
+        this.store.state.elements = stripe.elements(options.elementsOptions);
+      } else {
+        this.store.state.elements = stripe.elements();
+      }
+
       this.store.state.checkout = undefined;
       this.store.state.loadStripeStatus = 'success';
     } catch (e) {

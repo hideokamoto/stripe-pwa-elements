@@ -90,14 +90,19 @@ describe('ExpressCheckoutElementManager', () => {
 
     it('should create express checkout element with provided options', async () => {
       const options = {
-        mode: 'payment' as const,
-        amount: 1099,
-        currency: 'usd',
+        buttonType: { googlePay: 'checkout' as const },
+        layout: { maxColumns: 2 },
       };
 
       await manager.initialize(containerElement, options);
 
       expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', options);
+    });
+
+    it('should not pass mode, amount and currency to elements.create (they belong to stripe.elements())', async () => {
+      await manager.initialize(containerElement, { mode: 'payment', amount: 1099, currency: 'usd', buttonHeight: 48 });
+
+      expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', { buttonHeight: 48 });
     });
 
     it('should convert string buttonHeight to number', async () => {
@@ -109,7 +114,6 @@ describe('ExpressCheckoutElementManager', () => {
       await manager.initialize(containerElement, options);
 
       expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', {
-        mode: 'payment',
         buttonHeight: 48,
       });
     });
@@ -123,7 +127,6 @@ describe('ExpressCheckoutElementManager', () => {
       await manager.initialize(containerElement, options);
 
       expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', {
-        mode: 'payment',
         buttonHeight: 56,
       });
     });
