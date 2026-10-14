@@ -21,6 +21,7 @@ describe('ExpressCheckoutElementManager', () => {
     // Create mock elements
     mockElements = {
       create: jest.fn().mockReturnValue(mockExpressCheckoutElement),
+      update: jest.fn(),
     };
 
     // Create mock stripe service
@@ -263,9 +264,35 @@ describe('ExpressCheckoutElementManager', () => {
 
       await manager.initialize(containerElement, { mode: 'payment', amount: 1000 });
 
+      manager.update({ buttonType: { googlePay: 'checkout' } });
+
+      expect(mockExpressCheckoutElement.update).toHaveBeenCalledWith({ buttonType: { googlePay: 'checkout' } });
+    });
+
+    it('should update mode, amount and currency on the Elements group, not on the element', async () => {
+      const containerElement = document.createElement('div');
+
+      containerElement.innerHTML = '<div id="express-checkout-element"></div>';
+
+      await manager.initialize(containerElement, { mode: 'payment', amount: 1000, currency: 'usd' });
+
+      manager.update({ amount: 2000, buttonHeight: 48 });
+
+      expect(mockElements.update).toHaveBeenCalledWith({ amount: 2000 });
+      expect(mockExpressCheckoutElement.update).toHaveBeenCalledWith({ buttonHeight: 48 });
+    });
+
+    it('should not call element.update when only Elements group options change', async () => {
+      const containerElement = document.createElement('div');
+
+      containerElement.innerHTML = '<div id="express-checkout-element"></div>';
+
+      await manager.initialize(containerElement, { mode: 'payment', amount: 1000, currency: 'usd' });
+
       manager.update({ amount: 2000 });
 
-      expect(mockExpressCheckoutElement.update).toHaveBeenCalledWith({ amount: 2000 });
+      expect(mockElements.update).toHaveBeenCalledWith({ amount: 2000 });
+      expect(mockExpressCheckoutElement.update).not.toHaveBeenCalled();
     });
 
     it('should convert string buttonHeight to number when updating', async () => {

@@ -63,7 +63,6 @@ class StripeServiceClass implements IStripeService {
     publishableKey: string,
     options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string; elementsOptions?: StripeElementsOptionsMode },
   ): Promise<void> {
-    const generation = ++this.initGeneration;
     const elementsOptionsKey = options?.elementsOptions != null ? JSON.stringify(options.elementsOptions) : undefined;
 
     // Capture the previous config before overwriting it, so we can detect real changes
@@ -88,10 +87,13 @@ class StripeServiceClass implements IStripeService {
       this.store.state.applicationName = options.applicationName;
     }
 
-    // If Stripe.js already loaded with same config, do nothing
+    // If Stripe.js already loaded with same config, do nothing.
+    // Return before bumping the generation, so an in-flight init for this same config is not discarded.
     if (isUpToDate) {
       return;
     }
+
+    const generation = ++this.initGeneration;
 
     this.store.state.loadStripeStatus = 'loading';
 

@@ -283,6 +283,26 @@ describe('StripeServiceClass', () => {
       expect(service.getElements()).toBe(freshElements);
     });
 
+    it('does not drop an in-flight initialize when it is called again with the same new config', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      const newElements = { next: true };
+      let resolveLoad: (v: any) => void = () => undefined;
+      const nextStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => newElements) };
+
+      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveLoad = resolve)));
+
+      const first = service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+      resolveLoad(nextStripe);
+      await first;
+
+      expect(nextStripe.elements).toHaveBeenCalledWith({ mode: 'payment', amount: 2000, currency: 'usd' });
+      expect(service.getElements()).toBe(newElements);
+      expect(mockStoreState.loadStripeStatus).toBe('success');
+    });
+
     it('skips re-initialization with same config', async () => {
       // First init
       await service.initialize('pk_test_xxx');

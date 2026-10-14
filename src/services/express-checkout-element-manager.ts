@@ -125,8 +125,28 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       return;
     }
 
+    // mode / amount / currency are Elements group options, so they are updated with elements.update()
+    const { mode, amount, currency, ...elementOptions } = options;
+    const groupOptions: import('@stripe/stripe-js').StripeElementsUpdateOptions = {};
+
+    if (mode !== undefined) {
+      groupOptions.mode = mode;
+    }
+
+    if (amount !== undefined) {
+      groupOptions.amount = amount;
+    }
+
+    if (currency !== undefined) {
+      groupOptions.currency = currency;
+    }
+
+    if (Object.keys(groupOptions).length > 0) {
+      this.stripeService.getElements()?.update(groupOptions);
+    }
+
     // Convert buttonHeight from string to number if present
-    const updateOptions: any = { ...options };
+    const updateOptions: any = { ...elementOptions };
 
     if (updateOptions.buttonHeight && typeof updateOptions.buttonHeight === 'string') {
       const height = parseInt(updateOptions.buttonHeight.replace('px', ''), 10);
@@ -134,6 +154,10 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       if (!isNaN(height)) {
         updateOptions.buttonHeight = height;
       }
+    }
+
+    if (Object.keys(updateOptions).length === 0) {
+      return;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
