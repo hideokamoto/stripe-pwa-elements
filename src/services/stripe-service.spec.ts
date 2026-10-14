@@ -202,6 +202,39 @@ describe('StripeServiceClass', () => {
       expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_xxx_secret_xxx' });
     });
 
+    it('passes elementsOptions to stripe.elements() when clientSecret is not given', async () => {
+      const elementsOptions = { mode: 'payment' as const, amount: 1000, currency: 'usd' };
+
+      await service.initialize('pk_test_xxx', { elementsOptions });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith(elementsOptions);
+    });
+
+    it('prefers clientSecret over elementsOptions', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_xxx_secret_xxx', elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_xxx_secret_xxx' });
+    });
+
+    it('recreates elements when elementsOptions change', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+
+      expect(mockStripe.elements).toHaveBeenCalledTimes(2);
+      expect(mockStripe.elements).toHaveBeenLastCalledWith({ mode: 'payment', amount: 2000, currency: 'usd' });
+    });
+
+    it('skips re-initialization when elementsOptions are unchanged', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+
+      expect(loadStripe).toHaveBeenCalledTimes(1);
+    });
+
     it('recreates elements when clientSecret changes', async () => {
       await service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
       mockStoreState.stripe = mockStripe;
@@ -248,6 +281,26 @@ describe('StripeServiceClass', () => {
       expect(freshStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_2_secret_2' });
       expect(staleStripe.elements).not.toHaveBeenCalled();
       expect(service.getElements()).toBe(freshElements);
+    });
+
+    it('does not drop an in-flight initialize when it is called again with the same new config', async () => {
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 1000, currency: 'usd' } });
+      mockStoreState.stripe = mockStripe;
+
+      const newElements = { next: true };
+      let resolveLoad: (v: any) => void = () => undefined;
+      const nextStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => newElements) };
+
+      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveLoad = resolve)));
+
+      const first = service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+      await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
+      resolveLoad(nextStripe);
+      await first;
+
+      expect(nextStripe.elements).toHaveBeenCalledWith({ mode: 'payment', amount: 2000, currency: 'usd' });
+      expect(service.getElements()).toBe(newElements);
+      expect(mockStoreState.loadStripeStatus).toBe('success');
     });
 
     it('skips re-initialization with same config', async () => {
