@@ -100,6 +100,19 @@ customElements
   })
 ```
 
+## Known console error
+
+When this component is used on its own, the browser console shows:
+
+```
+Unable to select session. Make sure Elements is initialized with clientSecret
+or use the nullableSessionSelector() instead.
+```
+
+The form still works: it renders, accepts input, and `formSubmit` is emitted with the entered address.
+
+The message is logged by an iframe that Stripe.js adds when an Address Element is mounted (`elements-inner-easel`), not by the address form itself. Stripe.js logs it when the Elements group was created without a PaymentIntent / SetupIntent client secret or a `mode` / `currency`. This component creates its Elements group without them, because a standalone address form has no payment to describe, so the message cannot be avoided here and can be ignored. This was observed with the Stripe.js version loaded by `@stripe/stripe-js` 9.x.
+
 <!-- Auto Generated Below -->
 
 

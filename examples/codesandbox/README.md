@@ -25,6 +25,10 @@ https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main
    also show a port 2222 entry on an old devbox; it only returns 502 — use 3000.
 2. The landing page links to each demo; open a page and click **Render …**.
 3. Card demo: fill `4242 4242 4242 4242`, any future expiry, any CVC, **Pay now**.
+4. Address demo: the console shows `Unable to select session. Make sure Elements is
+   initialized with clientSecret`. This is expected for a standalone Address Element
+   and the form still works; see the
+   [component readme](../../src/components/stripe-address-element/readme.md#known-console-error).
 
 ## What these demos exercise
 
