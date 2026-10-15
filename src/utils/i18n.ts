@@ -22,6 +22,7 @@ i18next.use(I18nextBrowserLanguageDetector).init({
         'CVC': 'セキュリティコード(CVC)',
         'Country or region': '地域',
         'Postal Code': '郵便番号',
+        'Close': '閉じる',
       },
     },
     'pt-BR': {
@@ -38,6 +39,7 @@ i18next.use(I18nextBrowserLanguageDetector).init({
         'CVC': 'Número de Segurança(CVC)',
         'Country or region': 'País ou região',
         'Postal Code': 'Cep',
+        'Close': 'Fechar',
       },
     },
   },

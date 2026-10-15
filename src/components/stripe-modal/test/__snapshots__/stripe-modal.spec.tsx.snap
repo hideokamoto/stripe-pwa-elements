@@ -4,9 +4,12 @@ exports[`stripe-modal component tests Rendering should match snapshot (open='tru
 <stripe-modal open="true">
   <template shadowrootmode="open">
     <div class="modal-row">
-      <div class="loading modal-child" style="will-change: transform;">
+      <div class="loading modal-child" tabindex="-1" style="will-change: transform;">
+        <div class="focus-guard" tabindex="-1"></div>
         <div class="modal-close-button-wrap">
-          <ion-icon class="modal-close-button" name="close" size="large"></ion-icon>
+          <button aria-label="Close" class="modal-close-button" type="button">
+            <ion-icon aria-hidden="true" name="close" size="large"></ion-icon>
+          </button>
         </div>
         <div class="modal-loading">
           <svg version="1.1" viewBox="0 0 2400 2400" xmlns="http://www.w3.org/2000/svg">
@@ -30,6 +33,7 @@ exports[`stripe-modal component tests Rendering should match snapshot (open='tru
         <div class="modal-content">
           <slot></slot>
         </div>
+        <div class="focus-guard" tabindex="-1"></div>
       </div>
     </div>
   </template>
@@ -40,7 +44,8 @@ exports[`stripe-modal component tests Rendering should match snapshot (showClose
 <stripe-modal show-close-button="false">
   <template shadowrootmode="open">
     <div class="modal-row">
-      <div class="modal-child">
+      <div class="modal-child" tabindex="-1">
+        <div class="focus-guard" tabindex="-1"></div>
         <div class="modal-loading">
           <svg version="1.1" viewBox="0 0 2400 2400" xmlns="http://www.w3.org/2000/svg">
             <g fill="none" id="spinner" stroke="currentColor" stroke-linecap="round" stroke-width="200">
@@ -63,6 +68,7 @@ exports[`stripe-modal component tests Rendering should match snapshot (showClose
         <div class="modal-content">
           <slot></slot>
         </div>
+        <div class="focus-guard" tabindex="-1"></div>
       </div>
     </div>
   </template>
@@ -73,9 +79,12 @@ exports[`stripe-modal component tests Rendering should match snapshot (showClose
 <stripe-modal show-close-button="true">
   <template shadowrootmode="open">
     <div class="modal-row">
-      <div class="modal-child">
+      <div class="modal-child" tabindex="-1">
+        <div class="focus-guard" tabindex="-1"></div>
         <div class="modal-close-button-wrap">
-          <ion-icon class="modal-close-button" name="close" size="large"></ion-icon>
+          <button aria-label="Close" class="modal-close-button" type="button">
+            <ion-icon aria-hidden="true" name="close" size="large"></ion-icon>
+          </button>
         </div>
         <div class="modal-loading">
           <svg version="1.1" viewBox="0 0 2400 2400" xmlns="http://www.w3.org/2000/svg">
@@ -99,6 +108,7 @@ exports[`stripe-modal component tests Rendering should match snapshot (showClose
         <div class="modal-content">
           <slot></slot>
         </div>
+        <div class="focus-guard" tabindex="-1"></div>
       </div>
     </div>
   </template>
