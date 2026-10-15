@@ -13,4 +13,6 @@ export type {
   CurrencySelectorChangeHandler,
   DefaultFormSubmitResult,
 } from './interfaces';
+export type { PaymentSheetOptions, PaymentSheetPresentResult } from './components/stripe-payment-sheet/stripe-payment-sheet.helpers';
+export type { PaymentSheetEventName, PaymentSheetResult } from './components/stripe-payment-sheet/payment-sheet-state';
 import 'ionicons';

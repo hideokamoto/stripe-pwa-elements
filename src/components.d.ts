@@ -7,14 +7,16 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 import { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
-import { PaymentRequestOptions, PaymentRequestWallet, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+import { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { ExpressCheckoutElementOptions } from "./services/interfaces";
 import { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
+import { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
 export { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 export { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
-export { PaymentRequestOptions, PaymentRequestWallet, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+export { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 export { ExpressCheckoutElementOptions } from "./services/interfaces";
 export { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
+export { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
 export namespace Components {
     interface StripeAddressElement {
         /**
@@ -645,6 +647,55 @@ export namespace Components {
          */
         "stripeDidLoaded"?: StripeDidLoadedHandler;
     }
+    /**
+     * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     */
+    interface StripePaymentSheet {
+        /**
+          * Application name registered to Stripe.js, for wrapper libraries such as `@capacitor-community/stripe`.
+          * @default 'stripe-pwa-elements'
+         */
+        "applicationName": string;
+        /**
+          * Submit button label. Translated automatically by this library.
+          * @default 'Pay'
+         */
+        "buttonLabel": string;
+        /**
+          * The client secret of a PaymentIntent (`pi_..._secret_...`) or a SetupIntent (`seti_..._secret_...`). The prefix decides whether `confirmPayment` or `confirmSetup` is used.
+         */
+        "intentClientSecret"?: string;
+        /**
+          * Whether the sheet is shown. Setting it to false closes the sheet as canceled.
+          * @default false
+         */
+        "open": boolean;
+        /**
+          * Options with the same keys as `CreatePaymentSheetOption` of `@capacitor-community/stripe`. JavaScript property only.
+         */
+        "options"?: PaymentSheetOptions;
+        /**
+          * Show the sheet and wait for its result. Calling it again while a result is pending returns the same promise.
+          * @returns `{ paymentResult }`, where `paymentResult` is `paymentSheetCompleted`, `paymentSheetCanceled` or `paymentSheetFailed`
+          * @example ``` const sheet = document.querySelector('stripe-payment-sheet'); const { paymentResult } = await sheet.present(); ```
+         */
+        "present": () => Promise<PaymentSheetPresentResult>;
+        /**
+          * Your Stripe publishable API key.
+         */
+        "publishableKey"?: string;
+        /**
+          * Sheet title. Translated automatically by this library.
+          * @default 'Add your payment information'
+         */
+        "sheetTitle": string;
+        /**
+          * Optional. Making API calls for connected accounts
+          * @info https://stripe.com/docs/connect/authentication
+         */
+        "stripeAccount"?: string;
+    }
 }
 export interface StripeAddressElementCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -681,6 +732,10 @@ export interface StripePaymentElementCustomEvent<T> extends CustomEvent<T> {
 export interface StripePaymentRequestButtonCustomEvent<T> extends CustomEvent<T> {
     detail: T;
     target: HTMLStripePaymentRequestButtonElement;
+}
+export interface StripePaymentSheetCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLStripePaymentSheetElement;
 }
 declare global {
     interface HTMLStripeAddressElementElementEventMap {
@@ -872,6 +927,31 @@ declare global {
         prototype: HTMLStripePaymentRequestButtonElement;
         new (): HTMLStripePaymentRequestButtonElement;
     };
+    interface HTMLStripePaymentSheetElementEventMap {
+        "paymentSheetLoaded": StripeLoadedEvent;
+        "paymentSheetFailedToLoad": unknown;
+        "paymentSheetCompleted": PaymentIntentResult | SetupIntentResult;
+        "paymentSheetCanceled": void;
+        "paymentSheetFailed": unknown;
+    }
+    /**
+     * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     */
+    interface HTMLStripePaymentSheetElement extends Components.StripePaymentSheet, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLStripePaymentSheetElementEventMap>(type: K, listener: (this: HTMLStripePaymentSheetElement, ev: StripePaymentSheetCustomEvent<HTMLStripePaymentSheetElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLStripePaymentSheetElementEventMap>(type: K, listener: (this: HTMLStripePaymentSheetElement, ev: StripePaymentSheetCustomEvent<HTMLStripePaymentSheetElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+    }
+    var HTMLStripePaymentSheetElement: {
+        prototype: HTMLStripePaymentSheetElement;
+        new (): HTMLStripePaymentSheetElement;
+    };
     interface HTMLElementTagNameMap {
         "stripe-address-element": HTMLStripeAddressElementElement;
         "stripe-card-element": HTMLStripeCardElementElement;
@@ -882,6 +962,7 @@ declare global {
         "stripe-modal": HTMLStripeModalElement;
         "stripe-payment-element": HTMLStripePaymentElementElement;
         "stripe-payment-request-button": HTMLStripePaymentRequestButtonElement;
+        "stripe-payment-sheet": HTMLStripePaymentSheetElement;
     }
 }
 declare namespace LocalJSX {
@@ -1395,6 +1476,69 @@ declare namespace LocalJSX {
          */
         "stripeDidLoaded"?: StripeDidLoadedHandler;
     }
+    /**
+     * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     */
+    interface StripePaymentSheet {
+        /**
+          * Application name registered to Stripe.js, for wrapper libraries such as `@capacitor-community/stripe`.
+          * @default 'stripe-pwa-elements'
+         */
+        "applicationName"?: string;
+        /**
+          * Submit button label. Translated automatically by this library.
+          * @default 'Pay'
+         */
+        "buttonLabel"?: string;
+        /**
+          * The client secret of a PaymentIntent (`pi_..._secret_...`) or a SetupIntent (`seti_..._secret_...`). The prefix decides whether `confirmPayment` or `confirmSetup` is used.
+         */
+        "intentClientSecret"?: string;
+        /**
+          * The customer closed the sheet
+         */
+        "onPaymentSheetCanceled"?: (event: StripePaymentSheetCustomEvent<void>) => void;
+        /**
+          * The payment or setup succeeded
+         */
+        "onPaymentSheetCompleted"?: (event: StripePaymentSheetCustomEvent<PaymentIntentResult | SetupIntentResult>) => void;
+        /**
+          * The confirmation failed with an error the customer cannot fix in the sheet
+         */
+        "onPaymentSheetFailed"?: (event: StripePaymentSheetCustomEvent<unknown>) => void;
+        /**
+          * Stripe.js or the Payment Element failed to load, or the client secret format is unknown
+         */
+        "onPaymentSheetFailedToLoad"?: (event: StripePaymentSheetCustomEvent<unknown>) => void;
+        /**
+          * Stripe.js and the Payment Element are ready
+         */
+        "onPaymentSheetLoaded"?: (event: StripePaymentSheetCustomEvent<StripeLoadedEvent>) => void;
+        /**
+          * Whether the sheet is shown. Setting it to false closes the sheet as canceled.
+          * @default false
+         */
+        "open"?: boolean;
+        /**
+          * Options with the same keys as `CreatePaymentSheetOption` of `@capacitor-community/stripe`. JavaScript property only.
+         */
+        "options"?: PaymentSheetOptions;
+        /**
+          * Your Stripe publishable API key.
+         */
+        "publishableKey"?: string;
+        /**
+          * Sheet title. Translated automatically by this library.
+          * @default 'Add your payment information'
+         */
+        "sheetTitle"?: string;
+        /**
+          * Optional. Making API calls for connected accounts
+          * @info https://stripe.com/docs/connect/authentication
+         */
+        "stripeAccount"?: string;
+    }
 
     interface StripeAddressElementAttributes {
         "mode": 'shipping' | 'billing';
@@ -1476,6 +1620,15 @@ declare namespace LocalJSX {
         "stripeAccount": string;
         "applicationName": string;
     }
+    interface StripePaymentSheetAttributes {
+        "publishableKey": string;
+        "intentClientSecret": string;
+        "stripeAccount": string;
+        "open": boolean;
+        "sheetTitle": string;
+        "buttonLabel": string;
+        "applicationName": string;
+    }
 
     interface IntrinsicElements {
         "stripe-address-element": Omit<StripeAddressElement, keyof StripeAddressElementAttributes> & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes]?: StripeAddressElement[K] } & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes as `attr:${K}`]?: StripeAddressElementAttributes[K] } & { [K in keyof StripeAddressElement & keyof StripeAddressElementAttributes as `prop:${K}`]?: StripeAddressElement[K] };
@@ -1487,6 +1640,7 @@ declare namespace LocalJSX {
         "stripe-modal": Omit<StripeModal, keyof StripeModalAttributes> & { [K in keyof StripeModal & keyof StripeModalAttributes]?: StripeModal[K] } & { [K in keyof StripeModal & keyof StripeModalAttributes as `attr:${K}`]?: StripeModalAttributes[K] } & { [K in keyof StripeModal & keyof StripeModalAttributes as `prop:${K}`]?: StripeModal[K] };
         "stripe-payment-element": Omit<StripePaymentElement, keyof StripePaymentElementAttributes> & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes]?: StripePaymentElement[K] } & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes as `attr:${K}`]?: StripePaymentElementAttributes[K] } & { [K in keyof StripePaymentElement & keyof StripePaymentElementAttributes as `prop:${K}`]?: StripePaymentElement[K] };
         "stripe-payment-request-button": Omit<StripePaymentRequestButton, keyof StripePaymentRequestButtonAttributes> & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes]?: StripePaymentRequestButton[K] } & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes as `attr:${K}`]?: StripePaymentRequestButtonAttributes[K] } & { [K in keyof StripePaymentRequestButton & keyof StripePaymentRequestButtonAttributes as `prop:${K}`]?: StripePaymentRequestButton[K] };
+        "stripe-payment-sheet": Omit<StripePaymentSheet, keyof StripePaymentSheetAttributes> & { [K in keyof StripePaymentSheet & keyof StripePaymentSheetAttributes]?: StripePaymentSheet[K] } & { [K in keyof StripePaymentSheet & keyof StripePaymentSheetAttributes as `attr:${K}`]?: StripePaymentSheetAttributes[K] } & { [K in keyof StripePaymentSheet & keyof StripePaymentSheetAttributes as `prop:${K}`]?: StripePaymentSheet[K] };
     }
 }
 export { LocalJSX as JSX };
@@ -1526,6 +1680,11 @@ declare module "@stencil/core" {
              * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
              */
             "stripe-payment-request-button": LocalJSX.IntrinsicElements["stripe-payment-request-button"] & JSXBase.HTMLAttributes<HTMLStripePaymentRequestButtonElement>;
+            /**
+             * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
+             * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+             */
+            "stripe-payment-sheet": LocalJSX.IntrinsicElements["stripe-payment-sheet"] & JSXBase.HTMLAttributes<HTMLStripePaymentSheetElement>;
         }
     }
 }
