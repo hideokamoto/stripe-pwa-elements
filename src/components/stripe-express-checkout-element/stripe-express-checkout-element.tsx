@@ -5,7 +5,13 @@ import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IExpressCheckoutElementManager, ExpressCheckoutElementOptions } from '../../services/interfaces';
 import { StripeAPIError } from '../../utils/error';
-import { StripeExpressCheckoutElementConfirmEvent, StripeExpressCheckoutElementClickEvent, PaymentIntentResult, SetupIntentResult } from '@stripe/stripe-js';
+import {
+  StripeExpressCheckoutElementConfirmEvent,
+  StripeExpressCheckoutElementClickEvent,
+  PaymentIntentResult,
+  SetupIntentResult,
+  StripeElementsOptionsMode,
+} from '@stripe/stripe-js';
 
 /**
  * Express Checkout Element Component
@@ -172,6 +178,8 @@ export class StripeExpressCheckoutElement {
     await this.stripeService.initialize(publishableKey, {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
+      clientSecret: this.clientSecret,
+      elementsOptions: this.buildElementsOptions(),
     });
 
     // If already successfully loaded, initialize elements immediately
@@ -190,6 +198,26 @@ export class StripeExpressCheckoutElement {
         unsubscribe(); // Clean up listener after first success
       });
     }
+  }
+
+  /**
+   * Options for `stripe.elements()` when there is no client secret.
+   * Stripe.js reads mode / amount / currency from the Elements group, not from the element itself.
+   */
+  private buildElementsOptions(): StripeElementsOptionsMode | undefined {
+    if (this.currency == null || this.currency === '') {
+      return undefined;
+    }
+
+    if (this.intentType === 'setup') {
+      return { mode: 'setup', currency: this.currency };
+    }
+
+    if (this.amount === undefined) {
+      return undefined;
+    }
+
+    return { mode: 'payment', amount: this.amount, currency: this.currency };
   }
 
   /**

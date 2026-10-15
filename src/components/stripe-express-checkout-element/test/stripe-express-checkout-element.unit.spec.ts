@@ -200,6 +200,46 @@ describe('StripeExpressCheckoutElement', () => {
       });
     });
 
+    it('passes clientSecret to initialize so Elements is created with it', async () => {
+      const element = new StripeExpressCheckoutElement();
+
+      (element as any).clientSecret = 'pi_xxx_secret_xxx';
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', expect.objectContaining({ clientSecret: 'pi_xxx_secret_xxx' }));
+    });
+
+    it('passes mode, amount and currency to initialize as elementsOptions', async () => {
+      const element = new StripeExpressCheckoutElement();
+
+      (element as any).amount = 1099;
+      (element as any).currency = 'usd';
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', expect.objectContaining({ elementsOptions: { mode: 'payment', amount: 1099, currency: 'usd' } }));
+    });
+
+    it('uses setup mode in elementsOptions when intentType is setup', async () => {
+      const element = new StripeExpressCheckoutElement();
+
+      (element as any).intentType = 'setup';
+      (element as any).currency = 'usd';
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', expect.objectContaining({ elementsOptions: { mode: 'setup', currency: 'usd' } }));
+    });
+
+    it('omits elementsOptions when currency is missing', async () => {
+      const element = new StripeExpressCheckoutElement();
+
+      (element as any).amount = 1099;
+      await element.initStripe('pk_test_xxx');
+
+      const options = (mockStripeService.initialize as jest.Mock).mock.calls[0][1];
+
+      expect(options.elementsOptions).toBeUndefined();
+    });
+
     it('passes stripeAccount to initialize', async () => {
       const element = new StripeExpressCheckoutElement();
 
