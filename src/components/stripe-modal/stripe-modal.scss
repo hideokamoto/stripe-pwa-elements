@@ -10,11 +10,14 @@
   opacity: 0;
   pointer-events: none;
   will-change: transform;
+  // Keep the closed modal (including slotted content) out of the tab order and the accessibility tree
+  visibility: hidden;
 }
 
 .modal-row.open {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 
   position: fixed;
   top: 0;
@@ -74,9 +77,31 @@
 .modal-close-button-wrap {
   padding-left: 8px;
   .modal-close-button {
-    width: 32px;
     display: block;
-    fill: var(--color-label);
+    width: 32px;
     cursor: pointer;
+    border-radius: 4px;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-label, #000);
+      outline-offset: 2px;
+    }
+
+    ion-icon {
+      width: 32px;
+      display: block;
+      fill: var(--color-label);
+    }
   }
+}
+
+.modal-child:focus {
+  outline: none;
+}
+
+.focus-guard {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
