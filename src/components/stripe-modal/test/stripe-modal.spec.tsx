@@ -551,6 +551,74 @@ describe('stripe-modal component tests', () => {
       });
     });
 
+    describe('focus guard direction when relatedTarget is null (focus left an iframe)', () => {
+      const setup = async () => {
+        const page = await newSpecPage({
+          components: [StripeModal],
+          html: `<stripe-modal open="true"><input id="first" /><iframe id="frame"></iframe></stripe-modal>`,
+        });
+
+        await waitForOpen(page);
+        const [startGuard, endGuard] = Array.from(page.root.shadowRoot.querySelectorAll('.focus-guard'));
+        const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
+        const frame = page.body.querySelector('#frame') as HTMLIFrameElement;
+
+        return { page, startGuard, endGuard, closeButton, frame };
+      };
+
+      const focusIn = (target: Element) => target.dispatchEvent(new Event('focusin', { bubbles: true, composed: true }));
+
+      it('end guard wraps to the first element when focus was last inside the modal', async () => {
+        const { endGuard, closeButton, frame } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const frameFocus = jest.spyOn(frame, 'focus');
+
+        focusIn(frame);
+        endGuard.dispatchEvent(focusEvent(null));
+
+        expect(closeFocus).toHaveBeenCalledTimes(1);
+        expect(frameFocus).not.toHaveBeenCalled();
+      });
+
+      it('start guard wraps to the last element when focus was last inside the modal', async () => {
+        const { page, startGuard, frame } = await setup();
+        const frameFocus = jest.spyOn(frame, 'focus');
+
+        focusIn(page.body.querySelector('#first'));
+        startGuard.dispatchEvent(focusEvent(null));
+
+        expect(frameFocus).toHaveBeenCalledTimes(1);
+      });
+
+      it('does not treat a focus-guard as the last focused element inside', async () => {
+        const { startGuard, endGuard, closeButton, frame } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const frameFocus = jest.spyOn(frame, 'focus');
+
+        focusIn(startGuard);
+        endGuard.dispatchEvent(focusEvent(null));
+
+        // No usable "came from inside" information: Shift+Tab from outside enters at the last element
+        expect(frameFocus).toHaveBeenCalledTimes(1);
+        expect(closeFocus).not.toHaveBeenCalled();
+      });
+
+      it('forgets the last focused element when the modal closes', async () => {
+        const { page, endGuard, frame } = await setup();
+
+        focusIn(frame);
+        await page.rootInstance.closeModal();
+        await page.waitForChanges();
+        page.root.open = true;
+        await waitForOpen(page);
+
+        const frameFocus = jest.spyOn(frame, 'focus');
+
+        endGuard.dispatchEvent(focusEvent(null));
+        expect(frameFocus).toHaveBeenCalledTimes(1);
+      });
+    });
+
     describe('initial focus while the content is loading', () => {
       const setup = async (html: string) => {
         const page = await newSpecPage({ components: [StripeModal], html });

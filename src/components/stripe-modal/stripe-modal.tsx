@@ -44,6 +44,13 @@ export class StripeModal {
 
   private closeButtonElement?: HTMLElement;
 
+  /**
+   * The last element inside the modal that received focus.
+   * `FocusEvent.relatedTarget` is `null` when focus crosses an iframe boundary (e.g. leaving a Stripe Elements field),
+   * so the guards fall back to this value to tell which way focus is moving.
+   */
+  private lastFocusedInside: EventTarget | null = null;
+
   @Watch('open')
   onOpenChange(open: boolean) {
     if (open) {
@@ -52,6 +59,7 @@ export class StripeModal {
     } else {
       this.renderedOpen = false;
       this.shouldFocusOnRender = false;
+      this.lastFocusedInside = null;
       this.close.emit();
       this.restoreFocus();
     }
@@ -162,8 +170,24 @@ export class StripeModal {
    * Whether focus came from a focusable element inside the modal (not from the container itself or from outside).
    * The guards use it to tell Tab from Shift+Tab: a guard cannot see the key, but it can see where focus came from.
    */
+  private handleFocusIn = (event: FocusEvent) => {
+    const target = (event.composedPath?.()[0] ?? event.target) as Element | null;
+
+    if (target?.classList !== undefined && !target.classList.contains('focus-guard')) {
+      this.lastFocusedInside = target;
+    }
+  };
+
+  private getFocusOrigin(event: FocusEvent): EventTarget | null {
+    return (event.relatedTarget as EventTarget | null) ?? this.lastFocusedInside;
+  }
+
+  /**
+   * Whether focus came from a focusable element inside the modal (not from the container itself or from outside).
+   * The guards use it to tell Tab from Shift+Tab: a guard cannot see the key, but it can see where focus came from.
+   */
   private cameFromFocusableInside(event: FocusEvent): boolean {
-    const from = event.relatedTarget as EventTarget | null;
+    const from = this.getFocusOrigin(event);
 
     return from !== this.dialogElement && this.isInsideModal(from);
   }
@@ -175,7 +199,7 @@ export class StripeModal {
 
   private handleEndGuardFocus = (event: FocusEvent) => {
     // Tab from the last element wraps to the first; Shift+Tab from outside enters at the last
-    this.isInsideModal(event.relatedTarget as EventTarget | null) ? this.focusFirstElement() : this.focusLastElement();
+    this.isInsideModal(this.getFocusOrigin(event)) ? this.focusFirstElement() : this.focusLastElement();
   };
 
   /**
@@ -240,7 +264,7 @@ export class StripeModal {
     const guardTabIndex = renderedOpen ? 0 : -1;
 
     return (
-      <Host role={renderedOpen ? 'dialog' : undefined} aria-modal={renderedOpen ? 'true' : undefined} onKeyDown={this.handleKeyDown}>
+      <Host role={renderedOpen ? 'dialog' : undefined} aria-modal={renderedOpen ? 'true' : undefined} onKeyDown={this.handleKeyDown} onFocusin={this.handleFocusIn}>
         <div class={`modal-row${renderedOpen ? ' open' : ''}`} onClick={() => this.closeModal()}>
           <div class="modal-child" tabindex="-1" ref={el => (this.dialogElement = el)} onClick={e => e.stopPropagation()}>
             <div class="focus-guard" tabindex={guardTabIndex} onFocus={this.handleStartGuardFocus}></div>
