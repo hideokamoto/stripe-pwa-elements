@@ -1,5 +1,23 @@
 # stripe-element-modal
 
+## Accessibility
+
+While open, the modal behaves as a modal dialog:
+
+- The host element gets `role="dialog"` and `aria-modal="true"`.
+- Focus moves into the modal (the close button, or the first focusable element) and returns to the previously focused element when it closes.
+- `Tab` / `Shift+Tab` cycle through the focusable elements inside the modal.
+- Pressing `Escape` closes the modal and emits the `close` event.
+
+Give the dialog an accessible name with `aria-label` or `aria-labelledby` on the host element:
+
+```html
+<h2 id="payment-title">Add your payment information</h2>
+<stripe-modal aria-labelledby="payment-title"></stripe-modal>
+```
+
+Note: key presses inside cross-origin iframes (for example Stripe Elements fields) are not visible to the modal, so `Escape` pressed while such a field has focus does not close it.
+
 <!-- Auto Generated Below -->
 
 

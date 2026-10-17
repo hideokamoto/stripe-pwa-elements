@@ -100,6 +100,8 @@ customElements
   })
 ```
 
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox) — Try it first: open the live demo (Stripe test mode, `address.html`) in CodeSandbox.
+
 ## Known console error
 
 When this component is used on its own, the browser console shows:

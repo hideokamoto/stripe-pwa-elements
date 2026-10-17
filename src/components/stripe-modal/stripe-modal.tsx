@@ -1,5 +1,7 @@
 import { Component, Host, h, Prop, Method, Element, Event, EventEmitter, State, Watch } from '@stencil/core';
 import { checkPlatform } from '../../utils/utils';
+import { getDeepActiveElement, getTabbableElements } from '../../utils/focus';
+import { i18n } from '../../utils/i18n';
 
 @Component({
   tag: 'stripe-modal',
@@ -26,15 +28,58 @@ export class StripeModal {
    */
   @State() renderedOpen = false;
 
+  /**
+   * The element that had focus before the modal opened. Focus returns to it when the modal closes.
+   */
+  private returnFocusElement: HTMLElement | null = null;
+
+  /**
+   * Set when the modal opens; the initial focus is moved after the open state has been rendered.
+   */
+  private shouldFocusOnRender = false;
+
+  private dialogElement?: HTMLElement;
+
+  private contentElement?: HTMLElement;
+
+  private closeButtonElement?: HTMLElement;
+
+  /**
+   * The last element inside the modal that received focus.
+   * `FocusEvent.relatedTarget` is `null` when focus crosses an iframe boundary (e.g. leaving a Stripe Elements field),
+   * so the guards fall back to this value to tell which way focus is moving.
+   */
+  private lastFocusedInside: EventTarget | null = null;
+
   @Watch('open')
   onOpenChange(open: boolean) {
     if (open) {
+      this.rememberFocus();
       this.openModalAnimation();
     } else {
       this.renderedOpen = false;
+      this.shouldFocusOnRender = false;
+      this.lastFocusedInside = null;
       this.close.emit();
+      this.restoreFocus();
     }
   }
+
+  private handleKeyDown = (event: KeyboardEvent) => {
+    if (!this.open || event.key !== 'Escape') {
+      return;
+    }
+
+    // Escape that cancels an IME composition (keyCode 229) or that a slotted widget (e.g. an autocomplete popup) already handled must not close the modal
+    if (event.isComposing || event.keyCode === 229 || event.defaultPrevented) {
+      return;
+    }
+
+    // Prevent an outer modal (or the page) from also reacting to the same key press
+    event.preventDefault();
+    event.stopPropagation();
+    this.closeModal();
+  };
 
   /**
    * Toggle modal state
@@ -73,11 +118,124 @@ export class StripeModal {
     }
 
     if (this.open) {
+      this.rememberFocus();
       this.openModalAnimation();
     }
   }
 
+  componentDidRender() {
+    if (this.shouldFocusOnRender && this.renderedOpen) {
+      this.shouldFocusOnRender = false;
+      this.focusFirstElement();
+    }
+  }
+
+  private rememberFocus() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const active = getDeepActiveElement(document);
+
+    // Ignore focus that is already inside the modal and the default document focus
+    if (active === null || active === document.body || this.el.contains(active) || this.el.shadowRoot?.contains(active) === true) {
+      return;
+    }
+
+    this.returnFocusElement = active as HTMLElement;
+  }
+
+  private restoreFocus() {
+    const target = this.returnFocusElement;
+
+    this.returnFocusElement = null;
+    if (target != null && target.isConnected && typeof target.focus === 'function') {
+      target.focus();
+    }
+  }
+
+  private getTabbableElements(): HTMLElement[] {
+    if (this.dialogElement === undefined) {
+      return [];
+    }
+
+    return getTabbableElements(this.dialogElement).filter(element => !element.classList.contains('focus-guard'));
+  }
+
+  private isInsideModal(node: EventTarget | null): boolean {
+    return node !== null && (this.el.contains(node as Node) || this.dialogElement?.contains(node as Node) === true);
+  }
+
+  /**
+   * Whether focus came from a focusable element inside the modal (not from the container itself or from outside).
+   * The guards use it to tell Tab from Shift+Tab: a guard cannot see the key, but it can see where focus came from.
+   */
+  private handleFocusIn = (event: FocusEvent) => {
+    const target = (event.composedPath?.()[0] ?? event.target) as Element | null;
+
+    if (target?.classList !== undefined && !target.classList.contains('focus-guard')) {
+      this.lastFocusedInside = target;
+    }
+  };
+
+  private getFocusOrigin(event: FocusEvent): EventTarget | null {
+    return (event.relatedTarget as EventTarget | null) ?? this.lastFocusedInside;
+  }
+
+  /**
+   * Whether focus came from a focusable element inside the modal (not from the container itself or from outside).
+   * The guards use it to tell Tab from Shift+Tab: a guard cannot see the key, but it can see where focus came from.
+   */
+  private cameFromFocusableInside(event: FocusEvent): boolean {
+    const from = this.getFocusOrigin(event);
+
+    return from !== this.dialogElement && this.isInsideModal(from);
+  }
+
+  private handleStartGuardFocus = (event: FocusEvent) => {
+    // Shift+Tab from the first element wraps to the last; Tab from the container (or from outside) enters at the first
+    this.cameFromFocusableInside(event) ? this.focusLastElement() : this.focusFirstElement();
+  };
+
+  private handleEndGuardFocus = (event: FocusEvent) => {
+    // Tab from the last element wraps to the first; Shift+Tab from outside enters at the last
+    this.isInsideModal(this.getFocusOrigin(event)) ? this.focusFirstElement() : this.focusLastElement();
+  };
+
+  /**
+   * Slotted content is hidden (and therefore not focusable) while the open transition runs.
+   * When it ends, move focus from the placeholder (container / close button) into the content, unless the user already moved it.
+   */
+  private focusContentAfterLoading() {
+    if (!this.open || this.contentElement === undefined) {
+      return;
+    }
+
+    const active = getDeepActiveElement(document);
+    const focusIsIdle = active === null || active === document.body || active === this.dialogElement || active === this.closeButtonElement;
+
+    if (!focusIsIdle) {
+      return;
+    }
+
+    getTabbableElements(this.contentElement)[0]?.focus();
+  }
+
+  private focusFirstElement() {
+    const [first] = this.getTabbableElements();
+
+    (first ?? this.dialogElement)?.focus();
+  }
+
+  private focusLastElement() {
+    const elements = this.getTabbableElements();
+
+    (elements[elements.length - 1] ?? this.dialogElement)?.focus();
+  }
+
   private openModalAnimation() {
+    this.shouldFocusOnRender = true;
+
     if (!this.el.shadowRoot) {
       this.renderedOpen = true;
       return;
@@ -92,6 +250,7 @@ export class StripeModal {
       () => {
         modalChild.style.willChange = 'auto';
         modalChild.classList.remove('loading');
+        this.focusContentAfterLoading();
       },
       { once: true },
     );
@@ -102,14 +261,18 @@ export class StripeModal {
 
   render() {
     const { renderedOpen, showCloseButton } = this;
+    const guardTabIndex = renderedOpen ? 0 : -1;
 
     return (
-      <Host>
+      <Host role={renderedOpen ? 'dialog' : undefined} aria-modal={renderedOpen ? 'true' : undefined} onKeyDown={this.handleKeyDown} onFocusin={this.handleFocusIn}>
         <div class={`modal-row${renderedOpen ? ' open' : ''}`} onClick={() => this.closeModal()}>
-          <div class="modal-child" onClick={e => e.stopPropagation()}>
+          <div class="modal-child" tabindex="-1" ref={el => (this.dialogElement = el)} onClick={e => e.stopPropagation()}>
+            <div class="focus-guard" tabindex={guardTabIndex} onFocus={this.handleStartGuardFocus}></div>
             {showCloseButton ? (
               <div class="modal-close-button-wrap">
-                <ion-icon name="close" size="large" class="modal-close-button" onClick={() => this.closeModal()}></ion-icon>
+                <button type="button" class="modal-close-button" aria-label={i18n.t('Close')} ref={el => (this.closeButtonElement = el)} onClick={() => this.closeModal()}>
+                  <ion-icon name="close" size="large" aria-hidden="true"></ion-icon>
+                </button>
               </div>
             ) : null}
             <div class="modal-loading">
@@ -141,9 +304,10 @@ export class StripeModal {
                 </g>
               </svg>
             </div>
-            <div class="modal-content">
+            <div class="modal-content" ref={el => (this.contentElement = el)}>
               <slot></slot>
             </div>
+            <div class="focus-guard" tabindex={guardTabIndex} onFocus={this.handleEndGuardFocus}></div>
           </div>
         </div>
       </Host>
