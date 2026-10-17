@@ -11,6 +11,18 @@ Framework-agnostic Stripe payment components built with Web Components. Works wi
 > **Note:** The current npm package is **`stripe-pwa-elements`** (this repo).
 > The old package `@stripe-elements/stripe-elements` (v2.0.2) is deprecated and superseded — please use `stripe-pwa-elements` instead.
 
+## Try it first
+
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox)
+
+Open the live demo in CodeSandbox (Stripe test mode, no setup or API keys needed) before installing anything. The demo covers:
+
+- `<stripe-card-element>` — card number / expiry / CVC with a PaymentIntent confirm flow
+- `<stripe-address-element>` — billing address form
+- `<stripe-express-checkout-element>` — Apple Pay / Google Pay / Link (device-dependent)
+
+There is no `<stripe-payment-element>` demo yet. See [`examples/codesandbox`](examples/codesandbox) for details.
+
 ## Used in production
 
 [![capacitor-community/stripe](https://img.shields.io/badge/capacitor--community%2Fstripe-4000%2B%20weekly%20downloads-brightgreen)](https://github.com/capacitor-community/stripe)

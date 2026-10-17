@@ -1,6 +1,0 @@
-{
-  "installCommand": "npm ci --prefix docs",
-  "buildCommand": "npm run docs:build",
-  "outputDirectory": "docs/dist"
-}
-

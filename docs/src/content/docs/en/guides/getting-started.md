@@ -3,6 +3,20 @@ title: Getting Started
 description: Install and minimal usage.
 ---
 
+## Try it first
+
+Before installing, you can try the live demo in CodeSandbox (Stripe test mode, no API keys needed).
+
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox)
+
+The demo covers:
+
+- `<stripe-card-element>` (card input with a PaymentIntent confirm flow)
+- `<stripe-address-element>` (address form)
+- `<stripe-express-checkout-element>` (Apple Pay / Google Pay / Link, device-dependent)
+
+There is no `<stripe-payment-element>` demo yet.
+
 ## Install
 
 ```bash

@@ -14,7 +14,7 @@ import { PaymentRequestWallet } from '@stripe/stripe-js';
  * `stripe.paymentRequest()` is being removed in Stripe.js 9.x (deprecated as of 2025-09-30 / 2026-03-25).
  * Please migrate to `<stripe-express-checkout-element>` which supports Apple Pay, Google Pay, Link, PayPal,
  * and more via the modern Express Checkout Element API.
- * Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/
+ * Migration guide: https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/guides/migrate-payment-request-button-to-express-checkout/
  */
 @Component({
   tag: 'stripe-payment-request-button',
@@ -223,7 +223,7 @@ export class StripePaymentRequestButton {
       '[stripe-pwa-elements] <stripe-payment-request-button> is deprecated. ' +
         'stripe.paymentRequest() is being removed in Stripe.js 9.x (deprecated 2025-09-30 / removed 2026-03-25). ' +
         'Please migrate to <stripe-express-checkout-element>, which supports Apple Pay, Google Pay, Link, PayPal, and more. ' +
-        'Migration guide: https://hideokamoto.github.io/stripe-pwa-elements/guides/migrate-payment-request-button-to-express-checkout/',
+        'Migration guide: https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/guides/migrate-payment-request-button-to-express-checkout/',
     );
   }
 

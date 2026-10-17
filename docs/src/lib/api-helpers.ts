@@ -118,9 +118,9 @@ export function getStripe(env: ApiEnv): Stripe {
   }
   cachedStripe = new Stripe(key, {
     httpClient: Stripe.createFetchHttpClient(),
-    // Pinned to the version bundled with stripe@22 (LatestApiVersion). The `.dahlia`
+    // Pinned to the version bundled with stripe@23 (LatestApiVersion). The `.dahlia`
     // suffix is Stripe's current release-train versioning and is required by the SDK types.
-    apiVersion: '2026-05-27.dahlia',
+    apiVersion: '2026-09-30.endive',
   });
   return cachedStripe;
 }

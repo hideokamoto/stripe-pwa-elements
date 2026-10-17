@@ -1,5 +1,7 @@
 # stripe-express-checkout-element
 
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox) — Try it first: open the live demo (Stripe test mode, `express-checkout.html`) in CodeSandbox.
+
 <!-- Auto Generated Below -->
 
 
