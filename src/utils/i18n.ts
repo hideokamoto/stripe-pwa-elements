@@ -23,6 +23,10 @@ i18next.use(I18nextBrowserLanguageDetector).init({
         'Country or region': '地域',
         'Postal Code': '郵便番号',
         'Close': '閉じる',
+        'Loading': '読み込み中',
+        'Payment information': '支払情報',
+        'Billing address': '請求先住所',
+        'Save': '保存',
       },
     },
     'pt-BR': {
