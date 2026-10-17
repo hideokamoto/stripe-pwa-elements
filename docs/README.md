@@ -5,13 +5,13 @@
 ## 開発
 
 ```bash
-npm run docs:dev
+pnpm run docs:dev
 ```
 
 ## ビルド
 
 ```bash
-npm run docs:build
+pnpm run docs:build
 ```
 
 ## コンポーネントAPIの同期
