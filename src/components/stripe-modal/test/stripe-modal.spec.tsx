@@ -403,12 +403,20 @@ describe('stripe-modal component tests', () => {
       const closeFocus = jest.spyOn(closeButton, 'focus');
       const lastFocus = jest.spyOn(lastButton, 'focus');
 
+      const focusFrom = (from: Element) => {
+        const event = new Event('focus');
+
+        Object.defineProperty(event, 'relatedTarget', { value: from });
+
+        return event;
+      };
+
       // Tab past the last element lands on the end guard -> back to the first element
-      endGuard.dispatchEvent(new Event('focus'));
+      endGuard.dispatchEvent(focusFrom(lastButton));
       expect(closeFocus).toHaveBeenCalledTimes(1);
 
       // Shift+Tab before the first element lands on the start guard -> to the last slotted element
-      startGuard.dispatchEvent(new Event('focus'));
+      startGuard.dispatchEvent(focusFrom(closeButton));
       expect(lastFocus).toHaveBeenCalledTimes(1);
     });
 
@@ -444,6 +452,207 @@ describe('stripe-modal component tests', () => {
       await page.rootInstance.closeModal();
       await page.waitForChanges();
       expect(openerFocus).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Accessibility: review follow-ups', () => {
+    const waitForOpen = async page => {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await page.waitForChanges();
+    };
+
+    const setActiveElement = (page, element: Element | null) => {
+      Object.defineProperty(page.doc, 'activeElement', { configurable: true, get: () => element });
+    };
+
+    const focusEvent = (relatedTarget: Element | null) => {
+      const event = new Event('focus');
+
+      Object.defineProperty(event, 'relatedTarget', { value: relatedTarget });
+
+      return event;
+    };
+
+    const escapeEvent = (init: { isComposing?: boolean; keyCode?: number } = {}) => {
+      const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true, cancelable: true });
+
+      Object.defineProperty(event, 'isComposing', { value: init.isComposing ?? false });
+      Object.defineProperty(event, 'keyCode', { value: init.keyCode ?? 27 });
+
+      return event;
+    };
+
+    describe('focus guard direction', () => {
+      const setup = async () => {
+        const page = await newSpecPage({
+          components: [StripeModal],
+          html: `<button id="outside">Outside</button><stripe-modal open="true"><input id="first" /><button id="last">Pay</button></stripe-modal>`,
+        });
+
+        await waitForOpen(page);
+        const [startGuard, endGuard] = Array.from(page.root.shadowRoot.querySelectorAll('.focus-guard'));
+        const dialog = page.root.shadowRoot.querySelector('.modal-child') as HTMLElement;
+        const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
+        const last = page.body.querySelector('#last') as HTMLButtonElement;
+        const outside = page.body.querySelector('#outside') as HTMLButtonElement;
+
+        return { page, startGuard, endGuard, dialog, closeButton, last, outside };
+      };
+
+      it('start guard reached from the dialog container (Tab) focuses the first element, not the last', async () => {
+        const { startGuard, dialog, closeButton, last } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const lastFocus = jest.spyOn(last, 'focus');
+
+        startGuard.dispatchEvent(focusEvent(dialog));
+
+        expect(closeFocus).toHaveBeenCalledTimes(1);
+        expect(lastFocus).not.toHaveBeenCalled();
+      });
+
+      it('start guard reached from outside the modal focuses the first element', async () => {
+        const { startGuard, outside, closeButton, last } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const lastFocus = jest.spyOn(last, 'focus');
+
+        startGuard.dispatchEvent(focusEvent(outside));
+
+        expect(closeFocus).toHaveBeenCalledTimes(1);
+        expect(lastFocus).not.toHaveBeenCalled();
+      });
+
+      it('start guard reached from an element inside the modal (Shift+Tab from the first) focuses the last element', async () => {
+        const { startGuard, closeButton, last } = await setup();
+        const lastFocus = jest.spyOn(last, 'focus');
+
+        startGuard.dispatchEvent(focusEvent(closeButton));
+
+        expect(lastFocus).toHaveBeenCalledTimes(1);
+      });
+
+      it('end guard reached from an element inside the modal (Tab from the last) focuses the first element', async () => {
+        const { endGuard, last, closeButton } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+
+        endGuard.dispatchEvent(focusEvent(last));
+
+        expect(closeFocus).toHaveBeenCalledTimes(1);
+      });
+
+      it('end guard reached from outside the modal (Shift+Tab from the page) focuses the last element', async () => {
+        const { endGuard, outside, last, closeButton } = await setup();
+        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const lastFocus = jest.spyOn(last, 'focus');
+
+        endGuard.dispatchEvent(focusEvent(outside));
+
+        expect(lastFocus).toHaveBeenCalledTimes(1);
+        expect(closeFocus).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('initial focus while the content is loading', () => {
+      const setup = async (html: string) => {
+        const page = await newSpecPage({ components: [StripeModal], html });
+        const modalChild = page.root.shadowRoot.querySelector('.modal-child') as HTMLElement;
+        const content = page.body.querySelector('#field') as HTMLInputElement;
+
+        // Slotted content is `visibility: hidden` until the open transition ends (the `loading` class is removed)
+        (content as any).checkVisibility = () => !modalChild.classList.contains('loading');
+        page.root.open = true;
+        await waitForOpen(page);
+
+        return { page, modalChild, content };
+      };
+
+      it('moves focus into the content once loading ends when the dialog container held focus', async () => {
+        const { page, modalChild, content } = await setup(`<stripe-modal show-close-button="false"><input id="field" /></stripe-modal>`);
+        const contentFocus = jest.spyOn(content, 'focus');
+
+        setActiveElement(page, modalChild);
+        modalChild.dispatchEvent(new Event('transitionend'));
+        await page.waitForChanges();
+
+        expect(modalChild.classList.contains('loading')).toBe(false);
+        expect(contentFocus).toHaveBeenCalledTimes(1);
+      });
+
+      it('moves focus from the close button into the content once loading ends', async () => {
+        const { page, modalChild, content } = await setup(`<stripe-modal><input id="field" /></stripe-modal>`);
+        const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
+        const contentFocus = jest.spyOn(content, 'focus');
+
+        setActiveElement(page, closeButton);
+        modalChild.dispatchEvent(new Event('transitionend'));
+        await page.waitForChanges();
+
+        expect(contentFocus).toHaveBeenCalledTimes(1);
+      });
+
+      it('does not steal focus when the user has already moved it elsewhere', async () => {
+        const { page, modalChild, content } = await setup(`<stripe-modal><input id="field" /><input id="other" /></stripe-modal>`);
+        const contentFocus = jest.spyOn(content, 'focus');
+
+        setActiveElement(page, page.body.querySelector('#other'));
+        modalChild.dispatchEvent(new Event('transitionend'));
+        await page.waitForChanges();
+
+        expect(contentFocus).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Escape handling', () => {
+      const setup = async () => {
+        const page = await newSpecPage({
+          components: [StripeModal],
+          html: `<stripe-modal open="true"><input id="field" /></stripe-modal>`,
+        });
+
+        await waitForOpen(page);
+
+        return { page, field: page.body.querySelector('#field') as HTMLInputElement };
+      };
+
+      it('does not close while an IME composition is in progress (isComposing)', async () => {
+        const { page, field } = await setup();
+        const event = escapeEvent({ isComposing: true });
+
+        field.dispatchEvent(event);
+        await page.waitForChanges();
+
+        expect(page.root.open).toBe(true);
+        expect(event.defaultPrevented).toBe(false);
+      });
+
+      it('does not close for keyCode 229 (IME processing)', async () => {
+        const { page, field } = await setup();
+        const event = escapeEvent({ keyCode: 229 });
+
+        field.dispatchEvent(event);
+        await page.waitForChanges();
+
+        expect(page.root.open).toBe(true);
+      });
+
+      it('does not close when a slotted widget already handled Escape (defaultPrevented)', async () => {
+        const { page, field } = await setup();
+
+        // e.g. an autocomplete popup that dismisses itself on Escape
+        field.addEventListener('keydown', e => e.preventDefault());
+        field.dispatchEvent(escapeEvent());
+        await page.waitForChanges();
+
+        expect(page.root.open).toBe(true);
+      });
+
+      it('still closes on a plain Escape', async () => {
+        const { page, field } = await setup();
+
+        field.dispatchEvent(escapeEvent());
+        await page.waitForChanges();
+
+        expect(page.root.open).toBe(false);
+      });
     });
   });
 });

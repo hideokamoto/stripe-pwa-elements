@@ -40,6 +40,10 @@ export class StripeModal {
 
   private dialogElement?: HTMLElement;
 
+  private contentElement?: HTMLElement;
+
+  private closeButtonElement?: HTMLElement;
+
   @Watch('open')
   onOpenChange(open: boolean) {
     if (open) {
@@ -55,6 +59,11 @@ export class StripeModal {
 
   private handleKeyDown = (event: KeyboardEvent) => {
     if (!this.open || event.key !== 'Escape') {
+      return;
+    }
+
+    // Escape that cancels an IME composition (keyCode 229) or that a slotted widget (e.g. an autocomplete popup) already handled must not close the modal
+    if (event.isComposing || event.keyCode === 229 || event.defaultPrevented) {
       return;
     }
 
@@ -145,6 +154,49 @@ export class StripeModal {
     return getTabbableElements(this.dialogElement).filter(element => !element.classList.contains('focus-guard'));
   }
 
+  private isInsideModal(node: EventTarget | null): boolean {
+    return node !== null && (this.el.contains(node as Node) || this.dialogElement?.contains(node as Node) === true);
+  }
+
+  /**
+   * Whether focus came from a focusable element inside the modal (not from the container itself or from outside).
+   * The guards use it to tell Tab from Shift+Tab: a guard cannot see the key, but it can see where focus came from.
+   */
+  private cameFromFocusableInside(event: FocusEvent): boolean {
+    const from = event.relatedTarget as EventTarget | null;
+
+    return from !== this.dialogElement && this.isInsideModal(from);
+  }
+
+  private handleStartGuardFocus = (event: FocusEvent) => {
+    // Shift+Tab from the first element wraps to the last; Tab from the container (or from outside) enters at the first
+    this.cameFromFocusableInside(event) ? this.focusLastElement() : this.focusFirstElement();
+  };
+
+  private handleEndGuardFocus = (event: FocusEvent) => {
+    // Tab from the last element wraps to the first; Shift+Tab from outside enters at the last
+    this.isInsideModal(event.relatedTarget as EventTarget | null) ? this.focusFirstElement() : this.focusLastElement();
+  };
+
+  /**
+   * Slotted content is hidden (and therefore not focusable) while the open transition runs.
+   * When it ends, move focus from the placeholder (container / close button) into the content, unless the user already moved it.
+   */
+  private focusContentAfterLoading() {
+    if (!this.open || this.contentElement === undefined) {
+      return;
+    }
+
+    const active = getDeepActiveElement(document);
+    const focusIsIdle = active === null || active === document.body || active === this.dialogElement || active === this.closeButtonElement;
+
+    if (!focusIsIdle) {
+      return;
+    }
+
+    getTabbableElements(this.contentElement)[0]?.focus();
+  }
+
   private focusFirstElement() {
     const [first] = this.getTabbableElements();
 
@@ -174,6 +226,7 @@ export class StripeModal {
       () => {
         modalChild.style.willChange = 'auto';
         modalChild.classList.remove('loading');
+        this.focusContentAfterLoading();
       },
       { once: true },
     );
@@ -190,10 +243,10 @@ export class StripeModal {
       <Host role={renderedOpen ? 'dialog' : undefined} aria-modal={renderedOpen ? 'true' : undefined} onKeyDown={this.handleKeyDown}>
         <div class={`modal-row${renderedOpen ? ' open' : ''}`} onClick={() => this.closeModal()}>
           <div class="modal-child" tabindex="-1" ref={el => (this.dialogElement = el)} onClick={e => e.stopPropagation()}>
-            <div class="focus-guard" tabindex={guardTabIndex} onFocus={() => this.focusLastElement()}></div>
+            <div class="focus-guard" tabindex={guardTabIndex} onFocus={this.handleStartGuardFocus}></div>
             {showCloseButton ? (
               <div class="modal-close-button-wrap">
-                <button type="button" class="modal-close-button" aria-label={i18n.t('Close')} onClick={() => this.closeModal()}>
+                <button type="button" class="modal-close-button" aria-label={i18n.t('Close')} ref={el => (this.closeButtonElement = el)} onClick={() => this.closeModal()}>
                   <ion-icon name="close" size="large" aria-hidden="true"></ion-icon>
                 </button>
               </div>
@@ -227,10 +280,10 @@ export class StripeModal {
                 </g>
               </svg>
             </div>
-            <div class="modal-content">
+            <div class="modal-content" ref={el => (this.contentElement = el)}>
               <slot></slot>
             </div>
-            <div class="focus-guard" tabindex={guardTabIndex} onFocus={() => this.focusFirstElement()}></div>
+            <div class="focus-guard" tabindex={guardTabIndex} onFocus={this.handleEndGuardFocus}></div>
           </div>
         </div>
       </Host>
