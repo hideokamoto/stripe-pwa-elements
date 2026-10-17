@@ -2,6 +2,7 @@
 
 <!-- Auto Generated Below -->
 
+
 ## Overview
 
 A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
@@ -20,6 +21,7 @@ of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart b
 | `sheetTitle`         | `sheet-title`          | Sheet title. Translated automatically by this library.                                                                                                                      | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `'Add your payment information'` |
 | `stripeAccount`      | `stripe-account`       | Optional. Making API calls for connected accounts                                                                                                                           | `string`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `undefined`                      |
 
+
 ## Events
 
 | Event                      | Description                                                                             | Type                                                                                                                                                                                                                              |
@@ -29,6 +31,7 @@ of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart b
 | `paymentSheetFailed`       | The confirmation failed with an error the customer cannot fix in the sheet              | `CustomEvent<unknown>`                                                                                                                                                                                                            |
 | `paymentSheetFailedToLoad` | Stripe.js or the Payment Element failed to load, or the client secret format is unknown | `CustomEvent<unknown>`                                                                                                                                                                                                            |
 | `paymentSheetLoaded`       | Stripe.js and the Payment Element are ready                                             | `CustomEvent<{ stripe: Stripe; }>`                                                                                                                                                                                                |
+
 
 ## Methods
 
@@ -43,6 +46,7 @@ Type: `Promise<PaymentSheetPresentResult>`
 
 `{ paymentResult }`, where `paymentResult` is `paymentSheetCompleted`, `paymentSheetCanceled` or `paymentSheetFailed`
 
+
 ## Dependencies
 
 ### Depends on
@@ -50,7 +54,6 @@ Type: `Promise<PaymentSheetPresentResult>`
 - [stripe-modal](../stripe-modal)
 
 ### Graph
-
 ```mermaid
 graph TD;
   stripe-payment-sheet --> stripe-modal
@@ -58,6 +61,6 @@ graph TD;
   style stripe-payment-sheet fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
----
+----------------------------------------------
 
-_Built with [StencilJS](https://stenciljs.com/)_
+*Built with [StencilJS](https://stenciljs.com/)*
