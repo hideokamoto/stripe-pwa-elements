@@ -1,4 +1,4 @@
-import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
+import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult, ConfirmPaymentData, ConfirmSetupData } from '@stripe/stripe-js';
 import type { IntentType, ProgressStatus } from '../../interfaces';
 import { StripeAPIError } from '../../utils/error';
 import type { PaymentElementSubmitEvent } from './stripe-payment-element';
@@ -23,22 +23,29 @@ export const isSubmitButtonDisabled = (params: {
 };
 
 /**
+ * Params accepted by both `confirmPayment` and `confirmSetup` on top of `return_url`
+ */
+export type ExtraConfirmParams = Pick<ConfirmPaymentData & ConfirmSetupData, 'payment_method_data'>;
+
+/**
  * Run the default Stripe confirmation flow for Payment Intent / Setup Intent mode.
  * Calls `confirmPayment` or `confirmSetup` depending on the intent type.
  * @param stripe the loaded Stripe.js instance
  * @param elements the Stripe Elements instance bound to the payment element
  * @param intentType the configured intent type
  * @param returnUrl the URL Stripe should redirect back to when required
+ * @param extraConfirmParams optional params merged into `confirmParams` (for example `payment_method_data.billing_details`)
  * @returns the confirmation result
  * @throws StripeAPIError when Stripe returns an error
  */
-export const confirmPaymentOrSetup = async (stripe: Stripe, elements: StripeElements, intentType: IntentType, returnUrl: string) => {
+export const confirmPaymentOrSetup = async (stripe: Stripe, elements: StripeElements, intentType: IntentType, returnUrl: string, extraConfirmParams?: ExtraConfirmParams) => {
   const result = await (() => {
     if (intentType === 'payment') {
       return stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl,
+          ...extraConfirmParams,
         },
         redirect: 'if_required',
       });
@@ -48,6 +55,7 @@ export const confirmPaymentOrSetup = async (stripe: Stripe, elements: StripeElem
       elements,
       confirmParams: {
         return_url: returnUrl,
+        ...extraConfirmParams,
       },
       redirect: 'if_required',
     });
