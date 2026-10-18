@@ -1,5 +1,11 @@
 # hono-stripe-elements
 
+## 0.1.1
+
+### Patch Changes
+
+- a11db1d: Add a README describing installation, usage and prop mapping.
+
 ## 0.1.0
 
 ### Minor Changes
