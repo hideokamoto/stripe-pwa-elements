@@ -8,9 +8,9 @@
     "skipLibCheck": true,
     "declaration": true,
     "sourceMap": false,
-    "rootDir": ".",
-    "outDir": "../../dist/hono",
+    "rootDir": "src",
+    "outDir": "dist",
     "moduleDetection": "force"
   },
-  "include": ["index.ts", "modules.d.ts"]
+  "include": ["src"]
 }
