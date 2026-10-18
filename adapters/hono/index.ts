@@ -64,33 +64,6 @@ export type CurrencySelectorChangeEvent = {
   currency: string;
 };
 
-export type ExpressCheckoutElementOptions = {
-  mode?: 'payment' | 'setup' | 'subscription';
-  amount?: number;
-  currency?: string;
-  paymentMethods?: {
-    applePay?: 'never' | 'always' | 'auto';
-    googlePay?: 'never' | 'always' | 'auto';
-    link?: 'never' | 'always' | 'auto';
-    paypal?: 'never' | 'always' | 'auto';
-    amazonPay?: 'never' | 'always' | 'auto';
-  };
-  buttonType?: {
-    applePay?: 'buy' | 'donate' | 'plain' | 'book' | 'check-out' | 'subscribe';
-    googlePay?: 'buy' | 'donate' | 'plain' | 'book' | 'checkout' | 'order' | 'pay' | 'subscribe';
-  };
-  buttonTheme?: {
-    applePay?: 'black' | 'white' | 'white-outline';
-    googlePay?: 'black' | 'white';
-  };
-  buttonHeight?: string | number;
-  layout?: {
-    maxColumns?: number;
-    maxRows?: number;
-    overflow?: 'auto' | 'never';
-  };
-};
-
 const toKebab = (key: string): string => key.replace(/([A-Z])/g, '-$1').toLowerCase();
 
 const isEventProp = (key: string, value: unknown): value is EventListener =>
@@ -162,7 +135,8 @@ export function createStripeElementComponent<P extends StripeElementBaseProps>(t
       // events like `stripeLoaded` can fire before effects would run.
       ref: (el: HTMLElement | null) => {
         if (el == null) return;
-        if (typeof userRef === 'function') userRef(el);
+        let userCleanup: void | (() => void);
+        if (typeof userRef === 'function') userCleanup = userRef(el);
         else if (userRef != null) userRef.current = el;
 
         const cleanups: (() => void)[] = [];
@@ -177,7 +151,8 @@ export function createStripeElementComponent<P extends StripeElementBaseProps>(t
         }
         return () => {
           for (const cleanup of cleanups) cleanup();
-          if (typeof userRef === 'function') userRef(null);
+          if (userCleanup != null) userCleanup();
+          else if (typeof userRef === 'function') userRef(null);
           else if (userRef != null) userRef.current = null;
         };
       },
@@ -233,7 +208,6 @@ export type StripeExpressCheckoutElementProps = StripeElementBaseProps &
     amount?: number;
     currency?: string;
     buttonHeight?: string;
-    expressCheckoutOption?: ExpressCheckoutElementOptions;
     onStripeLoaded?: (event: CustomEvent<StripeLoadedEvent>) => void;
     onConfirm?: (event: CustomEvent<StripeExpressCheckoutElementConfirmEvent>) => void;
     onExpressCheckoutClick?: (event: CustomEvent<StripeExpressCheckoutElementClickEvent>) => void;
