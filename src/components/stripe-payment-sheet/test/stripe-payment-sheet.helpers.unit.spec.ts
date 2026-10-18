@@ -88,7 +88,10 @@ describe('toPaymentElementOptions', () => {
   it.each([
     [{ enableApplePay: true }, { applePay: 'auto' }],
     [{ enableGooglePay: false }, { googlePay: 'never' }],
-    [{ enableApplePay: false, enableGooglePay: true }, { applePay: 'never', googlePay: 'auto' }],
+    [
+      { enableApplePay: false, enableGooglePay: true },
+      { applePay: 'never', googlePay: 'auto' },
+    ],
   ] as const)('maps the wallet flags %j to wallets %j', (options, wallets) => {
     expect(toPaymentElementOptions(options)).toEqual({ wallets });
   });
@@ -219,7 +222,10 @@ describe('collectedBillingDetails', () => {
   });
 
   it('lets the fixed values win over the Address Element', () => {
-    const plan = planBillingDetailsCollection({ billingDetailsCollectionConfiguration: { address: 'full', name: 'never' }, defaultBillingDetails: { name: 'Fixed Name' } }, 'payment');
+    const plan = planBillingDetailsCollection(
+      { billingDetailsCollectionConfiguration: { address: 'full', name: 'never' }, defaultBillingDetails: { name: 'Fixed Name' } },
+      'payment',
+    );
 
     expect(collectedBillingDetails(plan, { billingAddress: { complete: true, value: ADDRESS_ELEMENT_VALUE } })).toEqual({
       name: 'Fixed Name',
