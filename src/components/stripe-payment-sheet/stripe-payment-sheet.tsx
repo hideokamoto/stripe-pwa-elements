@@ -176,7 +176,7 @@ export class StripePaymentSheet {
       return;
     }
 
-    this.dispatch({ type: 'secretChanged', clientSecret: this.intentClientSecret });
+    this.dispatch({ type: 'secretChanged', clientSecret: this.intentClientSecret, source: 'intent' });
   }
 
   private dispatch(event: SheetEvent) {
