@@ -7,13 +7,13 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 import { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
-import { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+import { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeCheckoutConfirmResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import { ExpressCheckoutElementOptions } from "./services/interfaces";
 import { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
 import { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
 export { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 export { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
-export { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
+export { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeCheckoutConfirmResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 export { ExpressCheckoutElementOptions } from "./services/interfaces";
 export { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
 export { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
@@ -649,7 +649,8 @@ export namespace Components {
     }
     /**
      * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
-     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix;
+     * a Checkout Session is used when `checkout-session-client-secret` is set.
      */
     interface StripePaymentSheet {
         /**
@@ -662,6 +663,10 @@ export namespace Components {
           * @default 'Pay'
          */
         "buttonLabel": string;
+        /**
+          * The client secret of a Checkout Session created with `ui_mode: 'custom'`. Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
+         */
+        "checkoutSessionClientSecret"?: string;
         /**
           * The client secret of a PaymentIntent (`pi_..._secret_...`) or a SetupIntent (`seti_..._secret_...`). The prefix decides whether `confirmPayment` or `confirmSetup` is used.
          */
@@ -930,13 +935,14 @@ declare global {
     interface HTMLStripePaymentSheetElementEventMap {
         "paymentSheetLoaded": StripeLoadedEvent;
         "paymentSheetFailedToLoad": unknown;
-        "paymentSheetCompleted": PaymentIntentResult | SetupIntentResult;
+        "paymentSheetCompleted": PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult;
         "paymentSheetCanceled": void;
         "paymentSheetFailed": unknown;
     }
     /**
      * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
-     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix;
+     * a Checkout Session is used when `checkout-session-client-secret` is set.
      */
     interface HTMLStripePaymentSheetElement extends Components.StripePaymentSheet, HTMLStencilElement {
         addEventListener<K extends keyof HTMLStripePaymentSheetElementEventMap>(type: K, listener: (this: HTMLStripePaymentSheetElement, ev: StripePaymentSheetCustomEvent<HTMLStripePaymentSheetElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
@@ -1478,7 +1484,8 @@ declare namespace LocalJSX {
     }
     /**
      * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
-     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+     * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix;
+     * a Checkout Session is used when `checkout-session-client-secret` is set.
      */
     interface StripePaymentSheet {
         /**
@@ -1492,6 +1499,10 @@ declare namespace LocalJSX {
          */
         "buttonLabel"?: string;
         /**
+          * The client secret of a Checkout Session created with `ui_mode: 'custom'`. Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
+         */
+        "checkoutSessionClientSecret"?: string;
+        /**
           * The client secret of a PaymentIntent (`pi_..._secret_...`) or a SetupIntent (`seti_..._secret_...`). The prefix decides whether `confirmPayment` or `confirmSetup` is used.
          */
         "intentClientSecret"?: string;
@@ -1500,9 +1511,9 @@ declare namespace LocalJSX {
          */
         "onPaymentSheetCanceled"?: (event: StripePaymentSheetCustomEvent<void>) => void;
         /**
-          * The payment or setup succeeded
+          * The payment or setup succeeded. In Checkout Session mode the detail is the result of `confirm` (`{ type: 'success', session }`)
          */
-        "onPaymentSheetCompleted"?: (event: StripePaymentSheetCustomEvent<PaymentIntentResult | SetupIntentResult>) => void;
+        "onPaymentSheetCompleted"?: (event: StripePaymentSheetCustomEvent<PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult>) => void;
         /**
           * The confirmation failed with an error the customer cannot fix in the sheet
          */
@@ -1623,6 +1634,7 @@ declare namespace LocalJSX {
     interface StripePaymentSheetAttributes {
         "publishableKey": string;
         "intentClientSecret": string;
+        "checkoutSessionClientSecret": string;
         "stripeAccount": string;
         "open": boolean;
         "sheetTitle": string;
@@ -1682,7 +1694,8 @@ declare module "@stencil/core" {
             "stripe-payment-request-button": LocalJSX.IntrinsicElements["stripe-payment-request-button"] & JSXBase.HTMLAttributes<HTMLStripePaymentRequestButtonElement>;
             /**
              * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
-             * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+             * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix;
+             * a Checkout Session is used when `checkout-session-client-secret` is set.
              */
             "stripe-payment-sheet": LocalJSX.IntrinsicElements["stripe-payment-sheet"] & JSXBase.HTMLAttributes<HTMLStripePaymentSheetElement>;
         }
