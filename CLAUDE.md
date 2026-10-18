@@ -186,9 +186,11 @@ pnpm run generate     # Generate new Stencil component
 - Local equivalent: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run test:unit`, `pnpm run test:component`, `pnpm run build`
 
 ### Publishing
-- Uses `np` package for releases
-- Command: `pnpm run release`
-- Pre-publish: Automatically runs build via `prepublishOnly` script
+- Uses **Changesets** (`stripe-pwa-elements` at the root + `hono-stripe-elements` in `packages/`); see `RELEASE.md`
+- Add a changeset per user-facing change: `pnpm changeset` (commit the generated `.changeset/*.md`)
+- Merging to `main` triggers an automated CircleCI pipeline (config source: `hideokamoto/circleci-configurations`, `workflows/publish/npm-monorepo.yaml`): `changeset version` → commit to main (`[skip ci]`) → `changeset publish` (npm OIDC Trusted Publishing) → tag push
+- Do **not** add a publish workflow file to this repo; the pipeline is attached via a CircleCI Pipeline Definition
+- Do not bump versions by hand; manual fallback: `pnpm changeset:publish`
 
 ## Code Conventions
 

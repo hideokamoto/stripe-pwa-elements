@@ -36,10 +36,9 @@
     "example:copy": "stencil build --docs && cp -R dist/stripe-elements example/",
     "example:serve": "pnpm dlx serve example",
     "prepublishOnly": "pnpm run build",
-    "release": "np",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "pnpm -F hono-stripe-elements run build && changeset publish"
+    "changeset:publish": "pnpm run build && pnpm -F hono-stripe-elements run build && changeset publish"
   },
   "dependencies": {
     "@stencil/core": "^4.38.3",
@@ -104,7 +103,6 @@
     "jest": "^29.7.0",
     "jest-cli": "^29.7.0",
     "jest-junit": "^17.0.0",
-    "np": "^10.2.0",
     "prettier": "^3.6.2",
     "prettier-eslint": "^16.4.2",
     "prettier-eslint-cli": "^8.0.1",
