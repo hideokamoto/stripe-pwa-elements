@@ -12,12 +12,13 @@
   "unpkg": "dist/stripe-elements/stripe-elements.esm.js",
   "files": [
     "dist/",
+    "hono/",
     "loader/"
   ],
   "scripts": {
-    "build": "stencil build --docs",
+    "build": "stencil build --docs && tsc -p adapters/hono/tsconfig.json",
     "start": "stencil build --dev --watch --serve",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p adapters/hono/tsconfig.json --noEmit",
     "deploy": "pnpm -C docs run deploy",
     "docs:dev": "pnpm -C docs run dev",
     "docs:build": "pnpm -C docs run build",
@@ -83,6 +84,14 @@
     "url": "https://github.com/hideokamoto"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "hono": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
@@ -97,6 +106,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.5.0",
+    "hono": "^4.13.13",
     "jest": "^29.7.0",
     "jest-cli": "^29.7.0",
     "jest-junit": "^17.0.0",
