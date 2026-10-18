@@ -12,6 +12,13 @@ const wwwRoot = resolve(here, '../../www');
 const pagesRoot = resolve(here, 'pages');
 const port = Number(process.env.STRIPE_E2E_PORT ?? 4321);
 
+try {
+  await stat(join(wwwRoot, 'build', 'stripe-elements.esm.js'));
+} catch {
+  console.error(`www/build/stripe-elements.esm.js not found. Run \`pnpm run build\` first.`);
+  process.exit(1);
+}
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

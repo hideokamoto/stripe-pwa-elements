@@ -42,8 +42,8 @@ export default defineConfig({
     },
   ],
   webServer: {
+    // Runs in this directory (Playwright uses the config directory as the default cwd)
     command: `node ./server.mjs`,
-    cwd: __dirname,
     url: `${baseURL}/e2e/health`,
     env: { STRIPE_E2E_PORT: String(port) },
     reuseExistingServer: false,
