@@ -342,8 +342,8 @@ describe('v1 counterexamples', () => {
  * properties that the Quint model (sheet_v3.qnt) verifies.
  */
 describe('payment sheet properties over every event order', () => {
-  /** `cs` is a Checkout Session secret, set through the checkout-session-client-secret attribute */
-  type SecretKind = 'pi' | 'seti' | 'other' | 'cs';
+  /** `cs` and `csLikePi` are Checkout Session secrets, set through the checkout-session-client-secret attribute */
+  type SecretKind = 'pi' | 'seti' | 'other' | 'cs' | 'csLikePi';
   type World = {
     state: SheetState;
     secretKind?: SecretKind;
@@ -366,9 +366,11 @@ describe('payment sheet properties over every event order', () => {
     other: { clientSecret: UNKNOWN_SECRET, source: 'intent' },
     // Same string as `other`: only the attribute decides that it is a Checkout Session
     cs: { clientSecret: UNKNOWN_SECRET, source: 'checkoutSession' },
+    // Looks like a PaymentIntent secret, but the attribute still makes it a Checkout Session
+    csLikePi: { clientSecret: PI_SECRET, source: 'checkoutSession' },
   };
   /** The only confirmation method that can succeed for each secret (unknown intent secrets must never be confirmed) */
-  const EXPECTED_METHOD: Record<SecretKind, IntentKind | undefined> = { pi: 'payment', seti: 'setup', other: undefined, cs: 'checkoutSession' };
+  const EXPECTED_METHOD: Record<SecretKind, IntentKind | undefined> = { pi: 'payment', seti: 'setup', other: undefined, cs: 'checkoutSession', csLikePi: 'checkoutSession' };
 
   const initialWorld: World = {
     state: initialSheetState,
