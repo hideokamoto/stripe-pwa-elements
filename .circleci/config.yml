@@ -70,7 +70,7 @@ jobs:
       - install-deps
       - run:
           name: TypeScript type check
-          command: pnpm exec tsc --noEmit
+          command: pnpm exec tsc --noEmit && pnpm -F hono-stripe-elements run typecheck
 
   # ── Unit tests ─────────────────────────────────────────────────────────────
   #
@@ -155,7 +155,7 @@ jobs:
           node-version: << parameters.node-version >>
       - run:
           name: Production build
-          command: pnpm run build
+          command: pnpm run build && pnpm -F hono-stripe-elements run build
       - store_artifacts:
           path: dist
           destination: dist-node<< parameters.node-version >>

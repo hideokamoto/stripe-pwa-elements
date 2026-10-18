@@ -1,0 +1,48 @@
+{
+  "name": "hono-stripe-elements",
+  "version": "0.0.0",
+  "description": "hono/jsx components wrapping stripe-pwa-elements Web Components",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "hono": ">=4.0.0",
+    "stripe-pwa-elements": ">=4.0.1"
+  },
+  "devDependencies": {
+    "@stripe/stripe-js": "^9.17.0",
+    "hono": "^4.13.13",
+    "stripe-pwa-elements": "workspace:*",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "hono",
+    "honox",
+    "jsx",
+    "stripe",
+    "stripe-elements",
+    "payment",
+    "web-components"
+  ],
+  "homepage": "https://github.com/hideokamoto/stripe-pwa-elements#readme",
+  "bugs": {
+    "url": "https://github.com/hideokamoto/stripe-pwa-elements/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hideokamoto/stripe-pwa-elements.git",
+    "directory": "packages/hono-stripe-elements"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
