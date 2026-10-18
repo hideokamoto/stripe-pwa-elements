@@ -327,8 +327,11 @@ describe('stripe-payment-sheet', () => {
     };
 
     it('loads the Checkout Session and mounts the Payment Element with the options it supports', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
       const { sheet, eventTypes } = await setupCheckout({ merchantDisplayName: 'Example Inc.', paymentMethodLayout: 'vertical', style: 'alwaysDark' });
 
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('no effect with a Checkout Session: merchantDisplayName');
       expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledWith(
         'pk_test_123',
         CHECKOUT_SECRET,
@@ -403,7 +406,10 @@ describe('stripe-payment-sheet', () => {
     });
 
     it('keeps the sheet open and shows the message when the payment fails', async () => {
-      checkoutConfirm.mockResolvedValueOnce({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } } });
+      checkoutConfirm.mockResolvedValueOnce({
+        type: 'error',
+        error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } },
+      });
       const { page, sheet, modal, submit, eventTypes } = await setupCheckout();
       const result = sheet.present();
 

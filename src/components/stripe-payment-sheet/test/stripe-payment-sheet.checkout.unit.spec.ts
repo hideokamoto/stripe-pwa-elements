@@ -1,5 +1,5 @@
 import type { StripeCheckoutElementsSdk } from '@stripe/stripe-js';
-import { confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from '../stripe-payment-sheet.checkout';
+import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from '../stripe-payment-sheet.checkout';
 import { isRecoverableConfirmError } from '../stripe-payment-sheet.helpers';
 
 const RETURN_URL = 'https://example.com/return';
@@ -13,8 +13,26 @@ describe('toCheckoutPaymentElementOptions', () => {
 
   it('maps the layout and drops options the Checkout Payment Element does not take', () => {
     expect(
-      toCheckoutPaymentElementOptions({ paymentMethodLayout: 'horizontal', merchantDisplayName: 'Example Inc.', defaultBillingDetails: { name: 'Jenny', email: 'jenny@example.com' } }),
+      toCheckoutPaymentElementOptions({
+        paymentMethodLayout: 'horizontal',
+        merchantDisplayName: 'Example Inc.',
+        defaultBillingDetails: { name: 'Jenny', email: 'jenny@example.com' },
+      }),
     ).toEqual({ layout: 'tabs' });
+  });
+});
+
+describe('checkoutIgnoredOptionKeys', () => {
+  it('returns nothing without options', () => {
+    expect(checkoutIgnoredOptionKeys(undefined)).toEqual([]);
+    expect(checkoutIgnoredOptionKeys({ paymentMethodLayout: 'vertical', style: 'alwaysLight', returnURL: 'https://example.com' })).toEqual([]);
+  });
+
+  it('lists the options a Checkout Session does not use, keeping the email that is passed to confirm', () => {
+    expect(checkoutIgnoredOptionKeys({ merchantDisplayName: 'Example', defaultBillingDetails: { email: 'jenny@example.com', name: 'Jenny', address: { country: 'JP' } } })).toEqual(
+      ['defaultBillingDetails.address', 'defaultBillingDetails.name', 'merchantDisplayName'],
+    );
+    expect(checkoutIgnoredOptionKeys({ defaultBillingDetails: { email: 'jenny@example.com' } })).toEqual([]);
   });
 });
 
@@ -46,8 +64,10 @@ describe('confirmCheckoutSessionSheet', () => {
     expect(confirm).toHaveBeenCalledWith({ returnUrl: RETURN_URL, redirect: 'if_required', email: 'jenny@example.com' });
   });
 
-  it('throws a recoverable card_error with the decline code when the payment failed', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'insufficient_funds' } } });
+  it('throws a recoverable card_error when the payment failed', async () => {
+    const confirm = jest
+      .fn()
+      .mockResolvedValue({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'insufficient_funds' } } });
     const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL).catch(e => e);
 
     expect(error).toMatchObject({ type: 'card_error', code: 'paymentFailed', message: 'Your card was declined.' });

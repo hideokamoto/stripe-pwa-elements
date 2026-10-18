@@ -119,7 +119,11 @@ describe('payment sheet state transitions', () => {
     });
 
     it('opens the sheet once loading finishes when called before the load', () => {
-      const { state, effects } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' }, { type: 'loadSucceeded', generation: 1 }]);
+      const { state, effects } = run([
+        { type: 'presentRequested' },
+        { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
+        { type: 'loadSucceeded', generation: 1 },
+      ]);
 
       expect(state.phase).toBe('presented');
       expect(state.pendingPresent).toBe(true);
@@ -304,7 +308,12 @@ describe('Checkout Session', () => {
  */
 describe('v1 counterexamples', () => {
   it('a SetupIntent secret is never confirmed with confirmPayment', () => {
-    const { effects } = run([{ type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' }, { type: 'loadSucceeded', generation: 1 }, { type: 'presentRequested' }, { type: 'submitted' }]);
+    const { effects } = run([
+      { type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' },
+      { type: 'loadSucceeded', generation: 1 },
+      { type: 'presentRequested' },
+      { type: 'submitted' },
+    ]);
 
     expect(effects).toContainEqual({ type: 'confirm', generation: 1, intentKind: 'setup' });
   });
