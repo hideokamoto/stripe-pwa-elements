@@ -1,9 +1,11 @@
-import { initialSheetState, intentKindFromClientSecret, transition } from '../payment-sheet-state';
-import type { IntentKind, SheetEffect, SheetEvent, SheetState } from '../payment-sheet-state';
+import { initialSheetState, intentKindFromClientSecret, intentKindOf, transition } from '../payment-sheet-state';
+import type { IntentKind, SecretSource, SheetEffect, SheetEvent, SheetState } from '../payment-sheet-state';
 
 const PI_SECRET = 'pi_3Mtw_secret_abc';
 const SETI_SECRET = 'seti_1Mm8_secret_xyz';
 const UNKNOWN_SECRET = 'cs_test_a1_secret_zzz';
+/** Stripe does not document the format of a Checkout Session client secret, so the test value is deliberately arbitrary */
+const CHECKOUT_SECRET = 'cs_test_a1_secret_zzz';
 
 /**
  * Apply events in order, collecting every effect.
@@ -22,7 +24,7 @@ const run = (events: SheetEvent[], from: SheetState = initialSheetState) => {
 /** State right after a successful load of a PaymentIntent secret */
 const readyState = () =>
   run([
-    { type: 'secretChanged', clientSecret: PI_SECRET },
+    { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
     { type: 'loadSucceeded', generation: 1 },
   ]).state;
 const presentedState = () => run([{ type: 'presentRequested' }], readyState()).state;
@@ -42,17 +44,29 @@ describe('intentKindFromClientSecret', () => {
   });
 });
 
+describe('intentKindOf', () => {
+  it('uses the prefix for the intent-client-secret attribute', () => {
+    expect(intentKindOf(PI_SECRET, 'intent')).toBe('payment');
+    expect(intentKindOf(SETI_SECRET, 'intent')).toBe('setup');
+    expect(intentKindOf(UNKNOWN_SECRET, 'intent')).toBeUndefined();
+  });
+
+  it.each([CHECKOUT_SECRET, PI_SECRET, SETI_SECRET, 'anything'])('treats %p from the checkout-session-client-secret attribute as a Checkout Session', secret => {
+    expect(intentKindOf(secret, 'checkoutSession')).toBe('checkoutSession');
+  });
+});
+
 describe('payment sheet state transitions', () => {
   describe('loading', () => {
     it('starts loading with the intent kind derived from the secret', () => {
-      const { state, effects } = transition(initialSheetState, { type: 'secretChanged', clientSecret: SETI_SECRET });
+      const { state, effects } = transition(initialSheetState, { type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' });
 
       expect(state.phase).toBe('loading');
       expect(effects).toContainEqual({ type: 'load', generation: 1, clientSecret: SETI_SECRET, intentKind: 'setup' });
     });
 
     it('fails to load immediately when the secret prefix is unknown', () => {
-      const { state, effects } = transition(initialSheetState, { type: 'secretChanged', clientSecret: UNKNOWN_SECRET });
+      const { state, effects } = transition(initialSheetState, { type: 'secretChanged', clientSecret: UNKNOWN_SECRET, source: 'intent' });
 
       expect(state.phase).toBe('loadFailed');
       expect(effects).toContainEqual({ type: 'emit', event: 'paymentSheetFailedToLoad' });
@@ -60,12 +74,12 @@ describe('payment sheet state transitions', () => {
     });
 
     it('ignores an empty secret', () => {
-      expect(transition(initialSheetState, { type: 'secretChanged', clientSecret: '' })).toEqual({ state: initialSheetState, effects: [] });
+      expect(transition(initialSheetState, { type: 'secretChanged', clientSecret: '', source: 'intent' })).toEqual({ state: initialSheetState, effects: [] });
     });
 
     it('becomes ready and emits paymentSheetLoaded when the current load succeeds', () => {
       const { state, effects } = run([
-        { type: 'secretChanged', clientSecret: PI_SECRET },
+        { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
         { type: 'loadSucceeded', generation: 1 },
       ]);
 
@@ -75,8 +89,8 @@ describe('payment sheet state transitions', () => {
 
     it('ignores the result of a superseded load', () => {
       const { state } = run([
-        { type: 'secretChanged', clientSecret: PI_SECRET },
-        { type: 'secretChanged', clientSecret: SETI_SECRET },
+        { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
+        { type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' },
         { type: 'loadFailed', generation: 1 },
       ]);
 
@@ -86,7 +100,7 @@ describe('payment sheet state transitions', () => {
 
     it('emits paymentSheetFailedToLoad when the current load fails', () => {
       const { state, effects } = run([
-        { type: 'secretChanged', clientSecret: PI_SECRET },
+        { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
         { type: 'loadFailed', generation: 1 },
       ]);
 
@@ -105,7 +119,7 @@ describe('payment sheet state transitions', () => {
     });
 
     it('opens the sheet once loading finishes when called before the load', () => {
-      const { state, effects } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadSucceeded', generation: 1 }]);
+      const { state, effects } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' }, { type: 'loadSucceeded', generation: 1 }]);
 
       expect(state.phase).toBe('presented');
       expect(state.pendingPresent).toBe(true);
@@ -113,7 +127,7 @@ describe('payment sheet state transitions', () => {
     });
 
     it('resolves with paymentSheetFailed when the load it waits for fails', () => {
-      const { state, effects } = run([{ type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'presentRequested' }, { type: 'loadFailed', generation: 1 }]);
+      const { state, effects } = run([{ type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' }, { type: 'presentRequested' }, { type: 'loadFailed', generation: 1 }]);
 
       expect(state.pendingPresent).toBe(false);
       expect(effects).toContainEqual({ type: 'resolvePresent', result: 'paymentSheetFailed' });
@@ -196,7 +210,7 @@ describe('payment sheet state transitions', () => {
 
   describe('secret changes', () => {
     it('cancels an open sheet before reloading', () => {
-      const { state, effects } = transition(presentedState(), { type: 'secretChanged', clientSecret: SETI_SECRET });
+      const { state, effects } = transition(presentedState(), { type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' });
 
       expect(state.phase).toBe('loading');
       expect(effects).toEqual(
@@ -205,7 +219,7 @@ describe('payment sheet state transitions', () => {
     });
 
     it('defers a secret change until the running confirmation finishes', () => {
-      const deferred = transition(confirmingState(), { type: 'secretChanged', clientSecret: SETI_SECRET });
+      const deferred = transition(confirmingState(), { type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' });
 
       expect(deferred.state.phase).toBe('confirming');
       expect(deferred.effects).toEqual([]);
@@ -219,12 +233,78 @@ describe('payment sheet state transitions', () => {
   });
 });
 
+describe('Checkout Session', () => {
+  const checkoutReady = () =>
+    run([
+      { type: 'secretChanged', clientSecret: CHECKOUT_SECRET, source: 'checkoutSession' },
+      { type: 'loadSucceeded', generation: 1 },
+    ]).state;
+
+  it('loads a Checkout Session secret without looking at its format', () => {
+    const { state, effects } = transition(initialSheetState, { type: 'secretChanged', clientSecret: CHECKOUT_SECRET, source: 'checkoutSession' });
+
+    expect(state.phase).toBe('loading');
+    expect(state.intentKind).toBe('checkoutSession');
+    expect(effects).toEqual([{ type: 'load', generation: 1, clientSecret: CHECKOUT_SECRET, intentKind: 'checkoutSession' }]);
+  });
+
+  it('ignores an empty Checkout Session secret', () => {
+    expect(transition(initialSheetState, { type: 'secretChanged', clientSecret: '', source: 'checkoutSession' })).toEqual({ state: initialSheetState, effects: [] });
+  });
+
+  it('confirms through the Checkout Session even when the secret looks like a PaymentIntent secret', () => {
+    const { effects } = run([
+      { type: 'secretChanged', clientSecret: PI_SECRET, source: 'checkoutSession' },
+      { type: 'loadSucceeded', generation: 1 },
+      { type: 'presentRequested' },
+      { type: 'submitted' },
+    ]);
+
+    expect(effects).toContainEqual({ type: 'confirm', generation: 1, intentKind: 'checkoutSession' });
+  });
+
+  it('completes, emits and resolves on success', () => {
+    const { state, effects } = run([{ type: 'presentRequested' }, { type: 'submitted' }, { type: 'confirmSucceeded', generation: 1 }], checkoutReady());
+
+    expect(state.phase).toBe('completed');
+    expect(effects).toEqual(
+      expect.arrayContaining([{ type: 'hide' }, { type: 'emit', event: 'paymentSheetCompleted' }, { type: 'resolvePresent', result: 'paymentSheetCompleted' }]),
+    );
+  });
+
+  it('switches from an intent to a Checkout Session, canceling the open sheet', () => {
+    const { state, effects } = transition(presentedState(), { type: 'secretChanged', clientSecret: CHECKOUT_SECRET, source: 'checkoutSession' });
+
+    expect(state.phase).toBe('loading');
+    expect(state.intentKind).toBe('checkoutSession');
+    expect(effects).toEqual(
+      expect.arrayContaining([
+        { type: 'hide' },
+        { type: 'emit', event: 'paymentSheetCanceled' },
+        { type: 'resolvePresent', result: 'paymentSheetCanceled' },
+        { type: 'load', generation: 2, clientSecret: CHECKOUT_SECRET, intentKind: 'checkoutSession' },
+      ]),
+    );
+  });
+
+  it('keeps the attribute a deferred secret came from', () => {
+    const deferred = transition(confirmingState(), { type: 'secretChanged', clientSecret: CHECKOUT_SECRET, source: 'checkoutSession' });
+
+    expect(deferred.effects).toEqual([]);
+
+    const { state, effects } = transition(deferred.state, { type: 'confirmDeclined', generation: 1, message: 'declined' });
+
+    expect(state.intentKind).toBe('checkoutSession');
+    expect(effects).toContainEqual({ type: 'load', generation: 2, clientSecret: CHECKOUT_SECRET, intentKind: 'checkoutSession' });
+  });
+});
+
 /**
  * Regression tests for the counterexamples the Quint model found in the v1 interface draft.
  */
 describe('v1 counterexamples', () => {
   it('a SetupIntent secret is never confirmed with confirmPayment', () => {
-    const { effects } = run([{ type: 'secretChanged', clientSecret: SETI_SECRET }, { type: 'loadSucceeded', generation: 1 }, { type: 'presentRequested' }, { type: 'submitted' }]);
+    const { effects } = run([{ type: 'secretChanged', clientSecret: SETI_SECRET, source: 'intent' }, { type: 'loadSucceeded', generation: 1 }, { type: 'presentRequested' }, { type: 'submitted' }]);
 
     expect(effects).toContainEqual({ type: 'confirm', generation: 1, intentKind: 'setup' });
   });
@@ -232,7 +312,7 @@ describe('v1 counterexamples', () => {
   it('a payment that succeeds after a secret change is still reported as completed', () => {
     const { effects } = run(
       [
-        { type: 'secretChanged', clientSecret: PI_SECRET },
+        { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' },
         { type: 'confirmSucceeded', generation: 1 },
       ],
       confirmingState(),
@@ -242,7 +322,7 @@ describe('v1 counterexamples', () => {
   });
 
   it('present() before loading does not wait forever', () => {
-    const { state } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET }, { type: 'loadSucceeded', generation: 1 }]);
+    const { state } = run([{ type: 'presentRequested' }, { type: 'secretChanged', clientSecret: PI_SECRET, source: 'intent' }, { type: 'loadSucceeded', generation: 1 }]);
 
     expect(state.phase).toBe('presented');
   });
@@ -250,10 +330,11 @@ describe('v1 counterexamples', () => {
 
 /**
  * Exhaustive check: enumerate every event order up to MAX_DEPTH and assert the same
- * properties that the Quint model (sheet_v2.qnt) verifies.
+ * properties that the Quint model (sheet_v3.qnt) verifies.
  */
 describe('payment sheet properties over every event order', () => {
-  type SecretKind = 'pi' | 'seti' | 'other';
+  /** `cs` is a Checkout Session secret, set through the checkout-session-client-secret attribute */
+  type SecretKind = 'pi' | 'seti' | 'other' | 'cs';
   type World = {
     state: SheetState;
     secretKind?: SecretKind;
@@ -270,7 +351,15 @@ describe('payment sheet properties over every event order', () => {
 
   const MAX_DEPTH = 7;
   const MAX_SECRET_CHANGES = 2;
-  const SECRETS: Record<SecretKind, string> = { pi: PI_SECRET, seti: SETI_SECRET, other: UNKNOWN_SECRET };
+  const SECRETS: Record<SecretKind, { clientSecret: string; source: SecretSource }> = {
+    pi: { clientSecret: PI_SECRET, source: 'intent' },
+    seti: { clientSecret: SETI_SECRET, source: 'intent' },
+    other: { clientSecret: UNKNOWN_SECRET, source: 'intent' },
+    // Same string as `other`: only the attribute decides that it is a Checkout Session
+    cs: { clientSecret: UNKNOWN_SECRET, source: 'checkoutSession' },
+  };
+  /** The only confirmation method that can succeed for each secret (unknown intent secrets must never be confirmed) */
+  const EXPECTED_METHOD: Record<SecretKind, IntentKind | undefined> = { pi: 'payment', seti: 'setup', other: undefined, cs: 'checkoutSession' };
 
   const initialWorld: World = {
     state: initialSheetState,
@@ -290,7 +379,7 @@ describe('payment sheet properties over every event order', () => {
     const steps: Step[] = [{ event: { type: 'presentRequested' } }, { event: { type: 'openRequested' } }, { event: { type: 'closeRequested' } }, { event: { type: 'submitted' } }];
 
     if (world.secretChanges < MAX_SECRET_CHANGES) {
-      (Object.keys(SECRETS) as SecretKind[]).forEach(kind => steps.push({ event: { type: 'secretChanged', clientSecret: SECRETS[kind] }, secretKind: kind }));
+      (Object.keys(SECRETS) as SecretKind[]).forEach(kind => steps.push({ event: { type: 'secretChanged', ...SECRETS[kind] }, secretKind: kind }));
     }
 
     world.loads.forEach(generation => {
@@ -298,9 +387,7 @@ describe('payment sheet properties over every event order', () => {
     });
 
     world.confirms.forEach(confirm => {
-      const methodMatches = (confirm.intentKind === 'payment') === (confirm.secretKind === 'pi');
-
-      if (methodMatches) {
+      if (confirm.intentKind === EXPECTED_METHOD[confirm.secretKind]) {
         steps.push({ event: { type: 'confirmSucceeded', generation: confirm.generation }, stripeSucceeds: true });
       }
 
@@ -343,9 +430,8 @@ describe('payment sheet properties over every event order', () => {
           break;
         case 'confirm': {
           const secretKind = next.secretKind as SecretKind;
-          const methodMatches = (effect.intentKind === 'payment') === (secretKind === 'pi');
 
-          if (!methodMatches) {
+          if (effect.intentKind !== EXPECTED_METHOD[secretKind]) {
             fail('confirmed with a method that does not match the secret');
           }
 
@@ -403,6 +489,7 @@ describe('payment sheet properties over every event order', () => {
   it(`holds for every event order up to ${MAX_DEPTH} steps`, () => {
     let explored = 0;
     let failedReached = false;
+    const completedKinds = new Set<IntentKind>();
 
     const explore = (world: World, depth: number, trace: string[]) => {
       if (depth === MAX_DEPTH) {
@@ -418,6 +505,10 @@ describe('payment sheet properties over every event order', () => {
           failedReached = true;
         }
 
+        if (next.state.phase === 'completed' && next.state.intentKind != null) {
+          completedKinds.add(next.state.intentKind);
+        }
+
         explore(next, depth + 1, [...trace, step.event.type]);
       });
     };
@@ -427,5 +518,7 @@ describe('payment sheet properties over every event order', () => {
     expect(explored).toBeGreaterThan(100000);
     // paymentSheetFailed must be reachable (it was unreachable in the v1 draft)
     expect(failedReached).toBe(true);
+    // Every kind of secret, including a Checkout Session, can complete
+    expect([...completedKinds].sort()).toEqual(['checkoutSession', 'payment', 'setup']);
   });
 });
