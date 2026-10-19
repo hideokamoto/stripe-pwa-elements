@@ -137,7 +137,7 @@ Open `http://localhost:5173` and the card form appears. Enter card number `4242 
 </TabItem>
 <TabItem label="HonoX">
 
-In HonoX, load the component on the client only, inside an island. The package's modules touch browser-only APIs such as `customElements`, so a static import during SSR throws. A dynamic import inside `useEffect` avoids that.
+In HonoX, use [`hono-stripe-elements`](https://www.npmjs.com/package/hono-stripe-elements), a set of hono/jsx components that wrap the Web Components. It registers the custom element lazily on the client, so inside an island you render it as plain JSX — no `document.createElement` or manual dynamic `import()`.
 
 ### 1. Create the HonoX project
 
@@ -146,35 +146,33 @@ npm create hono@latest stripe-honox -- --template x-basic --install --pm npm
 cd stripe-honox
 ```
 
-### 2. Add stripe-pwa-elements
+### 2. Add hono-stripe-elements
 
 ```bash
-npm i stripe-pwa-elements
+npm i hono-stripe-elements stripe-pwa-elements
 ```
+
+`stripe-pwa-elements` is a peer dependency, so install it alongside.
 
 ### 3. Create the island
 
 Create `app/islands/payment-form.tsx`.
 
 ```tsx
-import { useEffect, useRef, useState } from 'hono/jsx';
+import { useEffect, useState } from 'hono/jsx';
+import { StripeCardElement } from 'hono-stripe-elements';
 
 const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
 
 export default function PaymentForm() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [intent, setIntent] = useState<{ publishableKey: string; clientSecret: string } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const appendLog = (message: string) => setLogs(prev => [...prev, message]);
 
   useEffect(() => {
     let cancelled = false;
-    const appendLog = (message: string) => {
-      if (!cancelled) setLogs(prev => [...prev, message]);
-    };
 
     (async () => {
-      // Load on the client only — the module touches browser-only APIs (customElements)
-      await import('stripe-pwa-elements/dist/components/stripe-card-element');
-
       const { publishableKey } = await (await fetch(`${API}/config`)).json();
       const { clientSecret } = await (
         await fetch(`${API}/create-payment-intent`, {
@@ -184,19 +182,7 @@ export default function PaymentForm() {
         })
       ).json();
 
-      if (cancelled || !containerRef.current) return;
-
-      const el = document.createElement('stripe-card-element');
-      el.setAttribute('publishable-key', publishableKey);
-      el.setAttribute('intent-client-secret', clientSecret);
-      el.setAttribute('button-label', 'Pay now');
-      el.addEventListener('stripeLoaded', () => appendLog('event: stripeLoaded'));
-      el.addEventListener('formSubmit', () => appendLog('event: formSubmit'));
-      el.addEventListener('defaultFormSubmitResult', event => {
-        const detail = (event as CustomEvent).detail;
-        appendLog(detail instanceof Error ? `payment failed: ${detail.message}` : `payment status: ${detail.paymentIntent?.status}`);
-      });
-      containerRef.current.appendChild(el);
+      if (!cancelled) setIntent({ publishableKey, clientSecret });
     })();
 
     return () => {
@@ -206,12 +192,34 @@ export default function PaymentForm() {
 
   return (
     <div class="mx-auto max-w-xl text-left">
-      <div ref={containerRef}></div>
+      {intent ? (
+        <StripeCardElement
+          publishableKey={intent.publishableKey}
+          intentClientSecret={intent.clientSecret}
+          buttonLabel="Pay now"
+          fallback={<p>Loading card form…</p>}
+          onStripeLoaded={() => appendLog('event: stripeLoaded')}
+          onFormSubmit={() => appendLog('event: formSubmit')}
+          onDefaultFormSubmitResult={event => {
+            const detail = event.detail;
+            if (detail instanceof Error) {
+              appendLog(`payment failed: ${detail.message}`);
+            } else {
+              const intent = 'paymentIntent' in detail ? detail.paymentIntent : 'setupIntent' in detail ? detail.setupIntent : undefined;
+              appendLog(`payment status: ${intent?.status}`);
+            }
+          }}
+        />
+      ) : (
+        <p>Preparing payment…</p>
+      )}
       <pre class="mt-4 whitespace-pre-wrap text-xs">{logs.join('\n')}</pre>
     </div>
   );
 }
 ```
+
+`onXxx` props subscribe to the camelCase custom events (`onFormSubmit` → `formSubmit`), and `fallback` is rendered until the Web Component is ready on the client.
 
 ### 4. Mount it on the route
 

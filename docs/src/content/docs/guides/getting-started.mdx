@@ -137,7 +137,7 @@ npm run dev
 </TabItem>
 <TabItem label="HonoX">
 
-HonoX ではアイランド（island）の中でクライアント側だけにコンポーネントを読み込みます。パッケージのモジュールは`customElements`などブラウザ専用 API に触れるため、SSR で直接 import するとエラーになります。`useEffect`内の動的 import で回避します。
+HonoX では hono/jsx ラッパーの[`hono-stripe-elements`](https://www.npmjs.com/package/hono-stripe-elements)を使います。カスタム要素の登録をクライアント側で遅延実行してくれるため、アイランド（island）内でそのまま JSX として描画できます。`document.createElement`や動的 import を自分で書く必要はありません。
 
 ### 1. HonoX プロジェクトを作成する
 
@@ -146,35 +146,33 @@ npm create hono@latest stripe-honox -- --template x-basic --install --pm npm
 cd stripe-honox
 ```
 
-### 2. stripe-pwa-elements を追加する
+### 2. hono-stripe-elements を追加する
 
 ```bash
-npm i stripe-pwa-elements
+npm i hono-stripe-elements stripe-pwa-elements
 ```
+
+`stripe-pwa-elements`は peer dependency なので一緒にインストールします。
 
 ### 3. アイランドを作成する
 
 `app/islands/payment-form.tsx`を新規作成します。
 
 ```tsx
-import { useEffect, useRef, useState } from 'hono/jsx';
+import { useEffect, useState } from 'hono/jsx';
+import { StripeCardElement } from 'hono-stripe-elements';
 
 const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
 
 export default function PaymentForm() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [intent, setIntent] = useState<{ publishableKey: string; clientSecret: string } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const appendLog = (message: string) => setLogs(prev => [...prev, message]);
 
   useEffect(() => {
     let cancelled = false;
-    const appendLog = (message: string) => {
-      if (!cancelled) setLogs(prev => [...prev, message]);
-    };
 
     (async () => {
-      // customElements などブラウザ専用 API に触れるためクライアント側だけで読み込む
-      await import('stripe-pwa-elements/dist/components/stripe-card-element');
-
       const { publishableKey } = await (await fetch(`${API}/config`)).json();
       const { clientSecret } = await (
         await fetch(`${API}/create-payment-intent`, {
@@ -184,19 +182,7 @@ export default function PaymentForm() {
         })
       ).json();
 
-      if (cancelled || !containerRef.current) return;
-
-      const el = document.createElement('stripe-card-element');
-      el.setAttribute('publishable-key', publishableKey);
-      el.setAttribute('intent-client-secret', clientSecret);
-      el.setAttribute('button-label', 'Pay now');
-      el.addEventListener('stripeLoaded', () => appendLog('event: stripeLoaded'));
-      el.addEventListener('formSubmit', () => appendLog('event: formSubmit'));
-      el.addEventListener('defaultFormSubmitResult', event => {
-        const detail = (event as CustomEvent).detail;
-        appendLog(detail instanceof Error ? `payment failed: ${detail.message}` : `payment status: ${detail.paymentIntent?.status}`);
-      });
-      containerRef.current.appendChild(el);
+      if (!cancelled) setIntent({ publishableKey, clientSecret });
     })();
 
     return () => {
@@ -206,12 +192,34 @@ export default function PaymentForm() {
 
   return (
     <div class="mx-auto max-w-xl text-left">
-      <div ref={containerRef}></div>
+      {intent ? (
+        <StripeCardElement
+          publishableKey={intent.publishableKey}
+          intentClientSecret={intent.clientSecret}
+          buttonLabel="Pay now"
+          fallback={<p>カードフォームを読み込み中…</p>}
+          onStripeLoaded={() => appendLog('event: stripeLoaded')}
+          onFormSubmit={() => appendLog('event: formSubmit')}
+          onDefaultFormSubmitResult={event => {
+            const detail = event.detail;
+            if (detail instanceof Error) {
+              appendLog(`payment failed: ${detail.message}`);
+            } else {
+              const intent = 'paymentIntent' in detail ? detail.paymentIntent : 'setupIntent' in detail ? detail.setupIntent : undefined;
+              appendLog(`payment status: ${intent?.status}`);
+            }
+          }}
+        />
+      ) : (
+        <p>決済を準備中…</p>
+      )}
       <pre class="mt-4 whitespace-pre-wrap text-xs">{logs.join('\n')}</pre>
     </div>
   );
 }
 ```
+
+`onXxx` props は camelCase のカスタムイベントを購読します（`onFormSubmit` → `formSubmit`）。`fallback`はクライアント側で Web Component の準備ができるまで描画されます。
 
 ### 4. ルートに配置する
 
