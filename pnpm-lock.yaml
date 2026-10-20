@@ -158,6 +158,9 @@ importers:
       wrangler:
         specifier: ^4.151.1
         version: 4.151.1(@types/node@25.9.1)
+      yaml:
+        specifier: '>=2.8.3'
+        version: 2.9.1
 
   packages/hono-stripe-elements:
     devDependencies:
