@@ -7,10 +7,12 @@ import type { IStripeService, IPaymentElementManager } from '../../services/inte
 import type { StripeLoadedEvent } from '../../interfaces';
 import { confirmPaymentOrSetup } from '../stripe-payment-element/stripe-payment-element.helpers';
 import { initialSheetState, transition } from './payment-sheet-state';
-import type { PaymentSheetEventName, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
+import type { PaymentSheetEventName, SecretSource, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
 import { isRecoverableConfirmError, toAppearance, toPaymentElementOptions, unsupportedOptionKeys } from './stripe-payment-sheet.helpers';
 import type { PaymentSheetOptions, PaymentSheetPresentResult } from './stripe-payment-sheet.helpers';
 import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from './stripe-payment-sheet.checkout';
+
+const nonEmpty = (value: string | undefined): string | undefined => (value == null || value === '' ? undefined : value);
 
 /**
  * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
@@ -35,6 +37,9 @@ export class StripePaymentSheet {
   /** Details for the next emitted event */
   private lastError?: unknown;
   private lastResult?: PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult;
+
+  /** Key of the last requested load (see `loadTarget`), so that unchanged values do not reload */
+  private lastLoadKey?: string;
 
   private warnedUnsupportedOptions = false;
   private warnedCheckoutIgnoredOptions = false;
@@ -182,23 +187,43 @@ export class StripePaymentSheet {
     this.paymentElementManager.unmount();
   }
 
+  /**
+   * Decide what to load from the attributes and load it only when it differs from the last load.
+   * A change that does not alter the result (the attribute that is not used, or an empty value that means unset)
+   * must neither reload Stripe.js nor cancel an open sheet.
+   */
   private startLoading() {
-    if (this.publishableKey == null || this.publishableKey === '') {
+    const target = this.loadTarget();
+
+    if (target == null || target.key === this.lastLoadKey) {
       return;
     }
 
-    // The Checkout Session wins when both attributes are set
-    if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
-      this.dispatch({ type: 'secretChanged', clientSecret: this.checkoutSessionClientSecret, source: 'checkoutSession' });
+    this.lastLoadKey = target.key;
+    this.dispatch({ type: 'secretChanged', clientSecret: target.clientSecret, source: target.source });
+  }
 
-      return;
+  /**
+   * The secret to load and a key of everything the load depends on, or undefined when nothing can be loaded.
+   * The Checkout Session wins when both secrets are set (the same rule as `stripe-payment-element`).
+   */
+  private loadTarget(): { key: string; clientSecret: string; source: SecretSource } | undefined {
+    const publishableKey = nonEmpty(this.publishableKey);
+
+    if (publishableKey == null) {
+      return undefined;
     }
 
-    if (this.intentClientSecret == null) {
-      return;
+    const checkoutSessionClientSecret = nonEmpty(this.checkoutSessionClientSecret);
+    const intentClientSecret = nonEmpty(this.intentClientSecret);
+    const [clientSecret, source]: [string | undefined, SecretSource] =
+      checkoutSessionClientSecret != null ? [checkoutSessionClientSecret, 'checkoutSession'] : [intentClientSecret, 'intent'];
+
+    if (clientSecret == null) {
+      return undefined;
     }
 
-    this.dispatch({ type: 'secretChanged', clientSecret: this.intentClientSecret, source: 'intent' });
+    return { key: JSON.stringify([publishableKey, nonEmpty(this.stripeAccount) ?? null, source, clientSecret]), clientSecret, source };
   }
 
   private dispatch(event: SheetEvent) {

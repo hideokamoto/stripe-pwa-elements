@@ -264,6 +264,16 @@ describe('stripe-payment-sheet', () => {
   });
 
   describe('attributes', () => {
+    it('does not reload when the Checkout Session attribute is set to an empty value', async () => {
+      const { page, sheet } = await setup();
+
+      sheet.checkoutSessionClientSecret = '';
+      await flush(page);
+
+      expect(mockStripeService.initialize).toHaveBeenCalledTimes(1);
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+    });
+
     it('opens with the open attribute', async () => {
       const { modal } = await setup({ open: true });
 
@@ -365,6 +375,73 @@ describe('stripe-payment-sheet', () => {
       expect(mockStripeService.initialize).not.toHaveBeenCalled();
       expect(checkoutConfirm).toHaveBeenCalled();
       expect(stripe.confirmPayment).not.toHaveBeenCalled();
+    });
+
+    it('ignores a change to the intent attribute while the Checkout Session is shown', async () => {
+      const { page, sheet, modal, submit, eventTypes } = await setupCheckout();
+      const result = sheet.present();
+
+      await flush(page);
+      sheet.intentClientSecret = PI_SECRET;
+      await flush(page);
+
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledTimes(1);
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(modal().open).toBe(true);
+
+      await submit();
+
+      await expect(result).resolves.toEqual({ paymentResult: 'paymentSheetCompleted' });
+      expect(eventTypes()).toEqual(['paymentSheetLoaded', 'paymentSheetCompleted']);
+    });
+
+    it('ignores a change to the intent attribute while confirming the Checkout Session', async () => {
+      let settle: (value: unknown) => void;
+
+      checkoutConfirm.mockReturnValueOnce(new Promise(resolve => (settle = resolve)));
+      const { page, sheet, modal, submit, eventTypes } = await setupCheckout();
+
+      sheet.present();
+      await flush(page);
+      await submit();
+      sheet.intentClientSecret = PI_SECRET;
+      await flush(page);
+      settle({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } } });
+      await flush(page);
+
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledTimes(1);
+      expect(modal().open).toBe(true);
+      expect(eventTypes()).toEqual(['paymentSheetLoaded']);
+    });
+
+    it('does not reload when only the intent attribute is cleared', async () => {
+      const { page, sheet } = await setupCheckout();
+
+      sheet.intentClientSecret = PI_SECRET;
+      await flush(page);
+      sheet.intentClientSecret = '';
+      await flush(page);
+
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('reloads the Checkout Session when the publishable key changes', async () => {
+      const { page, sheet } = await setupCheckout();
+
+      sheet.publishableKey = 'pk_test_456';
+      await flush(page);
+
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledTimes(2);
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenLastCalledWith('pk_test_456', CHECKOUT_SECRET, expect.anything());
+    });
+
+    it('does not reload the Checkout Session when the stripe account changes between unset values', async () => {
+      const { page, sheet } = await setupCheckout();
+
+      sheet.stripeAccount = '';
+      await flush(page);
+
+      expect(mockStripeService.initializeWithCheckoutSession).toHaveBeenCalledTimes(1);
     });
 
     it('switches to the intent when the Checkout Session attribute is cleared', async () => {

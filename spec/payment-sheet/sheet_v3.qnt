@@ -5,6 +5,8 @@
 //  - Checkout Session の secret は形式を見ない（Stripe が形式を公開していないため）。確定は checkout の confirm を使う
 //  - 性質4 を「属性から決まる確定メソッドだけを呼ぶ」に強めた
 //  - 到達可能性の確認 checkoutNeverCompleted を追加（違反すれば Checkout Session でも完了できる）
+//  - 属性は値（同じ種類の別の secret を含む）で持つ。使われる secret が変わらない変更（使われない側の属性だけの変更）は何もしない
+//  - 性質6 ignoredChangeIsNoop を追加
 // v2 の変更点（v1 から）:
 //  - intent-type を廃止。intent の確定メソッドは secret のプレフィックスから決める（pi_ / seti_ 以外は読み込み失敗）
 //  - present() は Promise を1つしか持たない。表示中・確定処理中に呼ばれたら同じ Promise を返す
@@ -20,14 +22,16 @@ module sheet_v3 {
 
   pure val MAX_GEN = 3
 
-  // intent-client-secret に設定できる値の種類（"none" は未設定）
-  pure val INTENT_ATTRS = Set("none", "pi", "seti", "other")
+  // intent-client-secret に設定できる値（"none" は未設定。pi / pi2 は別々の PaymentIntent の secret）
+  pure val INTENT_ATTRS = Set("none", "pi", "pi2", "seti", "other")
+  // checkout-session-client-secret に設定できる値（"none" は未設定。cs / cs2 は別々の Checkout Session の secret）
+  pure val CHECKOUT_ATTRS = Set("none", "cs", "cs2")
 
   var phase: Phase
   var gen: int
   var secretKind: str          // "none" | "pi" | "seti" | "other" | "cs"（cs = Checkout Session）
-  var intentAttr: str          // intent-client-secret の値の種類（INTENT_ATTRS）
-  var checkoutAttr: bool       // checkout-session-client-secret が設定されているか
+  var intentAttr: str          // intent-client-secret の値（INTENT_ATTRS）
+  var checkoutAttr: str        // checkout-session-client-secret の値（CHECKOUT_ATTRS）
   var inits: Set[int]
   var confirms: Set[Confirm]
   var pending: bool            // 未解決の present() Promise があるか（常に最大1つ）
@@ -42,17 +46,24 @@ module sheet_v3 {
   var canceledAfterCompleted: bool
   var completedGen: int        // 完了した決済の世代（未完了なら -1）
   var checkoutCompleted: bool  // Checkout Session の確定が完了したことがあるか
+  var ignoredChangeDisturbed: bool // checkout-session-client-secret を保ったまま intent 側だけ変えたときに、読み込み直し・キャンセルが起きたか
 
-  // 両方の属性から secret の種類を決める。checkout-session-client-secret が優先
-  pure def kindOf(intent: str, checkout: bool): str = if (checkout) "cs" else intent
+  // intent の値から種類を決める（プレフィックスに相当）
+  pure def intentKind(intent: str): str = if (intent == "pi2") "pi" else intent
+
+  // 両方の属性から使う secret を決める。checkout-session-client-secret が優先
+  pure def effectiveSecret(intent: str, checkout: str): str = if (checkout != "none") checkout else intent
+
+  // 両方の属性から secret の種類を決める
+  pure def kindOf(intent: str, checkout: str): str = if (checkout != "none") "cs" else intentKind(intent)
 
   // 実装が secret の種類から選ぶ確定メソッド
   pure def methodOf(k: str): str =
     if (k == "pi") "payment" else if (k == "seti") "setup" else if (k == "cs") "checkout" else "none"
 
   // 属性だけから決まる正しい確定メソッド（kindOf / methodOf とは独立に書く）
-  pure def expectedMethod(intent: str, checkout: bool): str =
-    if (checkout) "checkout" else if (intent == "pi") "payment" else if (intent == "seti") "setup" else "none"
+  pure def expectedMethod(intent: str, checkout: str): str =
+    if (checkout != "none") "checkout" else if (intent == "pi" or intent == "pi2") "payment" else if (intent == "seti") "setup" else "none"
 
   // Stripe 側で成功しうる組み合わせ
   pure def stripeAccepts(method: str, k: str): bool =
@@ -62,42 +73,53 @@ module sheet_v3 {
   pure def loadable(k: str): bool = k == "pi" or k == "seti" or k == "cs"
 
   action init = all {
-    phase' = Idle, gen' = 0, secretKind' = "none", intentAttr' = "none", checkoutAttr' = false,
+    phase' = Idle, gen' = 0, secretKind' = "none", intentAttr' = "none", checkoutAttr' = "none",
     inits' = Set(), confirms' = Set(),
     pending' = false, wantOpen' = false, created' = 0, resolved' = 0,
     stripeSucceeded' = 0, completedEmitted' = 0, canceledEmitted' = 0, failedEmitted' = 0,
     mismatchConfirm' = false, canceledAfterCompleted' = false, completedGen' = -1, checkoutCompleted' = false,
+    ignoredChangeDisturbed' = false,
   }
 
   action unchangedCounters = all {
     stripeSucceeded' = stripeSucceeded, completedEmitted' = completedEmitted,
     mismatchConfirm' = mismatchConfirm, checkoutCompleted' = checkoutCompleted,
+    ignoredChangeDisturbed' = ignoredChangeDisturbed,
   }
 
   action unchangedAttrs = all { intentAttr' = intentAttr, checkoutAttr' = checkoutAttr }
 
   // secret の設定・変更（どちらか一方、または両方の属性）。確定処理中は受け付けない（実装では確定完了まで保留）
+  // 使う secret が変わらなければ属性の値だけが変わり、読み込み直しもキャンセルも起きない
   action setSecret = {
     nondet ia = INTENT_ATTRS.oneOf()
-    nondet ca = Set(true, false).oneOf()
-    val k = kindOf(ia, ca)
+    nondet ca = CHECKOUT_ATTRS.oneOf()
+    val changed = effectiveSecret(ia, ca) != effectiveSecret(intentAttr, checkoutAttr)
     val wasPresented = phase == Presented
+    val cancels = changed and wasPresented
+    // 使われない側（checkout-session-client-secret があるときの intent-client-secret）だけの変更か。effectiveSecret とは独立に書く
+    val ignoredOnly = checkoutAttr != "none" and ca == checkoutAttr
     all {
       gen < MAX_GEN,
       phase != Confirming,
-      ia != "none" or ca,
+      ia != "none" or ca != "none",
       intentAttr' = ia, checkoutAttr' = ca,
-      gen' = gen + 1, secretKind' = k, inits' = inits.union(Set(gen + 1)), phase' = Loading,
+      gen' = if (changed) gen + 1 else gen,
+      secretKind' = if (changed) kindOf(ia, ca) else secretKind,
+      inits' = if (changed) inits.union(Set(gen + 1)) else inits,
+      phase' = if (changed) Loading else phase,
       confirms' = confirms,
       // 表示中なら Canceled で解決して閉じる
-      pending' = if (wasPresented) false else pending,
-      resolved' = if (wasPresented and pending) resolved + 1 else resolved,
-      canceledEmitted' = if (wasPresented) canceledEmitted + 1 else canceledEmitted,
-      canceledAfterCompleted' = (canceledAfterCompleted or (wasPresented and completedGen == gen)),
+      pending' = if (cancels) false else pending,
+      resolved' = if (cancels and pending) resolved + 1 else resolved,
+      canceledEmitted' = if (cancels) canceledEmitted + 1 else canceledEmitted,
+      canceledAfterCompleted' = (canceledAfterCompleted or (cancels and completedGen == gen)),
       completedGen' = completedGen,
-      wantOpen' = if (wasPresented) false else wantOpen,
+      wantOpen' = if (cancels) false else wantOpen,
       created' = created, failedEmitted' = failedEmitted,
-      unchangedCounters,
+      stripeSucceeded' = stripeSucceeded, completedEmitted' = completedEmitted,
+      mismatchConfirm' = mismatchConfirm, checkoutCompleted' = checkoutCompleted,
+      ignoredChangeDisturbed' = (ignoredChangeDisturbed or (ignoredOnly and (changed or cancels))),
     }
   }
 
@@ -171,6 +193,7 @@ module sheet_v3 {
     created' = created, resolved' = resolved, failedEmitted' = failedEmitted,
     canceledEmitted' = canceledEmitted, canceledAfterCompleted' = canceledAfterCompleted, completedGen' = completedGen,
     stripeSucceeded' = stripeSucceeded, completedEmitted' = completedEmitted, checkoutCompleted' = checkoutCompleted,
+    ignoredChangeDisturbed' = ignoredChangeDisturbed,
     unchangedAttrs,
   }
 
@@ -195,6 +218,7 @@ module sheet_v3 {
       completedGen' = if (current and success) gen else completedGen,
       mismatchConfirm' = mismatchConfirm,
       checkoutCompleted' = (checkoutCompleted or (current and success and c.kind == "cs")),
+      ignoredChangeDisturbed' = ignoredChangeDisturbed,
       unchangedAttrs,
     }
   }
@@ -213,9 +237,11 @@ module sheet_v3 {
   val methodMatchesSecret = not(mismatchConfirm)
   // 性質5: 同じ決済（同じ世代）の中で、完了後に Canceled を発火しない
   val noCancelAfterComplete = not(canceledAfterCompleted)
+  // 性質6: 使われない側の属性（checkout-session-client-secret があるときの intent-client-secret）だけを変えても、読み込み直さず、開いているシートも閉じない
+  val ignoredChangeIsNoop = not(ignoredChangeDisturbed)
   // 到達可能性の確認用（違反が見つかれば Failed は到達可能）
   val failedNeverEmitted = failedEmitted == 0
   // 到達可能性の確認用（違反が見つかれば Checkout Session でも完了できる）
   val checkoutNeverCompleted = not(checkoutCompleted)
-  val allProps = noOrphanPromise and pendingImpliesProgress and successIsReported and methodMatchesSecret and noCancelAfterComplete
+  val allProps = noOrphanPromise and pendingImpliesProgress and successIsReported and methodMatchesSecret and noCancelAfterComplete and ignoredChangeIsNoop
 }
