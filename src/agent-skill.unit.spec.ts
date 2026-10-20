@@ -13,7 +13,6 @@ const skillDir = join(repoRoot, 'plugins', 'stripe-pwa-elements', 'skills', skil
 const read = (path: string): string => readFileSync(path, 'utf8');
 
 const skillMd = read(join(skillDir, 'SKILL.md'));
-const referenceMd = read(join(skillDir, 'reference.md'));
 const frontmatter = skillMd.split(/^---$/m)[1];
 
 /**
@@ -54,12 +53,16 @@ describe('Agent Skill stays in step with the library', () => {
     cdnUrls.forEach(url => expect(url).toBe(`https://unpkg.com/stripe-pwa-elements/${pkg.unpkg}`));
   });
 
-  it('lists every component tag in the description, the component table and reference.md', () => {
+  it('lists every component tag in the description and the component table', () => {
     const expected = componentTags().filter(tag => !(tag in tagsNotInSkill));
 
     expect(tagsIn(frontmatter)).toEqual(expected);
     expect(tagsIn(skillMd.split(/^## Choose the right component$/m)[1].split(/^## /m)[0])).toEqual(expected);
-    expect(tagsIn(referenceMd.split('\n').filter(line => line.startsWith('## ')).join('\n'))).toEqual(expected);
+  });
+
+  it('is a single SKILL.md, so every way of fetching it gets the whole skill', () => {
+    expect(readdirSync(skillDir)).toEqual(['SKILL.md']);
+    expect(skillMd).not.toMatch(/\]\((?!https?:)[^)]+\)/);
   });
 
   it('only leaves out components that still exist', () => {
