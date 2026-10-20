@@ -73,7 +73,15 @@ export class PaymentSheetHarness {
   }
 
   async waitForPresentResult(): Promise<unknown> {
-    await this.page.waitForFunction(() => (window as any).harness.presentResult != null, undefined, { timeout: 60_000 });
+    await this.page.waitForFunction(() => (window as any).harness.presentResult != null || (window as any).harness.presentError != null, undefined, {
+      timeout: 60_000,
+    });
+
+    const error = await this.page.evaluate(() => (window as any).harness.presentError);
+
+    if (error != null) {
+      throw new Error(`present() rejected: ${error}`);
+    }
 
     return this.presentResult();
   }

@@ -25,6 +25,11 @@
           return null;
         }
 
+        // A thrown non-Error (e.g. a string) must not make the `in` checks below throw
+        if (typeof detail !== 'object') {
+          return String(detail);
+        }
+
         if (detail instanceof Error || detail.message != null) {
           return { message: detail.message, type: detail.type, code: detail.code };
         }

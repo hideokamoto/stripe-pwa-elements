@@ -45,9 +45,10 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  const file = pathname.startsWith('/e2e/') ? inside(pagesRoot, pathname.slice('/e2e'.length)) : inside(wwwRoot, pathname);
-
   try {
+    // inside() decodes the path, which throws on malformed percent-encoding; keep that inside the try so it becomes a 404
+    const file = pathname.startsWith('/e2e/') ? inside(pagesRoot, pathname.slice('/e2e'.length)) : inside(wwwRoot, pathname);
+
     if (file == null) {
       throw new Error('outside root');
     }
