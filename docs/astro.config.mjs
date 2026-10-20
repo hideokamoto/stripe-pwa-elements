@@ -16,6 +16,8 @@ export default defineConfig({
 		starlight({
 			plugins: [starlightLlmsTxt()],
 			title: 'stripe-pwa-elements',
+			// llms.txt v2: rel="describedby" points every page at the llms.txt that covers it.
+			head: [{ tag: 'link', attrs: { rel: 'describedby', href: '/llms.txt' } }],
 			defaultLocale: 'root',
 			locales: {
 				root: { label: '日本語', lang: 'ja' },
