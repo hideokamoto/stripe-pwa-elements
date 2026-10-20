@@ -12,6 +12,7 @@ import type { IntentKind, PaymentSheetEventName, SheetEffect, SheetEvent, SheetS
 import {
   collectedBillingDetails,
   isRecoverableConfirmError,
+  isSheetValidationError,
   planBillingDetailsCollection,
   toAppearance,
   toPaymentElementOptions,
@@ -244,6 +245,9 @@ export class StripePaymentSheet {
   private async load(generation: number, clientSecret: string, intentKind: IntentKind) {
     this.warnUnsupportedOptions(intentKind);
 
+    // A newer load started while this one was waiting: stop before touching the elements, so that only the latest load mounts and emits
+    const superseded = () => generation !== this.sheet.generation;
+
     try {
       // Fails before loading Stripe.js when a `never` field has no default value, so that Stripe never rejects the confirmation
       const collection = planBillingDetailsCollection(this.options, intentKind);
@@ -254,7 +258,7 @@ export class StripePaymentSheet {
         clientSecret,
       });
 
-      if (generation !== this.sheet.generation) {
+      if (superseded()) {
         return;
       }
 
@@ -266,12 +270,23 @@ export class StripePaymentSheet {
 
       if (appearance != null) {
         await this.stripeService.getElements().update({ appearance });
+
+        if (superseded()) {
+          return;
+        }
       }
 
-      await this.mountExtraElements(collection);
+      if (!(await this.mountExtraElements(collection, superseded))) {
+        return;
+      }
+
       await this.paymentElementManager.initialize(this.el, toPaymentElementOptions(this.options));
       this.dispatch({ type: 'loadSucceeded', generation });
     } catch (e) {
+      if (superseded()) {
+        return;
+      }
+
       this.lastError = e;
       this.dispatch({ type: 'loadFailed', generation });
     }
@@ -281,29 +296,49 @@ export class StripePaymentSheet {
    * Render the mount points of the plan's extra elements and mount them. Elements a previous load needed but this one does not are unmounted
    * (the managers unmount their previous element themselves when initialized again).
    */
-  private async mountExtraElements(collection: BillingDetailsCollectionPlan) {
+  private async mountExtraElements(collection: BillingDetailsCollectionPlan, superseded: () => boolean): Promise<boolean> {
     this.collection = collection;
 
     const { emailElement, shippingAddressElement, billingAddressElement } = collection;
+    const extraElements: { manager: { unmount(): void }; selector: string; mount?: (container: HTMLElement) => Promise<unknown> }[] = [
+      {
+        manager: this.emailElementManager,
+        selector: '.stripe-payment-sheet-email',
+        mount: emailElement && (container => this.emailElementManager.initialize(container, emailElement)),
+      },
+      {
+        manager: this.shippingAddressElementManager,
+        selector: '.stripe-payment-sheet-shipping-address',
+        mount: shippingAddressElement && (container => this.shippingAddressElementManager.initialize(container, shippingAddressElement)),
+      },
+      {
+        manager: this.billingAddressElementManager,
+        selector: '.stripe-payment-sheet-billing-address',
+        mount: billingAddressElement && (container => this.billingAddressElementManager.initialize(container, billingAddressElement)),
+      },
+    ];
 
-    // The containers are looked up with findElement, which waits for them in case the sheet has not rendered yet
-    if (emailElement != null) {
-      await this.emailElementManager.initialize(await findElement(this.el, '.stripe-payment-sheet-email'), emailElement);
-    } else {
-      this.emailElementManager.unmount();
+    for (const { manager, selector, mount } of extraElements) {
+      if (mount == null) {
+        manager.unmount();
+        continue;
+      }
+
+      // The container is looked up with findElement, which waits for it in case the sheet has not rendered yet
+      const container = await findElement(this.el, selector);
+
+      if (superseded()) {
+        return false;
+      }
+
+      await mount(container);
+
+      if (superseded()) {
+        return false;
+      }
     }
 
-    if (shippingAddressElement != null) {
-      await this.shippingAddressElementManager.initialize(await findElement(this.el, '.stripe-payment-sheet-shipping-address'), shippingAddressElement);
-    } else {
-      this.shippingAddressElementManager.unmount();
-    }
-
-    if (billingAddressElement != null) {
-      await this.billingAddressElementManager.initialize(await findElement(this.el, '.stripe-payment-sheet-billing-address'), billingAddressElement);
-    } else {
-      this.billingAddressElementManager.unmount();
-    }
+    return true;
   }
 
   /**
@@ -317,21 +352,33 @@ export class StripePaymentSheet {
     }
 
     const billingAddress = collection.billingAddressElement != null ? await this.billingAddressElementManager.getElement()?.getValue() : undefined;
-    const email = collection.emailElement != null ? this.emailElementManager.getState().email : undefined;
-    const billingDetails = collectedBillingDetails(collection, { billingAddress, email });
+    const emailState = collection.emailElement != null ? this.emailElementManager.getState() : undefined;
+    const billingDetails = collectedBillingDetails(collection, { billingAddress, email: emailState?.email, emailComplete: emailState?.complete });
 
     return billingDetails == null ? undefined : { payment_method_data: { billing_details: billingDetails } };
   }
 
   private async confirm(generation: number, intentKind: 'payment' | 'setup') {
     try {
+      const elements = this.stripeService.getElements();
+      // elements.submit() comes first, with nothing awaited before it, as in Stripe's submit handler examples:
+      // it validates the elements and collects what wallets (Apple Pay, Google Pay) need while the customer's click still counts,
+      // and other asynchronous work may follow once it has resolved
+      const { error: submitError } = await elements.submit();
+
+      if (submitError != null) {
+        throw submitError;
+      }
+
       const returnUrl = this.options?.returnURL ?? window.location.href;
       const extraConfirmParams = await this.confirmParams();
 
-      this.lastResult = await confirmPaymentOrSetup(this.stripeService.getStripe(), this.stripeService.getElements(), intentKind, returnUrl, extraConfirmParams);
+      this.lastResult = await confirmPaymentOrSetup(this.stripeService.getStripe(), elements, intentKind, returnUrl, extraConfirmParams);
       this.dispatch({ type: 'confirmSucceeded', generation });
     } catch (e) {
-      const message = (e as StripeError).message ?? String(e);
+      const rawMessage = (e as StripeError).message ?? String(e);
+      // Stripe's messages are already localized; the sheet's own validation messages are i18n keys
+      const message = isSheetValidationError(e) ? i18n.t(rawMessage) : rawMessage;
 
       if (isRecoverableConfirmError(e)) {
         this.dispatch({ type: 'confirmDeclined', generation, message });

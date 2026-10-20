@@ -262,7 +262,10 @@ export type BillingDetailsCollectionPlan = {
  */
 export type CollectedDetails = {
   billingAddress?: Pick<StripeAddressElementChangeEvent, 'complete' | 'value'>;
+  /** Email of the latest change event of the email element; undefined until it reports one */
   email?: string;
+  /** `complete` of the latest change event of the email element; undefined until it reports one */
+  emailComplete?: boolean;
 };
 
 type AddressDefaultValues = NonNullable<StripeAddressElementOptions['defaultValues']>;
@@ -277,7 +280,12 @@ const toAddressDefaultValues = (details: { name?: string; phone?: string; addres
   return compact({ name, phone, address: country == null || country === '' ? undefined : { ...toStripeAddress(address), country } });
 };
 
-const isBlank = (value: string | undefined): boolean => value == null || value === '';
+const isBlank = (value: string | undefined): value is '' | undefined => value == null || value === '';
+
+/**
+ * Loose email check, used only when the email element has not told whether its value is complete (a prefilled value nobody edited)
+ */
+const looksLikeEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 /**
  * Error for a `never` field without a default value. Thrown while loading so that Stripe never rejects the confirmation.
@@ -286,9 +294,16 @@ const missingDefaultError = (field: string, defaultKey: string) =>
   new Error(`<stripe-payment-sheet>: billingDetailsCollectionConfiguration.${field} is 'never', so defaultBillingDetails.${defaultKey} is required`);
 
 /**
- * Error the customer can fix in the open sheet (handled like a Stripe `validation_error`)
+ * Error the customer can fix in the open sheet (handled like a Stripe `validation_error`).
+ * Its message is an English i18n key, translated when it is shown (see `isSheetValidationError`).
  */
-const validationError = (message: string) => Object.assign(new Error(message), { type: 'validation_error' as const });
+const validationError = (message: string) => Object.assign(new Error(message), { type: 'validation_error' as const, sheetValidation: true as const });
+
+/**
+ * Tell whether an error was raised by this sheet's own validation (its message is an i18n key), rather than by Stripe (already localized).
+ * @param error - Error thrown while confirming
+ */
+export const isSheetValidationError = (error: unknown): boolean => (error as { sheetValidation?: unknown } | null)?.sheetValidation === true;
 
 /**
  * Decide which extra elements to show and which billing details to pass at confirmation (PaymentIntent / SetupIntent mode).
@@ -394,11 +409,18 @@ export const collectedBillingDetails = (plan: BillingDetailsCollectionPlan, coll
   }
 
   if (plan.emailElement != null) {
-    if (isBlank(collected.email)) {
+    // Before any change event the element shows its prefilled value
+    const email = collected.email ?? plan.emailElement.defaultValues?.email;
+
+    if (isBlank(email)) {
       throw validationError('Please enter your email address.');
     }
 
-    details.email = collected.email;
+    if (collected.emailComplete === false || (collected.emailComplete == null && !looksLikeEmail(email))) {
+      throw validationError('Please enter a valid email address.');
+    }
+
+    details.email = email;
   }
 
   Object.assign(details, plan.fixedBillingDetails);
