@@ -3,6 +3,7 @@ import { StripePaymentSheet } from '../stripe-payment-sheet';
 import { StripeModal } from '../../stripe-modal/stripe-modal';
 import type { IStripeService, IPaymentElementManager, IAddressElementManager, ILinkAuthenticationElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import { i18n } from '../../../utils/i18n';
 
 jest.mock('@stripe/stripe-js', () => ({
   loadStripe: jest.fn(),
@@ -28,7 +29,7 @@ describe('stripe-payment-sheet', () => {
   let mockStripeService: jest.Mocked<IStripeService>;
   let mockPaymentElementManager: jest.Mocked<IPaymentElementManager>;
   let stripe: { confirmPayment: jest.Mock; confirmSetup: jest.Mock };
-  let elements: { update: jest.Mock };
+  let elements: { update: jest.Mock; submit: jest.Mock };
   let addressManagers: jest.Mocked<IAddressElementManager>[];
   let addressValue: { complete: boolean; isNewAddress: boolean; value: object };
   let mockLinkAuthenticationManager: jest.Mocked<ILinkAuthenticationElementManager>;
@@ -37,6 +38,7 @@ describe('stripe-payment-sheet', () => {
   const addressManager = (mode: 'billing' | 'shipping') => addressManagers.find(m => m.initialize.mock.calls.some(([, options]) => options?.mode === mode));
 
   beforeEach(() => {
+    jest.spyOn(i18n, 't');
     addressValue = {
       complete: true,
       isNewAddress: true,
@@ -76,7 +78,7 @@ describe('stripe-payment-sheet', () => {
       confirmPayment: jest.fn().mockResolvedValue({ paymentIntent: { id: 'pi_3Mtw', status: 'succeeded' } }),
       confirmSetup: jest.fn().mockResolvedValue({ setupIntent: { id: 'seti_1Mm8', status: 'succeeded' } }),
     };
-    elements = { update: jest.fn().mockResolvedValue(undefined) };
+    elements = { update: jest.fn().mockResolvedValue(undefined), submit: jest.fn().mockResolvedValue({ selectedPaymentMethod: 'card' }) };
     mockStripeService = {
       state: { loadStripeStatus: '', applicationName: 'stripe-pwa-elements' },
       initialize: jest.fn().mockImplementation(async () => {
@@ -170,6 +172,28 @@ describe('stripe-payment-sheet', () => {
       const { eventTypes } = await setup();
 
       expect(eventTypes()).toEqual(['paymentSheetFailedToLoad']);
+    });
+
+    it('mounts and emits only for the latest load when the inputs change while an earlier load is in flight', async () => {
+      let finishFirstUpdate: () => void;
+
+      elements.update.mockReturnValueOnce(new Promise<void>(resolve => (finishFirstUpdate = resolve)));
+      const { page, sheet, eventTypes } = await setup({}, { style: 'alwaysDark', billingDetailsCollectionConfiguration: { email: 'always' } });
+
+      // The first load waits on elements.update; a new secret starts a second load that finishes first
+      sheet.intentClientSecret = SETI_SECRET;
+      await flush(page);
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledTimes(1);
+      expect(eventTypes()).toEqual(['paymentSheetLoaded']);
+
+      finishFirstUpdate();
+      await flush(page);
+
+      expect(mockPaymentElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledTimes(1);
+      expect(eventTypes()).toEqual(['paymentSheetLoaded']);
     });
 
     it('warns once about options that have no effect on the web', async () => {
@@ -286,6 +310,61 @@ describe('stripe-payment-sheet', () => {
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
         expect.objectContaining({ confirmParams: expect.objectContaining({ payment_method_data: { billing_details: { email: 'jenny@example.com' } } }) }),
       );
+    });
+
+    it('keeps the sheet open without confirming when the email is not valid', async () => {
+      mockLinkAuthenticationManager.getState.mockReturnValue({ errorMessage: '', email: 'foo', complete: false });
+      const { sheet, modal, eventTypes } = await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' } });
+
+      expect(stripe.confirmPayment).not.toHaveBeenCalled();
+      expect(modal().open).toBe(true);
+      expect(sheet.querySelector('.stripe-element-errors').textContent).toBe('Please enter a valid email address.');
+      expect(i18n.t).toHaveBeenCalledWith('Please enter a valid email address.');
+      expect(eventTypes()).toEqual(['paymentSheetLoaded']);
+    });
+
+    it('passes the prefilled email at confirm when the customer does not edit it', async () => {
+      mockLinkAuthenticationManager.getState.mockReturnValue({ errorMessage: '', email: undefined });
+      await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' }, defaultBillingDetails: { email: 'jenny@example.com' } });
+
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { defaultValues: { email: 'jenny@example.com' } });
+      expect(stripe.confirmPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ confirmParams: expect.objectContaining({ payment_method_data: { billing_details: { email: 'jenny@example.com' } } }) }),
+      );
+    });
+
+    it('calls elements.submit() synchronously in the submit handler, before reading the extra elements and confirming', async () => {
+      const context = await setup({}, { billingDetailsCollectionConfiguration: { address: 'full' } });
+
+      context.sheet.present();
+      await flush(context.page);
+
+      const getValue = jest.fn().mockResolvedValue(addressValue);
+
+      addressManager('billing').getElement.mockReturnValue({ getValue } as any);
+
+      // Nothing is awaited before elements.submit(), so the customer's click still counts as a user activation for wallets
+      context.sheet.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+      expect(elements.submit).toHaveBeenCalledTimes(1);
+      expect(getValue).not.toHaveBeenCalled();
+
+      await flush(context.page);
+
+      expect(stripe.confirmPayment).toHaveBeenCalledTimes(1);
+      expect(elements.submit.mock.invocationCallOrder[0]).toBeLessThan(getValue.mock.invocationCallOrder[0]);
+      expect(getValue.mock.invocationCallOrder[0]).toBeLessThan(stripe.confirmPayment.mock.invocationCallOrder[0]);
+    });
+
+    it('keeps the sheet open without confirming when elements.submit() reports a validation error', async () => {
+      elements.submit.mockResolvedValueOnce({ error: { type: 'validation_error', message: 'Your card number is incomplete.' } });
+      const { sheet, modal, eventTypes } = await presentAndSubmit();
+
+      expect(stripe.confirmPayment).not.toHaveBeenCalled();
+      expect(modal().open).toBe(true);
+      expect(sheet.querySelector('.stripe-element-errors').textContent).toBe('Your card number is incomplete.');
+      // Stripe's messages are already localized
+      expect(i18n.t).not.toHaveBeenCalledWith('Your card number is incomplete.');
+      expect(eventTypes()).toEqual(['paymentSheetLoaded']);
     });
 
     it('shows a shipping Address Element prefilled from shippingDetails for a PaymentIntent, in its own container', async () => {

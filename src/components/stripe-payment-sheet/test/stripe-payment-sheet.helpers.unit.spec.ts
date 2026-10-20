@@ -252,6 +252,25 @@ describe('collectedBillingDetails', () => {
     expect(isRecoverableConfirmError(catchError(() => collectedBillingDetails(plan, { email: '' })))).toBe(true);
     expect(isRecoverableConfirmError(catchError(() => collectedBillingDetails(plan, {})))).toBe(true);
   });
+
+  it('throws a recoverable validation error when the email is not valid', () => {
+    const plan = planBillingDetailsCollection({ billingDetailsCollectionConfiguration: { email: 'always' } }, 'payment');
+    const incomplete = catchError(() => collectedBillingDetails(plan, { email: 'foo', emailComplete: false }));
+
+    expect(isRecoverableConfirmError(incomplete)).toBe(true);
+    expect((incomplete as Error).message).toBe('Please enter a valid email address.');
+    // Without a change event from the email element, the value is checked here
+    expect(isRecoverableConfirmError(catchError(() => collectedBillingDetails(plan, { email: 'foo' })))).toBe(true);
+    expect(collectedBillingDetails(plan, { email: 'jenny@example.com', emailComplete: true })).toEqual({ email: 'jenny@example.com' });
+  });
+
+  it('passes the prefilled email when the email element has not reported a value', () => {
+    const plan = planBillingDetailsCollection({ billingDetailsCollectionConfiguration: { email: 'always' }, defaultBillingDetails: { email: 'jenny@example.com' } }, 'payment');
+
+    expect(collectedBillingDetails(plan, {})).toEqual({ email: 'jenny@example.com' });
+    // A cleared field is not replaced by the prefilled value
+    expect(isRecoverableConfirmError(catchError(() => collectedBillingDetails(plan, { email: '', emailComplete: false })))).toBe(true);
+  });
 });
 
 describe('confirmPaymentOrSetup', () => {

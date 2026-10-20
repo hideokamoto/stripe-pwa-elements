@@ -186,6 +186,31 @@ describe('LinkAuthenticationElementManager', () => {
       expect(state.email).toBe('user@example.com');
     });
 
+    it('should track whether the email is complete from the change event, and reset it on initialize', async () => {
+      let changeHandler: ((event: any) => void) | undefined;
+
+      mockLinkAuthenticationElement.on.mockImplementation((eventName: any, handler: any) => {
+        if (eventName === 'change') {
+          changeHandler = handler;
+        }
+        return mockLinkAuthenticationElement;
+      });
+
+      await manager.initialize(containerElement);
+      changeHandler!({ complete: false, empty: false, value: { email: 'foo' } });
+
+      expect(manager.getState()).toEqual(expect.objectContaining({ email: 'foo', complete: false }));
+
+      changeHandler!({ complete: true, empty: false, value: { email: 'foo@example.com' } });
+
+      expect(manager.getState().complete).toBe(true);
+
+      await manager.initialize(containerElement);
+
+      expect(manager.getState().email).toBeUndefined();
+      expect(manager.getState().complete).toBeUndefined();
+    });
+
     it('should handle undefined email in change event', async () => {
       let changeHandler: ((event: any) => void) | undefined;
 
