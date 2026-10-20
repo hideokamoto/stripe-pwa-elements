@@ -30,7 +30,7 @@ Claude Code ではプラグインとして入れることもできます。
 | --- | --- |
 | [`/skill.md`](/skill.md) | スキル本体（SKILL.md） |
 | [`/.well-known/agent-skills/index.json`](/.well-known/agent-skills/index.json) | [Agent Skills Discovery RFC](https://github.com/cloudflare/agent-skills-discovery-rfc)（草案 v0.2.0）形式の一覧。各スキルの SHA-256 ダイジェスト付き |
-| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | スキル本体。リンク先の `reference.md` と `examples.md` も同じディレクトリにあります |
+| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | スキル本体。検出用一覧（index.json）が指す場所です |
 
 ## llms.txt
 

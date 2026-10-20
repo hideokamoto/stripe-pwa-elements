@@ -34,7 +34,7 @@ stripe-pwa-elements/
 │   └── codesandbox/           # Vite demo app for CodeSandbox devboxes (card, address, express checkout)
 ├── plugins/
 │   └── stripe-pwa-elements/   # Claude Code plugin (listed in .claude-plugin/marketplace.json)
-│       └── skills/stripe-pwa-elements/  # Agent Skill: SKILL.md, reference.md, examples.md
+│       └── skills/stripe-pwa-elements/  # Agent Skill: a single SKILL.md
 ├── scripts/
 │   └── run-stencil-tests.sh   # Test runner invoked by .circleci/test-suites.yml
 ├── src/                        # Source code
@@ -490,7 +490,11 @@ pnpm run example:serve
 
 The Agent Skill in `plugins/stripe-pwa-elements/skills/stripe-pwa-elements/` is the single source for:
 - `npx skills add hideokamoto/stripe-pwa-elements` and the Claude Code plugin (`/plugin marketplace add hideokamoto/stripe-pwa-elements`)
-- the docs site's `/skill.md`, `/.well-known/agent-skills/<name>/*.md` and `/.well-known/agent-skills/index.json`, generated at build time from these files (`docs/src/lib/agent-skills.ts`); never commit a copy under `docs/`
+- the docs site's `/skill.md`, `/.well-known/agent-skills/<name>/SKILL.md` and `/.well-known/agent-skills/index.json`, generated at build time from it (`docs/src/lib/agent-skills.ts`); never commit a copy under `docs/`
+
+Keep the skill a single `SKILL.md`. Some of those routes deliver only that file, so anything in a separate file would be missing there.
+Do not copy the component API (props, events, methods) into the skill: the skill points agents at the generated `dist/types/components.d.ts` and the docs component pages.
+If the generated API is wrong, fix the JSDoc in the component.
 
 **When you change a component (add, rename or remove it, or change its props, events, methods or how it is loaded), update the skill in the same PR.**
 `src/agent-skill.unit.spec.ts` fails when the skill's component tags, CDN bundle path or i18n languages drift from the code.

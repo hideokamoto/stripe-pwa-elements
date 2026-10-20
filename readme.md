@@ -351,7 +351,7 @@ The documentation site also serves the skill over HTTP, built from the same file
 | --- | --- |
 | [`/skill.md`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/skill.md) | The skill's `SKILL.md` |
 | [`/.well-known/agent-skills/index.json`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/.well-known/agent-skills/index.json) | Discovery index ([Agent Skills Discovery RFC](https://github.com/cloudflare/agent-skills-discovery-rfc), draft v0.2.0) with a SHA-256 digest per skill |
-| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | The skill, next to the `reference.md` and `examples.md` it links to |
+| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | The skill at the path the discovery index points to |
 
 ## Contribution
 

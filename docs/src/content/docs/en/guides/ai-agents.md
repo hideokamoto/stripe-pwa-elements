@@ -30,7 +30,7 @@ This site reads `plugins/stripe-pwa-elements/skills/stripe-pwa-elements/SKILL.md
 | --- | --- |
 | [`/skill.md`](/skill.md) | The skill (SKILL.md) |
 | [`/.well-known/agent-skills/index.json`](/.well-known/agent-skills/index.json) | Index in the [Agent Skills Discovery RFC](https://github.com/cloudflare/agent-skills-discovery-rfc) format (draft v0.2.0), with a SHA-256 digest per skill |
-| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | The skill, with the `reference.md` and `examples.md` it links to in the same directory |
+| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | The skill at the path the discovery index points to |
 
 ## llms.txt
 
