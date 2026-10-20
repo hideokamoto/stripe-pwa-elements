@@ -3,9 +3,9 @@ import { parse } from 'yaml';
 
 /**
  * Agent Skills shipped in this repository, read at build time from the plugin directory so the site never keeps its own copy.
- * Keys look like `../../../plugins/stripe-pwa-elements/skills/<name>/<file>.md`.
+ * Keys look like `../../../plugins/stripe-pwa-elements/skills/<name>/SKILL.md`.
  */
-const skillFiles = import.meta.glob<string>('../../../plugins/stripe-pwa-elements/skills/*/*.md', {
+const skillFiles = import.meta.glob<string>('../../../plugins/stripe-pwa-elements/skills/*/SKILL.md', {
   query: '?raw',
   import: 'default',
   eager: true,
@@ -16,11 +16,9 @@ export interface AgentSkill {
   description: string;
   /** Raw SKILL.md contents */
   skillMd: string;
-  /** Every Markdown file in the skill directory, keyed by file name (SKILL.md included) */
-  files: Record<string, string>;
 }
 
-/** Path where each skill's files are served, per the Agent Skills Discovery RFC convention */
+/** Directory each skill is served under, per the Agent Skills Discovery RFC convention */
 export const skillBasePath = (name: string) => `/.well-known/agent-skills/${name}/`;
 
 /** `sha256:<hex>` over the UTF-8 bytes of the content */
@@ -36,22 +34,13 @@ const parseFrontmatter = (skillMd: string): { name: string; description: string 
   return parse(match[1]);
 };
 
-export const agentSkills: AgentSkill[] = Object.entries(
-  Object.entries(skillFiles).reduce<Record<string, Record<string, string>>>((skills, [path, content]) => {
-    const [dir, file] = path.split('/').slice(-2);
-    skills[dir] = { ...skills[dir], [file]: content };
-    return skills;
-  }, {})
-).map(([dir, files]) => {
-  const skillMd = files['SKILL.md'];
-  if (!skillMd) {
-    throw new Error(`Skill directory ${dir} has no SKILL.md`);
-  }
+export const agentSkills: AgentSkill[] = Object.entries(skillFiles).map(([path, skillMd]) => {
+  const dir = path.split('/').slice(-2)[0];
   const { name, description } = parseFrontmatter(skillMd);
   if (name !== dir) {
     throw new Error(`Skill name "${name}" must match its directory "${dir}"`);
   }
-  return { name, description, skillMd, files };
+  return { name, description, skillMd };
 });
 
 export const getAgentSkill = (name: string): AgentSkill => {
