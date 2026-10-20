@@ -19,6 +19,53 @@ license: MIT
 Stencil) that wraps Stripe Elements. It works in plain HTML, React, Vue, Angular,
 and Svelte. This skill helps you pick the right component and wire it up correctly.
 
+## Prerequisites
+
+- A Stripe account. Develop against a sandbox: its keys start with `pk_test_`
+  (publishable), `sk_test_` (secret) and `rk_test_` (restricted).
+- A backend you control that creates the PaymentIntent / SetupIntent / Checkout
+  Session with a secret or restricted key and hands the client secret to the page.
+  The components only run in the browser; they never create these objects.
+- `@stripe/stripe-js` is a regular dependency of `stripe-pwa-elements`, so installing
+  the package installs it too. Do not add a second copy by hand.
+- Optional: the [Stripe CLI](https://docs.stripe.com/stripe-cli) for creating test
+  client secrets from a terminal.
+
+## Safety rules
+
+These steps change a real Stripe account, so treat them as external side effects:
+creating objects (PaymentIntents, Customers, Checkout Sessions) with the Stripe CLI
+or API, registering payment method domains, and changing Dashboard settings.
+
+1. **Check before you run.** The Stripe CLI has no dry-run flag. Show the user the
+   exact command first, and use read-only commands (`--help`, `list`, `retrieve`) to
+   check the target account and parameters.
+2. **Run only after the user approves.** Do not run a command that creates or changes
+   anything until the user has seen it and said yes.
+3. **Stay in the sandbox.** Stripe CLI resource commands make live requests only when
+   given `--live`. Never add `--live`, and never use a `pk_live_` / `sk_live_` /
+   `rk_live_` key, unless the user explicitly asks for live mode.
+4. **Keep keys out of code.** Only the publishable key may appear in front-end code.
+   Never write secret or restricted keys into client code or commit them.
+
+## Stripe-side constraints
+
+From the Stripe docs ([API keys](https://docs.stripe.com/keys),
+[Express Checkout Element](https://docs.stripe.com/elements/express-checkout-element)):
+
+- Only publishable keys are safe to expose outside your backend. For the server,
+  Stripe recommends restricted keys with only the permissions the integration needs
+  over unrestricted secret keys.
+- Sandbox and live mode each have their own keys, and objects made in one mode are not
+  accessible in the other. The publishable key and the client secret must come from
+  the same mode.
+- Wallets in `<stripe-express-checkout-element>` (Apple Pay, Google Pay, Link, …) need
+  the domain [registered](https://docs.stripe.com/payments/payment-methods/pmd-registration)
+  in both the sandbox and live mode, and some payment methods must be activated in the
+  Dashboard before they appear.
+- Inside an iframe, the iframe's origin must match the top-level page's origin for
+  Express Checkout (Safari 17+ also works with `allow="payment"`).
+
 ## Install
 
 ```bash
