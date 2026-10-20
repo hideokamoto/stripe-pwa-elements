@@ -6,6 +6,20 @@ export const prerender = false;
 
 const PRODUCTION_RETURN_URL = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev';
 
+/**
+ * Checkout Session UI modes a caller may request.
+ * - `embedded_page` (default, unchanged behavior): for Stripe.js embedded Checkout.
+ * - `elements`: for Stripe.js Checkout elements (`initCheckout` / `initCheckoutElementsSdk`),
+ *   used by `<stripe-payment-element>` in Checkout Session mode. Older API versions called this `custom`.
+ */
+const ALLOWED_UI_MODES = ['embedded_page', 'elements'] as const;
+type DemoUiMode = (typeof ALLOWED_UI_MODES)[number];
+const DEFAULT_UI_MODE: DemoUiMode = 'embedded_page';
+
+function isAllowedUiMode(value: string): value is DemoUiMode {
+  return (ALLOWED_UI_MODES as readonly string[]).includes(value);
+}
+
 export const OPTIONS: APIRoute = ({ request }) => {
   const origin = request.headers.get('origin');
   const headers = corsHeaders(origin, env);
@@ -22,13 +36,26 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   let currency = 'usd';
+  let requestedUiMode: unknown = undefined;
   try {
     const body = await request.json();
-    if (body && typeof body === 'object' && 'currency' in body && typeof (body as Record<string, unknown>).currency === 'string') {
-      currency = ((body as Record<string, unknown>).currency as string).toLowerCase();
+    if (body && typeof body === 'object') {
+      const record = body as Record<string, unknown>;
+      if (typeof record.currency === 'string') {
+        currency = record.currency.toLowerCase();
+      }
+      requestedUiMode = record.uiMode;
     }
   } catch {
-    // If body parsing fails, fall back to default currency
+    // If body parsing fails, fall back to default currency and UI mode
+  }
+
+  let uiMode: DemoUiMode = DEFAULT_UI_MODE;
+  if (requestedUiMode !== undefined && requestedUiMode !== null) {
+    if (typeof requestedUiMode !== 'string' || !isAllowedUiMode(requestedUiMode)) {
+      return json({ error: `uiMode is not supported. Allowed values: ${ALLOWED_UI_MODES.join(', ')}.` }, 400, cors);
+    }
+    uiMode = requestedUiMode;
   }
 
   if (!ALLOWED_CURRENCIES.has(currency)) {
@@ -55,7 +82,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      ui_mode: 'embedded_page',
+      ui_mode: uiMode,
       mode: 'payment',
       line_items: [
         {
@@ -69,6 +96,10 @@ export const POST: APIRoute = async ({ request }) => {
           },
         },
       ],
+      // return_url is accepted by both `embedded_page` and `elements` (required for either when
+      // redirect-based payment methods are enabled), so it is sent for both modes. Neither mode
+      // allows success_url / cancel_url, and redirect_on_completion only applies to embedded_page,
+      // so none of those are set.
       return_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
     });
 

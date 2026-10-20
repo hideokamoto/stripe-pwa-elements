@@ -87,13 +87,16 @@ Creates a Stripe PaymentIntent with `automatic_payment_methods` enabled.
 
 #### `POST /api/create-checkout-session`
 
-Creates an embedded Stripe Checkout Session (`ui_mode: 'embedded'`).
+Creates a Stripe Checkout Session. By default it is an embedded Checkout Session (`ui_mode: 'embedded_page'`);
+pass `uiMode: "elements"` to get a session usable with Stripe.js Checkout elements (`initCheckout`), which is what
+`<stripe-payment-element>` uses in Checkout Session mode.
 
 **Request body** (JSON):
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `currency` | string | No | ISO 4217 lower-case currency code. Defaults to `usd`. |
+| `uiMode` | string | No | `embedded_page` (default) or `elements`. Any other value returns `400`. |
 
 Same allowed currencies and demo amounts as above.
 
@@ -107,7 +110,7 @@ docs URL `https://stripe-pwa-elements-docs.wp-kyoto.workers.dev`) with `?session
 ```
 
 **Error responses**:
-- `400` — unsupported currency
+- `400` — unsupported currency or unsupported `uiMode`
 - `500` — server configuration error or Stripe API failure
 
 ---

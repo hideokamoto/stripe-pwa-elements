@@ -103,7 +103,9 @@ export async function fetchCheckoutSessionClientSecret(currency = 'usd') {
   const res = await fetch(`${DEMO_API_BASE}/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currency }),
+    // stripe-payment-element's Checkout Session mode uses Stripe.js Checkout elements, which needs
+    // a session created with ui_mode "elements" (the demo API defaults to "embedded_page").
+    body: JSON.stringify({ currency, uiMode: 'elements' }),
   });
 
   if (!res.ok) {
