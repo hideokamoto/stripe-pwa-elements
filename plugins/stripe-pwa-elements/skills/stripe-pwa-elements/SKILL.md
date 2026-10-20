@@ -35,7 +35,7 @@ defineCustomElements();
 Or load directly from a CDN (no build step):
 
 ```html
-<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/wpkyoto/stripe-pwa-elements.esm.js"></script>
+<script type="module" src="https://unpkg.com/stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js"></script>
 ```
 
 ## Choose the right component
