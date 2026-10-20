@@ -305,11 +305,19 @@ export class StripePaymentSheet {
     }
   }
 
-  private async confirm(generation: number, intentKind: 'payment' | 'setup') {
-    try {
-      const returnUrl = this.options?.returnURL ?? window.location.href;
+  private confirm(generation: number, intentKind: 'payment' | 'setup') {
+    const returnUrl = this.options?.returnURL ?? window.location.href;
 
-      this.lastResult = await confirmPaymentOrSetup(this.stripeService.getStripe(), this.stripeService.getElements(), intentKind, returnUrl);
+    return this.runConfirm(generation, () => confirmPaymentOrSetup(this.stripeService.getStripe(), this.stripeService.getElements(), intentKind, returnUrl));
+  }
+
+  /**
+   * Run a confirmation and report its result to the state machine.
+   * Errors the customer can fix or retry keep the sheet open; others end it with `paymentSheetFailed`.
+   */
+  private async runConfirm(generation: number, confirm: () => Promise<PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult>) {
+    try {
+      this.lastResult = await confirm();
       this.dispatch({ type: 'confirmSucceeded', generation });
     } catch (e) {
       const message = (e as StripeError).message ?? String(e);
@@ -352,30 +360,18 @@ export class StripePaymentSheet {
     }
   }
 
-  private async confirmCheckoutSession(generation: number) {
-    try {
+  private confirmCheckoutSession(generation: number) {
+    const returnUrl = this.options?.returnURL ?? window.location.href;
+
+    return this.runConfirm(generation, async () => {
       const checkout = this.stripeService.getCheckout();
 
       if (checkout == null) {
         throw new Error('Checkout Session is not initialized');
       }
 
-      const returnUrl = this.options?.returnURL ?? window.location.href;
-
-      this.lastResult = await confirmCheckoutSessionSheet(checkout, returnUrl, this.options?.defaultBillingDetails?.email);
-      this.dispatch({ type: 'confirmSucceeded', generation });
-    } catch (e) {
-      const message = (e as StripeError).message ?? String(e);
-
-      if (isRecoverableConfirmError(e)) {
-        this.dispatch({ type: 'confirmDeclined', generation, message });
-
-        return;
-      }
-
-      this.lastError = e;
-      this.dispatch({ type: 'confirmFailed', generation, message });
-    }
+      return confirmCheckoutSessionSheet(checkout, returnUrl, this.options?.defaultBillingDetails?.email);
+    });
   }
 
   private emit(event: PaymentSheetEventName) {

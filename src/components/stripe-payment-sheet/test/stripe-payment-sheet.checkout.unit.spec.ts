@@ -88,4 +88,65 @@ describe('confirmCheckoutSessionSheet', () => {
     expect(error).toMatchObject({ type: 'api_error', message: 'Network error' });
     expect(isRecoverableConfirmError(error)).toBe(true);
   });
+
+  describe('a session that can no longer be paid', () => {
+    const DECLINED = { type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } } };
+    const OTHER = { type: 'error', error: { code: null, message: 'This Checkout Session is no longer active.' } };
+
+    /**
+     * Checkout actions whose session status is `before` until confirm runs and `after` once it has returned.
+     */
+    const actionsWithStatus = (result: unknown, before: object, after: object = before) => {
+      let status = before;
+      const confirm = jest.fn().mockImplementation(async () => {
+        status = after;
+
+        return result;
+      });
+
+      return { confirm, actions: { confirm, getSession: jest.fn(() => ({ id: 'cs_test_a1', status })) } };
+    };
+
+    it.each([
+      ['expired', { type: 'expired' }],
+      ['complete', { type: 'complete', paymentStatus: 'paid' }],
+    ])('throws an unrecoverable invalid_request_error without confirming when the session is already %s', async (status, sessionStatus) => {
+      const { confirm, actions } = actionsWithStatus(OTHER, sessionStatus);
+      const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions }), RETURN_URL).catch(e => e);
+
+      expect(confirm).not.toHaveBeenCalled();
+      expect(error).toMatchObject({ type: 'invalid_request_error', code: `checkout_session_${status}` });
+      expect(isRecoverableConfirmError(error)).toBe(false);
+    });
+
+    it.each([
+      ['expired', { type: 'expired' }],
+      ['complete', { type: 'complete', paymentStatus: 'unpaid' }],
+    ])('throws an unrecoverable invalid_request_error when the session is %s after a failed confirm', async (status, sessionStatus) => {
+      const { actions } = actionsWithStatus(OTHER, { type: 'open' }, sessionStatus);
+      const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions }), RETURN_URL).catch(e => e);
+
+      expect(error).toMatchObject({ type: 'invalid_request_error', code: `checkout_session_${status}`, message: 'This Checkout Session is no longer active.' });
+      expect(isRecoverableConfirmError(error)).toBe(false);
+    });
+
+    it('treats a decline as unrecoverable when the session expired with it', async () => {
+      const { actions } = actionsWithStatus(DECLINED, { type: 'open' }, { type: 'expired' });
+      const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions }), RETURN_URL).catch(e => e);
+
+      expect(isRecoverableConfirmError(error)).toBe(false);
+    });
+
+    it('keeps declines and other errors recoverable while the session stays open', async () => {
+      const declined = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: actionsWithStatus(DECLINED, { type: 'open' }).actions }), RETURN_URL).catch(
+        e => e,
+      );
+      const other = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: actionsWithStatus(OTHER, { type: 'open' }).actions }), RETURN_URL).catch(e => e);
+
+      expect(declined).toMatchObject({ type: 'card_error', code: 'paymentFailed' });
+      expect(other).toMatchObject({ type: 'api_error' });
+      expect(isRecoverableConfirmError(declined)).toBe(true);
+      expect(isRecoverableConfirmError(other)).toBe(true);
+    });
+  });
 });

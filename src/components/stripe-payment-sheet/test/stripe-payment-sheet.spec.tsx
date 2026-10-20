@@ -502,6 +502,27 @@ describe('stripe-payment-sheet', () => {
       expect(eventTypes()).toEqual(['paymentSheetLoaded', 'paymentSheetCompleted']);
     });
 
+    it('resolves with paymentSheetFailed when the session expired', async () => {
+      let status: object = { type: 'open' };
+
+      checkoutConfirm.mockImplementationOnce(async () => {
+        status = { type: 'expired' };
+
+        return { type: 'error', error: { code: null, message: 'This Checkout Session is no longer active.' } };
+      });
+      checkout.loadActions.mockResolvedValue({ type: 'success', actions: { confirm: checkoutConfirm, getSession: () => ({ id: 'cs_test_a1', status }) } });
+      const { page, sheet, modal, submit, events, eventTypes } = await setupCheckout();
+      const result = sheet.present();
+
+      await flush(page);
+      await submit();
+
+      await expect(result).resolves.toEqual({ paymentResult: 'paymentSheetFailed' });
+      expect(eventTypes()).toEqual(['paymentSheetLoaded', 'paymentSheetFailed']);
+      expect(events[1].detail).toMatchObject({ type: 'invalid_request_error', code: 'checkout_session_expired' });
+      expect(modal().open).toBe(false);
+    });
+
     it('resolves with paymentSheetFailed when confirming throws an unexpected error', async () => {
       checkoutConfirm.mockRejectedValueOnce(new Error('boom'));
       const { page, sheet, modal, submit, eventTypes } = await setupCheckout();

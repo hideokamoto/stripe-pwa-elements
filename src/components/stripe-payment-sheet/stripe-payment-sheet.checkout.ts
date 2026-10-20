@@ -1,4 +1,10 @@
-import type { StripeCheckoutConfirmResult, StripeCheckoutElementsOptions, StripeCheckoutElementsSdk, StripeCheckoutPaymentElementOptions } from '@stripe/stripe-js';
+import type {
+  StripeCheckoutConfirmResult,
+  StripeCheckoutElementsOptions,
+  StripeCheckoutElementsSdk,
+  StripeCheckoutPaymentElementOptions,
+  StripeCheckoutStatus,
+} from '@stripe/stripe-js';
 import { StripeAPIError } from '../../utils/error';
 import { toAppearance, toPaymentElementOptions } from './stripe-payment-sheet.helpers';
 import type { PaymentSheetOptions } from './stripe-payment-sheet.helpers';
@@ -46,19 +52,41 @@ export const toCheckoutElementsOptions = (options: PaymentSheetOptions | undefin
 };
 
 /**
+ * Throw when the session can no longer be paid. Stripe documents an `expired` session as "No further processing will occur",
+ * and a `complete` one is already paid or being paid, so confirming again cannot succeed.
+ * @param status - `session.status` from `getSession()`; undefined when it cannot be read
+ * @param message - Message of the confirm error, if any
+ * @throws StripeAPIError of type `invalid_request_error` (unrecoverable), with the code `checkout_session_expired` or `checkout_session_complete`
+ */
+const assertSessionOpen = (status: StripeCheckoutStatus | undefined, message?: string) => {
+  if (status == null || status.type === 'open') {
+    return;
+  }
+
+  throw new StripeAPIError({
+    type: 'invalid_request_error',
+    code: `checkout_session_${status.type}`,
+    message: message ?? `The Checkout Session is ${status.type} and can no longer be paid.`,
+  });
+};
+
+/**
  * Confirm a Checkout Session from the payment sheet.
  *
  * Unlike the default of `confirm`, which always redirects to `returnUrl`, this passes `redirect: 'if_required'`
  * so that payment methods without a redirect finish in the page and can be reported as `paymentSheetCompleted`.
  *
  * Errors are thrown as `StripeAPIError` with a `type` that `isRecoverableConfirmError` understands.
- * The Checkout errors do not tell whether the session can still be paid, so all of them keep the sheet open:
- * `paymentFailed` becomes `card_error`, any other confirm error or a failure to load the actions becomes `api_error`.
+ * A confirm error only carries `code: 'paymentFailed'` or `code: null` (`StripeCheckoutConfirmResult` in @stripe/stripe-js),
+ * so whether the session can still be paid is read from `session.status`:
+ * - session `expired` or `complete` (before confirming or after a failed confirm): `invalid_request_error`, which ends the sheet
+ * - `paymentFailed` on an open session (a decline): `card_error`, which keeps the sheet open
+ * - any other confirm error on an open session, or a failure to load the actions: `api_error`, which keeps the sheet open
  * @param checkout - The Checkout instance from `initCheckoutElementsSdk`
  * @param returnUrl - Where Stripe redirects after a redirect-based payment method
  * @param email - Customer email; needed when the session was created without `customer_email` or `customer`
  * @returns The confirmation result
- * @throws StripeAPIError when the actions cannot be loaded or the confirmation fails
+ * @throws StripeAPIError when the actions cannot be loaded, the session can no longer be paid, or the confirmation fails
  */
 export const confirmCheckoutSessionSheet = async (checkout: StripeCheckoutElementsSdk, returnUrl: string, email?: string): Promise<StripeCheckoutConfirmResult> => {
   const loadActionsResult = await checkout.loadActions();
@@ -67,10 +95,17 @@ export const confirmCheckoutSessionSheet = async (checkout: StripeCheckoutElemen
     throw new StripeAPIError({ type: 'api_error', code: 'checkout_session_error', message: loadActionsResult.error.message });
   }
 
-  const result = await loadActionsResult.actions.confirm({ returnUrl, redirect: 'if_required', ...(email != null && email !== '' ? { email } : {}) });
+  const { actions } = loadActionsResult;
+  const sessionStatus = () => actions.getSession?.()?.status;
+
+  assertSessionOpen(sessionStatus());
+
+  const result = await actions.confirm({ returnUrl, redirect: 'if_required', ...(email != null && email !== '' ? { email } : {}) });
 
   if (result.type === 'error') {
     const { code, message } = result.error;
+
+    assertSessionOpen(sessionStatus(), message);
 
     if (code === 'paymentFailed') {
       throw new StripeAPIError({ type: 'card_error', code, message });
