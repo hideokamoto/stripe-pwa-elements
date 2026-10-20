@@ -29,6 +29,12 @@ TypeError: Failed to fetch dynamically imported module
 必要なコンポーネントを `dist/components` から直接 import します。
 各モジュールは import 時にカスタム要素を自動登録するため、import するだけで利用できます。
 
+なお、この import 方法は`stripe-pwa-elements@4.0.1`以降を使ってください。v4.0.0 ではコンポーネントの外枠だけが描画され、内部の Stripe Element がマウントされない不具合がありました。4.0.0 を使う場合は、代わりに全部入りバンドルを import してください。
+
+```javascript
+import 'stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js';
+```
+
 ```javascript
 // <stripe-payment-element> を登録 — defineCustomElements() は不要
 import 'stripe-pwa-elements/dist/components/stripe-payment-element';

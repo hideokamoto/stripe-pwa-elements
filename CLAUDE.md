@@ -32,6 +32,9 @@ stripe-pwa-elements/
 │   └── example-express-checkout.html  # Express Checkout
 ├── examples/
 │   └── codesandbox/           # Vite demo app for CodeSandbox devboxes (card, address, express checkout)
+├── plugins/
+│   └── stripe-pwa-elements/   # Claude Code plugin (listed in .claude-plugin/marketplace.json)
+│       └── skills/stripe-pwa-elements/  # Agent Skill: a single SKILL.md
 ├── scripts/
 │   └── run-stencil-tests.sh   # Test runner invoked by .circleci/test-suites.yml
 ├── src/                        # Source code
@@ -186,9 +189,11 @@ pnpm run generate     # Generate new Stencil component
 - Local equivalent: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run test:unit`, `pnpm run test:component`, `pnpm run build`
 
 ### Publishing
-- Uses `np` package for releases
-- Command: `pnpm run release`
-- Pre-publish: Automatically runs build via `prepublishOnly` script
+- Uses **Changesets** (`stripe-pwa-elements` at the root + `hono-stripe-elements` in `packages/`); see `RELEASE.md`
+- Add a changeset per user-facing change: `pnpm changeset` (commit the generated `.changeset/*.md`)
+- Merging to `main` triggers an automated CircleCI pipeline (config source: `hideokamoto/circleci-configurations`, `workflows/publish/npm-monorepo.yaml`): `changeset version` → commit to main (`[skip ci]`) → `changeset publish` (npm OIDC Trusted Publishing) → tag push
+- Do **not** add a publish workflow file to this repo; the pipeline is attached via a CircleCI Pipeline Definition
+- Do not bump versions by hand; manual fallback: `pnpm changeset:publish`
 
 ## Code Conventions
 
@@ -480,6 +485,20 @@ pnpm run example:serve
 3. **Stripe elements are lazy loaded** - Wait for stripeLoaded event
 4. **Error handling** - Use StripeAPIError utility from `src/utils/error.ts`
 5. **Test mode** - All examples and tests should use Stripe test mode
+
+### Agent Skill
+
+The Agent Skill in `plugins/stripe-pwa-elements/skills/stripe-pwa-elements/` is the single source for:
+- `npx skills add hideokamoto/stripe-pwa-elements` and the Claude Code plugin (`/plugin marketplace add hideokamoto/stripe-pwa-elements`)
+- the docs site's `/skill.md`, `/.well-known/agent-skills/<name>/SKILL.md` and `/.well-known/agent-skills/index.json`, generated at build time from it (`docs/src/lib/agent-skills.ts`); never commit a copy under `docs/`
+
+Keep the skill a single `SKILL.md`. Some of those routes deliver only that file, so anything in a separate file would be missing there.
+Do not copy the component API (props, events, methods) into the skill: the skill points agents at the generated `dist/types/components.d.ts` and the docs component pages.
+If the generated API is wrong, fix the JSDoc in the component.
+
+**When you change a component (add, rename or remove it, or change its props, events, methods or how it is loaded), update the skill in the same PR.**
+`src/agent-skill.unit.spec.ts` fails when the skill's component tags, CDN bundle path or i18n languages drift from the code.
+Validate the frontmatter with `uvx --from skills-ref agentskills validate plugins/stripe-pwa-elements/skills/stripe-pwa-elements`.
 
 ### Documentation
 

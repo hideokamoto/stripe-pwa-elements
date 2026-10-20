@@ -320,21 +320,38 @@ See the [example/](./example) directory for complete working examples:
 - [Address Element](./example/address-example.html) — Address collection
 - [Express Checkout](./example/example-express-checkout.html) — Apple Pay, Google Pay, etc.
 
-## Use with Claude Code
+## Use with coding agents (Agent Skill)
 
-This repo ships a [Claude Code](https://claude.com/claude-code) skill that teaches
-the assistant how to integrate `stripe-pwa-elements` correctly — picking the right
-component, wiring the publishable key + client secret, and handling the
-submit/confirm flow. Install it as a plugin:
+This repo ships an [Agent Skill](https://agentskills.io/specification) that teaches
+coding agents how to integrate `stripe-pwa-elements` correctly — picking the right
+component, wiring the publishable key + client secret, handling the
+submit/confirm flow, and asking before anything that changes your Stripe account.
+The skill lives in [`plugins/stripe-pwa-elements/skills/stripe-pwa-elements/`](./plugins/stripe-pwa-elements/skills/stripe-pwa-elements/SKILL.md).
+
+Install it with the [`skills`](https://www.npmjs.com/package/skills) CLI:
+
+```bash
+npx skills add hideokamoto/stripe-pwa-elements
+```
+
+Or, in [Claude Code](https://claude.com/claude-code), install it as a plugin:
 
 ```text
 /plugin marketplace add hideokamoto/stripe-pwa-elements
 /plugin install stripe-pwa-elements@stripe-pwa-elements
 ```
 
-Once installed, the skill activates automatically when Claude detects you are
+Once installed in Claude Code, the skill activates automatically when Claude detects you are
 working with the library, or you can invoke it explicitly with
 `/stripe-pwa-elements:stripe-pwa-elements`.
+
+The documentation site also serves the skill over HTTP, built from the same file:
+
+| URL | Purpose |
+| --- | --- |
+| [`/skill.md`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/skill.md) | The skill's `SKILL.md` |
+| [`/.well-known/agent-skills/index.json`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/.well-known/agent-skills/index.json) | Discovery index ([Agent Skills Discovery RFC](https://github.com/cloudflare/agent-skills-discovery-rfc), draft v0.2.0) with a SHA-256 digest per skill |
+| [`/.well-known/agent-skills/stripe-pwa-elements/SKILL.md`](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/.well-known/agent-skills/stripe-pwa-elements/SKILL.md) | The skill at the path the discovery index points to |
 
 ## Contribution
 
@@ -373,6 +390,13 @@ pnpm run test:e2e:stripe
 - Type-check the suite with `pnpm exec tsc -p e2e/stripe/tsconfig.json`.
 
 To add a check: add a scenario to `e2e/stripe/*.pw.ts` using `PaymentSheetHarness` (`e2e/stripe/support/payment-sheet.ts`) and the demo API helpers (`e2e/stripe/support/demo-api.ts`). Element options and attributes go through `harness.mount({ publishableKey, clientSecret, options, attributes })`. For a different page, add an HTML file to `e2e/stripe/pages/` that exposes the same `window.harness` contract and open it with `harness.goto('/e2e/<file>.html')`.
+
+### Keep the Agent Skill up to date
+
+When you add, rename or remove a component, or change its props, events, methods or how it is loaded,
+update the Agent Skill in [`plugins/stripe-pwa-elements/skills/stripe-pwa-elements/`](./plugins/stripe-pwa-elements/skills/stripe-pwa-elements/)
+in the same pull request. `src/agent-skill.unit.spec.ts` fails when the skill's component tags,
+CDN bundle path or i18n languages no longer match the code.
 
 ## Security & PCI DSS SAQ-A
 
