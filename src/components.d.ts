@@ -152,7 +152,7 @@ export namespace Components {
          */
         "sheetTitle": string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction": boolean;
@@ -242,7 +242,7 @@ export namespace Components {
          */
         "sheetTitle": string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction": boolean;
@@ -1079,7 +1079,7 @@ declare namespace LocalJSX {
          */
         "sheetTitle"?: string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction"?: boolean;
@@ -1147,7 +1147,7 @@ declare namespace LocalJSX {
          */
         "sheetTitle"?: string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction"?: boolean;
