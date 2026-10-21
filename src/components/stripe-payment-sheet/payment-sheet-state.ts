@@ -7,9 +7,14 @@
  */
 
 /**
- * Kind of intent a client secret belongs to
+ * What a client secret belongs to: a PaymentIntent, a SetupIntent or a Checkout Session
  */
-export type IntentKind = 'payment' | 'setup';
+export type IntentKind = 'payment' | 'setup' | 'checkoutSession';
+
+/**
+ * Attribute a client secret was set through: `intent-client-secret` or `checkout-session-client-secret`
+ */
+export type SecretSource = 'intent' | 'checkoutSession';
 
 /**
  * Lifecycle phase of the sheet
@@ -36,11 +41,11 @@ export type SheetState = Readonly<{
   /** Whether the sheet should open as soon as loading finishes */
   openRequested: boolean;
   /** Secret received while confirming; applied once the confirmation finishes */
-  deferredClientSecret?: string;
+  deferredSecret?: { clientSecret: string; source: SecretSource };
 }>;
 
 export type SheetEvent =
-  | { type: 'secretChanged'; clientSecret: string }
+  | { type: 'secretChanged'; clientSecret: string; source: SecretSource }
   | { type: 'loadSucceeded'; generation: number }
   | { type: 'loadFailed'; generation: number }
   | { type: 'presentRequested' }
@@ -69,7 +74,7 @@ export const initialSheetState: SheetState = {
   openRequested: false,
 };
 
-const CLIENT_SECRET_PATTERNS: Array<[RegExp, IntentKind]> = [
+const CLIENT_SECRET_PATTERNS: Array<[RegExp, 'payment' | 'setup']> = [
   [/^pi_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/, 'payment'],
   [/^seti_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/, 'setup'],
 ];
@@ -79,10 +84,26 @@ const CLIENT_SECRET_PATTERNS: Array<[RegExp, IntentKind]> = [
  * @param clientSecret - The `client_secret` of a PaymentIntent (`pi_..._secret_...`) or SetupIntent (`seti_..._secret_...`)
  * @returns The intent kind, or undefined when the format is not recognized
  */
-export const intentKindFromClientSecret = (clientSecret: string): IntentKind | undefined => {
+export const intentKindFromClientSecret = (clientSecret: string): 'payment' | 'setup' | undefined => {
   const match = CLIENT_SECRET_PATTERNS.find(([pattern]) => pattern.test(clientSecret));
 
   return match?.[1];
+};
+
+/**
+ * Tell what a client secret belongs to.
+ * A secret from `checkout-session-client-secret` is always a Checkout Session: Stripe does not document the format
+ * of a Checkout Session client secret, so it is never inspected. Intent secrets are told apart by their prefix.
+ * @param clientSecret - The client secret
+ * @param source - The attribute the secret was set through
+ * @returns The kind, or undefined when an intent secret has an unknown format
+ */
+export const intentKindOf = (clientSecret: string, source: SecretSource): IntentKind | undefined => {
+  if (source === 'checkoutSession') {
+    return 'checkoutSession';
+  }
+
+  return intentKindFromClientSecret(clientSecret);
 };
 
 const unchanged = (state: SheetState): Transition => ({ state, effects: [] });
@@ -111,19 +132,19 @@ const cancel = (state: SheetState): Transition => {
   };
 };
 
-const changeSecret = (state: SheetState, clientSecret: string): Transition => {
+const changeSecret = (state: SheetState, clientSecret: string, source: SecretSource): Transition => {
   if (clientSecret === '') {
     return unchanged(state);
   }
 
   // Never drop the result of a running confirmation; apply the new secret once it finishes
   if (state.phase === 'confirming') {
-    return unchanged({ ...state, deferredClientSecret: clientSecret });
+    return unchanged({ ...state, deferredSecret: { clientSecret, source } });
   }
 
   const canceled = state.phase === 'presented' ? cancel(state) : unchanged(state);
   const generation = state.generation + 1;
-  const intentKind = intentKindFromClientSecret(clientSecret);
+  const intentKind = intentKindOf(clientSecret, source);
 
   if (intentKind == null) {
     const resolved = resolvePending({ ...canceled.state, phase: 'loadFailed', generation, intentKind: undefined, openRequested: false }, 'paymentSheetFailed');
@@ -144,13 +165,13 @@ const changeSecret = (state: SheetState, clientSecret: string): Transition => {
  * Apply a secret that arrived while confirming.
  */
 const applyDeferredSecret = (result: Transition): Transition => {
-  const { deferredClientSecret } = result.state;
+  const { deferredSecret } = result.state;
 
-  if (deferredClientSecret == null) {
+  if (deferredSecret == null) {
     return result;
   }
 
-  const next = changeSecret({ ...result.state, deferredClientSecret: undefined }, deferredClientSecret);
+  const next = changeSecret({ ...result.state, deferredSecret: undefined }, deferredSecret.clientSecret, deferredSecret.source);
 
   return { state: next.state, effects: [...result.effects, ...next.effects] };
 };
@@ -165,7 +186,7 @@ const isCurrentConfirmation = (state: SheetState, generation: number) => state.p
 export const transition = (state: SheetState, event: SheetEvent): Transition => {
   switch (event.type) {
     case 'secretChanged':
-      return changeSecret(state, event.clientSecret);
+      return changeSecret(state, event.clientSecret, event.source);
 
     case 'loadSucceeded': {
       if (event.generation !== state.generation || state.phase !== 'loading') {

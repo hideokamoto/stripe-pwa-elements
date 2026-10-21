@@ -1,5 +1,5 @@
 import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch, Host } from '@stencil/core';
-import type { PaymentIntentResult, SetupIntentResult, StripeError } from '@stripe/stripe-js';
+import type { PaymentIntentResult, SetupIntentResult, StripeCheckoutConfirmResult, StripeError } from '@stripe/stripe-js';
 import { i18n } from '../../utils/i18n';
 import { checkPlatform } from '../../utils/utils';
 import { findElement } from '../../utils/element-finder';
@@ -8,7 +8,7 @@ import type { IStripeService, IPaymentElementManager, IAddressElementManager, IL
 import type { StripeLoadedEvent } from '../../interfaces';
 import { confirmPaymentOrSetup } from '../stripe-payment-element/stripe-payment-element.helpers';
 import { initialSheetState, transition } from './payment-sheet-state';
-import type { IntentKind, PaymentSheetEventName, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
+import type { IntentKind, PaymentSheetEventName, SecretSource, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
 import {
   collectedBillingDetails,
   isRecoverableConfirmError,
@@ -19,10 +19,14 @@ import {
   unsupportedOptionKeys,
 } from './stripe-payment-sheet.helpers';
 import type { BillingDetailsCollectionPlan, PaymentSheetOptions, PaymentSheetPresentResult } from './stripe-payment-sheet.helpers';
+import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from './stripe-payment-sheet.checkout';
+
+const nonEmpty = (value: string | undefined): string | undefined => (value == null || value === '' ? undefined : value);
 
 /**
  * A payment sheet: the Payment Element in a modal, with the same events and results as the native PaymentSheet
- * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix.
+ * of `@capacitor-community/stripe`. PaymentIntent and SetupIntent are told apart by the client secret prefix;
+ * a Checkout Session is used when `checkout-session-client-secret` is set.
  */
 @Component({
   tag: 'stripe-payment-sheet',
@@ -45,9 +49,13 @@ export class StripePaymentSheet {
 
   /** Details for the next emitted event */
   private lastError?: unknown;
-  private lastResult?: PaymentIntentResult | SetupIntentResult;
+  private lastResult?: PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult;
+
+  /** Key of the last requested load (see `loadTarget`), so that unchanged values do not reload */
+  private lastLoadKey?: string;
 
   private warnedUnsupportedOptions = false;
+  private warnedCheckoutIgnoredOptions = false;
 
   /**
    * Your Stripe publishable API key.
@@ -59,6 +67,13 @@ export class StripePaymentSheet {
    * The prefix decides whether `confirmPayment` or `confirmSetup` is used.
    */
   @Prop() readonly intentClientSecret?: string;
+
+  /**
+   * The client secret of a Checkout Session created with `ui_mode: 'elements'` (named `custom` in older Stripe API versions). Its format is not inspected.
+   * When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`).
+   * Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
+   */
+  @Prop() readonly checkoutSessionClientSecret?: string;
 
   /**
    * Optional. Making API calls for connected accounts
@@ -111,9 +126,9 @@ export class StripePaymentSheet {
   @Event() paymentSheetFailedToLoad: EventEmitter<unknown>;
 
   /**
-   * The payment or setup succeeded
+   * The payment or setup succeeded. In Checkout Session mode the detail is the result of `confirm` (`{ type: 'success', session }`)
    */
-  @Event() paymentSheetCompleted: EventEmitter<PaymentIntentResult | SetupIntentResult>;
+  @Event() paymentSheetCompleted: EventEmitter<PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult>;
 
   /**
    * The customer closed the sheet
@@ -152,6 +167,7 @@ export class StripePaymentSheet {
 
   @Watch('publishableKey')
   @Watch('intentClientSecret')
+  @Watch('checkoutSessionClientSecret')
   @Watch('stripeAccount')
   handleSecretChange() {
     this.startLoading();
@@ -197,12 +213,43 @@ export class StripePaymentSheet {
     this.emailElementManager.unmount();
   }
 
+  /**
+   * Decide what to load from the attributes and load it only when it differs from the last load.
+   * A change that does not alter the result (the attribute that is not used, or an empty value that means unset)
+   * must neither reload Stripe.js nor cancel an open sheet.
+   */
   private startLoading() {
-    if (this.publishableKey == null || this.publishableKey === '' || this.intentClientSecret == null) {
+    const target = this.loadTarget();
+
+    if (target == null || target.key === this.lastLoadKey) {
       return;
     }
 
-    this.dispatch({ type: 'secretChanged', clientSecret: this.intentClientSecret });
+    this.lastLoadKey = target.key;
+    this.dispatch({ type: 'secretChanged', clientSecret: target.clientSecret, source: target.source });
+  }
+
+  /**
+   * The secret to load and a key of everything the load depends on, or undefined when nothing can be loaded.
+   * The Checkout Session wins when both secrets are set (the same rule as `stripe-payment-element`).
+   */
+  private loadTarget(): { key: string; clientSecret: string; source: SecretSource } | undefined {
+    const publishableKey = nonEmpty(this.publishableKey);
+
+    if (publishableKey == null) {
+      return undefined;
+    }
+
+    const checkoutSessionClientSecret = nonEmpty(this.checkoutSessionClientSecret);
+    const intentClientSecret = nonEmpty(this.intentClientSecret);
+    const [clientSecret, source]: [string | undefined, SecretSource] =
+      checkoutSessionClientSecret != null ? [checkoutSessionClientSecret, 'checkoutSession'] : [intentClientSecret, 'intent'];
+
+    if (clientSecret == null) {
+      return undefined;
+    }
+
+    return { key: JSON.stringify([publishableKey, nonEmpty(this.stripeAccount) ?? null, source, clientSecret]), clientSecret, source };
   }
 
   private dispatch(event: SheetEvent) {
@@ -215,7 +262,12 @@ export class StripePaymentSheet {
   private perform(effect: SheetEffect) {
     switch (effect.type) {
       case 'load':
-        this.load(effect.generation, effect.clientSecret, effect.intentKind);
+        if (effect.intentKind === 'checkoutSession') {
+          this.loadCheckoutSession(effect.generation, effect.clientSecret);
+        } else {
+          this.load(effect.generation, effect.clientSecret, effect.intentKind);
+        }
+
         break;
       case 'show':
         this.visible = true;
@@ -226,7 +278,12 @@ export class StripePaymentSheet {
         this.open = false;
         break;
       case 'confirm':
-        this.confirm(effect.generation, effect.intentKind);
+        if (effect.intentKind === 'checkoutSession') {
+          this.confirmCheckoutSession(effect.generation);
+        } else {
+          this.confirm(effect.generation, effect.intentKind);
+        }
+
         break;
       case 'showError':
         this.errorMessage = effect.message;
@@ -242,7 +299,7 @@ export class StripePaymentSheet {
     }
   }
 
-  private async load(generation: number, clientSecret: string, intentKind: IntentKind) {
+  private async load(generation: number, clientSecret: string, intentKind: 'payment' | 'setup') {
     this.warnUnsupportedOptions(intentKind);
 
     // A newer load started while this one was waiting: stop before touching the elements, so that only the latest load mounts and emits
@@ -358,8 +415,8 @@ export class StripePaymentSheet {
     return billingDetails == null ? undefined : { payment_method_data: { billing_details: billingDetails } };
   }
 
-  private async confirm(generation: number, intentKind: 'payment' | 'setup') {
-    try {
+  private confirm(generation: number, intentKind: 'payment' | 'setup') {
+    return this.runConfirm(generation, async () => {
       const elements = this.stripeService.getElements();
       // elements.submit() comes first, with nothing awaited before it, as in Stripe's submit handler examples:
       // it validates the elements and collects what wallets (Apple Pay, Google Pay) need while the customer's click still counts,
@@ -373,7 +430,18 @@ export class StripePaymentSheet {
       const returnUrl = this.options?.returnURL ?? window.location.href;
       const extraConfirmParams = await this.confirmParams();
 
-      this.lastResult = await confirmPaymentOrSetup(this.stripeService.getStripe(), elements, intentKind, returnUrl, extraConfirmParams);
+      return confirmPaymentOrSetup(this.stripeService.getStripe(), elements, intentKind, returnUrl, extraConfirmParams);
+    });
+  }
+
+  /**
+   * Run a confirmation and report its result to the state machine.
+   * `confirm` is called synchronously, so that its first step still runs inside the customer's submit event.
+   * Errors the customer can fix or retry keep the sheet open; others end it with `paymentSheetFailed`.
+   */
+  private async runConfirm(generation: number, confirm: () => Promise<PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult>) {
+    try {
+      this.lastResult = await confirm();
       this.dispatch({ type: 'confirmSucceeded', generation });
     } catch (e) {
       const rawMessage = (e as StripeError).message ?? String(e);
@@ -389,6 +457,56 @@ export class StripePaymentSheet {
       this.lastError = e;
       this.dispatch({ type: 'confirmFailed', generation, message });
     }
+  }
+
+  private async loadCheckoutSession(generation: number, clientSecret: string) {
+    this.warnUnsupportedOptions('checkoutSession');
+    this.warnCheckoutIgnoredOptions();
+
+    // The extra billing elements belong to intent mode; remove those of an earlier intent load
+    this.collection = undefined;
+    this.unmountExtraElements();
+
+    try {
+      await this.stripeService.initializeWithCheckoutSession(this.publishableKey, clientSecret, {
+        stripeAccount: this.stripeAccount,
+        applicationName: this.applicationName,
+        elementsOptions: toCheckoutElementsOptions(this.options),
+      });
+
+      if (generation !== this.sheet.generation) {
+        return;
+      }
+
+      if (this.stripeService.state.loadStripeStatus !== 'success') {
+        throw new Error('Failed to load Stripe.js');
+      }
+
+      await this.paymentElementManager.initialize(this.el, toCheckoutPaymentElementOptions(this.options));
+      this.dispatch({ type: 'loadSucceeded', generation });
+    } catch (e) {
+      // An error of a load that a newer load replaced is not reported
+      if (generation !== this.sheet.generation) {
+        return;
+      }
+
+      this.lastError = e;
+      this.dispatch({ type: 'loadFailed', generation });
+    }
+  }
+
+  private confirmCheckoutSession(generation: number) {
+    const returnUrl = this.options?.returnURL ?? window.location.href;
+
+    return this.runConfirm(generation, async () => {
+      const checkout = this.stripeService.getCheckout();
+
+      if (checkout == null) {
+        throw new Error('Checkout Session is not initialized');
+      }
+
+      return confirmCheckoutSessionSheet(checkout, returnUrl, this.options?.defaultBillingDetails?.email);
+    });
   }
 
   private emit(event: PaymentSheetEventName) {
@@ -420,6 +538,17 @@ export class StripePaymentSheet {
 
     this.warnedUnsupportedOptions = true;
     console.warn(`<stripe-payment-sheet>: these options have no effect on the web yet: ${keys.join(', ')}`);
+  }
+
+  private warnCheckoutIgnoredOptions() {
+    const keys = checkoutIgnoredOptionKeys(this.options);
+
+    if (this.warnedCheckoutIgnoredOptions || keys.length === 0) {
+      return;
+    }
+
+    this.warnedCheckoutIgnoredOptions = true;
+    console.warn(`<stripe-payment-sheet>: these options have no effect with a Checkout Session: ${keys.join(', ')}`);
   }
 
   private handleSubmit = (e: Event) => {
