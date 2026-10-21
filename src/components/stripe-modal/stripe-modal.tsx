@@ -243,6 +243,8 @@ export class StripeModal {
 
     const modalChild = this.el.shadowRoot.querySelector('.modal-child') as HTMLElement;
 
+    // The panel stays in the DOM while closed and keeps its scroll position; start each opening at the top (title, close button)
+    modalChild.scrollTop = 0;
     modalChild.classList.add('loading');
     modalChild.style.willChange = 'transform';
     modalChild.addEventListener(

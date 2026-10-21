@@ -82,7 +82,23 @@ test.describe('stripe-payment-sheet (real Stripe.js, test mode)', () => {
       await harness.waitForEvent('paymentSheetLoaded');
       await harness.expectVisible();
 
+      // The panel scrolls inside itself: its content is taller than the panel
+      const panel = harness.sheet.locator('stripe-modal .modal-child');
+      const title = harness.sheet.locator('.stripe-heading');
+      const { scrollHeight, clientHeight } = await panel.evaluate(element => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+
+      expect(scrollHeight).toBeGreaterThan(clientHeight);
+      await expect(title).toBeInViewport();
       await expect(harness.closeButton).toBeInViewport({ timeout: 5_000 });
+
+      // Scrolling down reaches the submit button, and scrolling back up reaches the title and the close button again
+      await panel.evaluate(element => (element.scrollTop = element.scrollHeight));
+      await expect(harness.submitButton).toBeInViewport();
+      await expect(title).not.toBeInViewport();
+      await panel.evaluate(element => (element.scrollTop = 0));
+      await expect(title).toBeInViewport();
+      await expect(harness.closeButton).toBeInViewport();
+
       await harness.closeButton.click({ timeout: 5_000 });
       expect(await harness.waitForPresentResult()).toEqual({ paymentResult: 'paymentSheetCanceled' });
     });

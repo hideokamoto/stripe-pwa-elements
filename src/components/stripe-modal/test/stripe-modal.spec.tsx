@@ -130,6 +130,26 @@ describe('stripe-modal component tests', () => {
     });
   });
 
+  describe('Scroll position', () => {
+    it('starts at the top again when the modal is reopened after scrolling', async () => {
+      const page = await newSpecPage({
+        components: [StripeModal],
+        html: `<stripe-modal></stripe-modal>`,
+      });
+      const modalChild = page.root.shadowRoot.querySelector('.modal-child') as HTMLElement;
+
+      await page.rootInstance.openModal();
+      await page.waitForChanges();
+      modalChild.scrollTop = 630;
+      await page.rootInstance.closeModal();
+      await page.waitForChanges();
+      await page.rootInstance.openModal();
+      await page.waitForChanges();
+
+      expect(modalChild.scrollTop).toBe(0);
+    });
+  });
+
   describe('Event emission', () => {
     it('should emit close event with correct data when closeModal is called', async () => {
       const page = await newSpecPage({
