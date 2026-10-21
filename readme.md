@@ -389,7 +389,7 @@ pnpm run test:e2e:stripe
 - Traces and screenshots of failed tests go to `test-reports/stripe-e2e/`.
 - Type-check the suite with `pnpm exec tsc -p e2e/stripe/tsconfig.json`.
 
-To add a check: add a scenario to `e2e/stripe/*.pw.ts` using `PaymentSheetHarness` (`e2e/stripe/support/payment-sheet.ts`) and the demo API helpers (`e2e/stripe/support/demo-api.ts`). Element options and attributes go through `harness.mount({ publishableKey, clientSecret, options, attributes })`. For a different page, add an HTML file to `e2e/stripe/pages/` that exposes the same `window.harness` contract and open it with `harness.goto('/e2e/<file>.html')`.
+To add a check: add a scenario to `e2e/stripe/*.pw.ts` using `PaymentSheetHarness` (`e2e/stripe/support/payment-sheet.ts`) and the demo API helpers (`e2e/stripe/support/demo-api.ts`). Element options and attributes go through `harness.mount({ publishableKey, clientSecret, options, attributes })`. To check what Stripe received or saved (confirm request params, billing details on the PaymentMethod, shipping on the PaymentIntent), use `e2e/stripe/support/stripe-api.ts`, as `payment-sheet-billing.pw.ts` does. For a different page, add an HTML file to `e2e/stripe/pages/` that exposes the same `window.harness` contract and open it with `harness.goto('/e2e/<file>.html')`.
 
 ### Keep the Agent Skill up to date
 

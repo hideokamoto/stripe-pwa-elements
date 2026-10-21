@@ -130,6 +130,65 @@ export class PaymentSheetHarness {
     }
   }
 
+  /** Iframe of the email (Link Authentication) element, shown with `billingDetailsCollectionConfiguration.email: 'always'` */
+  get emailFrame(): FrameLocator {
+    return this.page.frameLocator('stripe-payment-sheet .stripe-payment-sheet-email iframe').first();
+  }
+
+  /** Iframe of the billing Address Element, shown with `billingDetailsCollectionConfiguration.address: 'full'` */
+  get billingAddressFrame(): FrameLocator {
+    return this.page.frameLocator('stripe-payment-sheet .stripe-payment-sheet-billing-address iframe[title="Secure address input frame"]').first();
+  }
+
+  /** Iframe of the shipping Address Element, shown with `shippingDetails` */
+  get shippingAddressFrame(): FrameLocator {
+    return this.page.frameLocator('stripe-payment-sheet .stripe-payment-sheet-shipping-address iframe[title="Secure address input frame"]').first();
+  }
+
+  /** Fill an Address Element with a US address, closing its autocomplete suggestions */
+  async fillUsAddress(frame: FrameLocator, { name = 'Jenny Rosen', line1 = '354 Oyster Point Blvd', city = 'South San Francisco', state = 'CA', postalCode = '94080' } = {}) {
+    const nameInput = frame.locator('input[name="name"]');
+
+    await nameInput.waitFor({ state: 'visible', timeout: 30_000 });
+    await nameInput.fill(name);
+    await frame.locator('select[name="country"]').selectOption('US');
+
+    const line1Input = frame.locator('input[name="addressLine1"]');
+
+    await line1Input.fill(line1);
+    await line1Input.press('Escape');
+
+    // With autocomplete, the other fields may stay hidden behind an "Enter address manually" link
+    const manual = frame.getByText(/enter address manually/i);
+
+    if (await manual.isVisible().catch(() => false)) {
+      await manual.click();
+    }
+
+    await frame.locator('input[name="locality"]').fill(city);
+    await frame.locator('select[name="administrativeArea"]').selectOption(state);
+    await frame.locator('input[name="postalCode"]').fill(postalCode);
+  }
+
+  /**
+   * Untick "Save my information for faster checkout" (Link sign-up) in the Payment Element, when it is shown and ticked.
+   * Once an email is known (e.g. from the email element), Stripe ticks it by default and then requires a mobile number;
+   * whether it is shown depends on the account's Link settings, so it is handled only when present.
+   */
+  async declineLinkSignUp() {
+    const optIn = this.paymentFrame.locator('input[name="linkOptIn"]');
+    // It appears shortly after the card is complete; give it a bounded moment instead of racing it
+    const shown = await optIn.waitFor({ state: 'visible', timeout: 5_000 }).then(
+      () => true,
+      () => false,
+    );
+
+    if (shown && (await optIn.isChecked())) {
+      await optIn.uncheck({ force: true });
+      await expect(optIn).not.toBeChecked();
+    }
+  }
+
   async submit() {
     await expect(this.submitButton).toBeEnabled();
     await this.submitButton.click();
