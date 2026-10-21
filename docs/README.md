@@ -96,7 +96,7 @@ pass `uiMode: "elements"` to get a session usable with Stripe.js Checkout elemen
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `currency` | string | No | ISO 4217 lower-case currency code. Defaults to `usd`. |
-| `uiMode` | string | No | `embedded_page` (default) or `elements`. Any other value returns `400`. |
+| `uiMode` | string | No | `embedded_page` (default) or `elements`. A missing field or `null` uses `embedded_page`; any other value returns `400`. |
 
 Same allowed currencies and demo amounts as above.
 
