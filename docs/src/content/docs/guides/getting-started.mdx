@@ -1,0 +1,322 @@
+---
+title: Getting Started
+description: デモ API を使い、決済フォームの表示からテスト決済までをステップバイステップで試します。
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+このガイドでは、自分の Stripe アカウントや API キーを用意せずに決済フォームを動かす手順を、順を追って進めます。手順はすべて実機で検証済みです。最後まで進めるとテストモードの決済が実際に成功します。
+
+## まず触る
+
+コードを書く前に、CodeSandbox 上のデモ（Stripe テストモード・API キー不要）で動作を確認できます。
+
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox)
+
+デモで試せるコンポーネントは次の 3 つです。
+
+- `<stripe-card-element>`（カード入力と Payment Intent の確認フロー）
+- `<stripe-address-element>`（住所入力）
+- `<stripe-express-checkout-element>`（Apple Pay/Google Pay/Link。デバイス依存）
+
+`<stripe-payment-element>`のデモはまだありません。
+
+## デモ API の仕組み
+
+このガイドの手順では、ドキュメントサイトが提供するデモ API を使います。Stripe テストモードのアカウントで Payment Intent や Checkout Session を発行するため、自分の Stripe アカウントがなくても決済フローを一通り試せます。
+
+| エンドポイント | メソッドとボディ | 戻り値 |
+| --- | --- | --- |
+| `/api/config` | GET | `{ publishableKey }` |
+| `/api/create-payment-intent` | POST `{ "currency": "jpy" }` | `{ clientSecret }` |
+| `/api/create-checkout-session` | POST `{ "currency": "jpy" }` | `{ clientSecret }` |
+
+ベース URL は`https://stripe-pwa-elements-docs.wp-kyoto.workers.dev`です。指定できる通貨は`usd`/`jpy`/`eur`/`gbp`/`aud`で、金額はサーバー側で 1,000 固定となっています。ブラウザから呼べるのは CORS で許可されたオリジンに限られます。許可されているのは`localhost`の`3000`/`4321`/`5173`番ポートと、`*.csb.app`・`*.stackblitz.io`のプレビューです。
+
+公開可能キー（publishable key）もデモ API から取得します。clientSecret は発行した Stripe アカウントに紐づくため、同じアカウントの公開可能キーと組み合わせる必要があるためです。
+
+なお、デモ API は手順の検証専用です。本番では自分のサーバーで Payment Intent や Checkout Session を作成し、clientSecret をブラウザへ渡します。全体の流れは[決済フロー](/guides/payment-flows/)で確認できます。
+
+## 環境を選んで進める
+
+使う環境のタブを選んでください。どの手順でも、最後に同じテストカードで決済を確定します。
+
+<Tabs>
+<TabItem label="HTML / TypeScript">
+
+Vite でビルドする、いちばん素直な構成です。
+
+### 1. プロジェクトを作成する
+
+```bash
+npm create vite@latest stripe-demo -- --template vanilla-ts
+cd stripe-demo
+npm install
+```
+
+### 2. stripe-pwa-elements を追加する
+
+```bash
+npm i stripe-pwa-elements
+```
+
+### 3. index.html を書き換える
+
+`index.html`を次の内容にします。
+
+```html
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-pwa-elements demo</title>
+  </head>
+  <body>
+    <h1>Card demo</h1>
+    <div id="checkout"></div>
+    <pre id="log"></pre>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+```
+
+### 4. src/main.ts を書き換える
+
+使うコンポーネントを`dist/components`から import します。import するだけでカスタム要素が登録されます。
+
+```ts
+import 'stripe-pwa-elements/dist/components/stripe-card-element';
+
+const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+
+const log = (message: string, detail?: unknown) => {
+  const out = document.querySelector<HTMLPreElement>('#log')!;
+  out.textContent += detail === undefined ? `${message}\n` : `${message}\n${JSON.stringify(detail, null, 2)}\n`;
+};
+
+// デモ API から公開可能キーと clientSecret を取得
+const { publishableKey } = await (await fetch(`${API}/config`)).json();
+const { clientSecret } = await (
+  await fetch(`${API}/create-payment-intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currency: 'jpy' }),
+  })
+).json();
+
+// 要素を生成して属性をセット
+const el = document.createElement('stripe-card-element');
+el.setAttribute('publishable-key', publishableKey);
+el.setAttribute('intent-client-secret', clientSecret);
+el.setAttribute('button-label', 'Pay now');
+
+// イベントを購読
+el.addEventListener('stripeLoaded', () => log('event: stripeLoaded'));
+el.addEventListener('formSubmit', () => log('event: formSubmit'));
+el.addEventListener('defaultFormSubmitResult', event => {
+  const detail = (event as CustomEvent).detail;
+  if (detail instanceof Error) {
+    log('payment failed', { message: detail.message });
+  } else {
+    log('payment result', detail);
+  }
+});
+
+document.querySelector<HTMLDivElement>('#checkout')!.appendChild(el);
+```
+
+### 5. 起動して決済する
+
+```bash
+npm run dev
+```
+
+`http://localhost:5173`を開くとカードフォームが表示されます。カード番号`4242 4242 4242 4242`、未来の有効期限、任意の CVC を入力して **Pay now** を押してください。ログの`payment result`に`status: succeeded`が出れば完了です。
+
+</TabItem>
+<TabItem label="HonoX">
+
+HonoX では hono/jsx ラッパーの[`hono-stripe-elements`](https://www.npmjs.com/package/hono-stripe-elements)を使います。カスタム要素の登録をクライアント側で遅延実行してくれるため、アイランド（island）内でそのまま JSX として描画できます。`document.createElement`や動的 import を自分で書く必要はありません。
+
+### 1. HonoX プロジェクトを作成する
+
+```bash
+npm create hono@latest stripe-honox -- --template x-basic --install --pm npm
+cd stripe-honox
+```
+
+### 2. hono-stripe-elements を追加する
+
+```bash
+npm i hono-stripe-elements stripe-pwa-elements
+```
+
+`stripe-pwa-elements`は peer dependency なので一緒にインストールします。
+
+### 3. アイランドを作成する
+
+`app/islands/payment-form.tsx`を新規作成します。
+
+```tsx
+import { useEffect, useState } from 'hono/jsx';
+import { StripeCardElement } from 'hono-stripe-elements';
+
+const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+
+export default function PaymentForm() {
+  const [intent, setIntent] = useState<{ publishableKey: string; clientSecret: string } | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const appendLog = (message: string) => setLogs(prev => [...prev, message]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const { publishableKey } = await (await fetch(`${API}/config`)).json();
+      const { clientSecret } = await (
+        await fetch(`${API}/create-payment-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currency: 'jpy' }),
+        })
+      ).json();
+
+      if (!cancelled) setIntent({ publishableKey, clientSecret });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div class="mx-auto max-w-xl text-left">
+      {intent ? (
+        <StripeCardElement
+          publishableKey={intent.publishableKey}
+          intentClientSecret={intent.clientSecret}
+          buttonLabel="Pay now"
+          fallback={<p>カードフォームを読み込み中…</p>}
+          onStripeLoaded={() => appendLog('event: stripeLoaded')}
+          onFormSubmit={() => appendLog('event: formSubmit')}
+          onDefaultFormSubmitResult={event => {
+            const detail = event.detail;
+            if (detail instanceof Error) {
+              appendLog(`payment failed: ${detail.message}`);
+            } else {
+              const intent = 'paymentIntent' in detail ? detail.paymentIntent : 'setupIntent' in detail ? detail.setupIntent : undefined;
+              appendLog(`payment status: ${intent?.status}`);
+            }
+          }}
+        />
+      ) : (
+        <p>決済を準備中…</p>
+      )}
+      <pre class="mt-4 whitespace-pre-wrap text-xs">{logs.join('\n')}</pre>
+    </div>
+  );
+}
+```
+
+`onXxx` props は camelCase のカスタムイベントを購読します（`onFormSubmit` → `formSubmit`）。`fallback`はクライアント側で Web Component の準備ができるまで描画されます。
+
+### 4. ルートに配置する
+
+`app/routes/index.tsx`を書き換えます。
+
+```tsx
+import { createRoute } from 'honox/factory';
+import PaymentForm from '../islands/payment-form';
+
+export default createRoute(c => {
+  return c.render(
+    <div class="py-8 text-center">
+      <title>stripe-pwa-elements × HonoX</title>
+      <h1 class="text-3xl font-bold">Card demo</h1>
+      <PaymentForm />
+    </div>,
+  );
+});
+```
+
+### 5. 起動して決済する
+
+```bash
+npm run dev
+```
+
+`http://localhost:5173`を開き、カード番号`4242 4242 4242 4242`、未来の有効期限、任意の CVC を入力して **Pay now** を押してください。ログに`payment status: succeeded`が出れば完了です。
+
+</TabItem>
+<TabItem label="ビルドなし（CDN）">
+
+npm やバンドラを使わずに、unpkg の CDN から全部入りバンドルを読み込みます。`stripe-elements.esm.js`はパッケージの`unpkg`フィールドが指す自己登録型のファイルで、読み込むだけですべてのコンポーネントが使えます。
+
+### 1. index.html を作る
+
+`index.html`を新規作成します。
+
+```html
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>stripe-pwa-elements demo</title>
+    <script type="module" src="https://unpkg.com/stripe-pwa-elements@4/dist/stripe-elements/stripe-elements.esm.js"></script>
+  </head>
+  <body>
+    <h1>Card demo</h1>
+    <div id="checkout"></div>
+    <pre id="log"></pre>
+    <script type="module">
+      const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+      const log = message => (document.getElementById('log').textContent += message + '\n');
+
+      const { publishableKey } = await (await fetch(`${API}/config`)).json();
+      const { clientSecret } = await (
+        await fetch(`${API}/create-payment-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currency: 'jpy' }),
+        })
+      ).json();
+
+      const el = document.createElement('stripe-card-element');
+      el.setAttribute('publishable-key', publishableKey);
+      el.setAttribute('intent-client-secret', clientSecret);
+      el.setAttribute('button-label', 'Pay now');
+      el.addEventListener('stripeLoaded', () => log('event: stripeLoaded'));
+      el.addEventListener('defaultFormSubmitResult', event => {
+        const detail = event.detail;
+        log(detail instanceof Error ? `payment failed: ${detail.message}` : `payment status: ${detail.paymentIntent?.status}`);
+      });
+      document.getElementById('checkout').appendChild(el);
+    </script>
+  </body>
+</html>
+```
+
+### 2. 静的サーバーで配信する
+
+```bash
+python3 -m http.server 4321
+```
+
+`http://localhost:4321`を開き、カード番号`4242 4242 4242 4242`、未来の有効期限、任意の CVC を入力して **Pay now** を押してください。なお`file://`で直接開いてもデモ API の CORS に阻まれるため、許可された`localhost`のオリジンで配信してください。
+
+</TabItem>
+</Tabs>
+
+## うまくいかないとき
+
+- `Origin is not allowed`が返るときは、デモ API の CORS で許可されたポートで起動しているか確認してください（`3000`/`4321`/`5173`）。
+- `Failed to fetch dynamically imported module`が出るときは、`stripe-pwa-elements/loader`の遅延ローダーを使っていないか確認してください。バンドラ環境では[バンドラ統合](/guides/bundler-integration/)に従って`dist/components`からの静的 import に切り替えます。
+- コンポーネントの外枠だけが出てカード入力が表示されないときは、バージョンを確認してください。v4.0.0 では`dist/components`の個別 import で内部の Stripe Element がマウントされない不具合がありました。`stripe-pwa-elements@4.0.1`以降で解消しています。
+- ウォレットボタンが表示されないときは、端末がその決済手段に対応しているか確認してください。`<stripe-express-checkout-element>`は Apple Pay や Google Pay、Link など対応する端末があるときだけボタンを描画します。
+
+## 次に読む
+
+- Payment Intent など各フローの流れと本番用 API の考え方は[決済フロー](/guides/payment-flows/)を参照してください
+- webpack や Rollup、Capacitor などの環境での import 方法は[バンドラ統合](/guides/bundler-integration/)にまとめています
+- 各コンポーネントの Props/Events/Methods は[Components](/components/)で確認できます

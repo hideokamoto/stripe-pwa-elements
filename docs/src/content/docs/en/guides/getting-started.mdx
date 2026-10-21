@@ -1,0 +1,322 @@
+---
+title: Getting Started
+description: Step-by-step setup using the demo API — from rendering a payment form to completing a test payment.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide walks you through running a real payment form in the browser without preparing your own Stripe account or API keys. Every step is verified, and finishing it ends with an actual successful payment in Stripe test mode.
+
+## Try it first
+
+Before writing code, you can try the live demo in CodeSandbox (Stripe test mode, no API keys needed).
+
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/devbox/github/hideokamoto/stripe-pwa-elements/tree/main/examples/codesandbox)
+
+The demo covers three components:
+
+- `<stripe-card-element>` (card input with a Payment Intent confirm flow)
+- `<stripe-address-element>` (address form)
+- `<stripe-express-checkout-element>` (Apple Pay / Google Pay / Link, device-dependent)
+
+There is no `<stripe-payment-element>` demo yet.
+
+## How the demo API works
+
+The steps in this guide use a demo API provided by the documentation site. It creates Payment Intents and Checkout Sessions on a Stripe test-mode account, so you can try the full payment flow without your own Stripe account.
+
+| Endpoint | Method and body | Returns |
+| --- | --- | --- |
+| `/api/config` | GET | `{ publishableKey }` |
+| `/api/create-payment-intent` | POST `{ "currency": "jpy" }` | `{ clientSecret }` |
+| `/api/create-checkout-session` | POST `{ "currency": "jpy" }` | `{ clientSecret }` |
+
+The base URL is `https://stripe-pwa-elements-docs.wp-kyoto.workers.dev`. Supported currencies are `usd`, `jpy`, `eur`, `gbp`, and `aud`, with the amount fixed server-side at 1,000. Browsers can only call it from CORS-allowed origins: `localhost` ports `3000`, `4321`, and `5173`, plus previews such as `*.csb.app` and `*.stackblitz.io`.
+
+The publishable key also comes from the demo API. A clientSecret is bound to the Stripe account that created it, so it must be paired with a publishable key from the same account.
+
+Note that the demo API is for trying these steps only. In production, create the Payment Intent or Checkout Session on your own server and pass its clientSecret to the browser. See [Payment flows](/en/guides/payment-flows/) for the full picture.
+
+## Pick your environment
+
+Choose the tab for your environment. Every path ends with the same test-card payment.
+
+<Tabs>
+<TabItem label="HTML / TypeScript">
+
+The most straightforward setup: a Vite build.
+
+### 1. Create the project
+
+```bash
+npm create vite@latest stripe-demo -- --template vanilla-ts
+cd stripe-demo
+npm install
+```
+
+### 2. Add stripe-pwa-elements
+
+```bash
+npm i stripe-pwa-elements
+```
+
+### 3. Replace index.html
+
+Replace `index.html` with the following.
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-pwa-elements demo</title>
+  </head>
+  <body>
+    <h1>Card demo</h1>
+    <div id="checkout"></div>
+    <pre id="log"></pre>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+```
+
+### 4. Replace src/main.ts
+
+Import the component you use from `dist/components`. The import itself registers the custom element.
+
+```ts
+import 'stripe-pwa-elements/dist/components/stripe-card-element';
+
+const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+
+const log = (message: string, detail?: unknown) => {
+  const out = document.querySelector<HTMLPreElement>('#log')!;
+  out.textContent += detail === undefined ? `${message}\n` : `${message}\n${JSON.stringify(detail, null, 2)}\n`;
+};
+
+// Fetch the publishable key and a clientSecret from the demo API
+const { publishableKey } = await (await fetch(`${API}/config`)).json();
+const { clientSecret } = await (
+  await fetch(`${API}/create-payment-intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currency: 'jpy' }),
+  })
+).json();
+
+// Create the element and set its attributes
+const el = document.createElement('stripe-card-element');
+el.setAttribute('publishable-key', publishableKey);
+el.setAttribute('intent-client-secret', clientSecret);
+el.setAttribute('button-label', 'Pay now');
+
+// Subscribe to events
+el.addEventListener('stripeLoaded', () => log('event: stripeLoaded'));
+el.addEventListener('formSubmit', () => log('event: formSubmit'));
+el.addEventListener('defaultFormSubmitResult', event => {
+  const detail = (event as CustomEvent).detail;
+  if (detail instanceof Error) {
+    log('payment failed', { message: detail.message });
+  } else {
+    log('payment result', detail);
+  }
+});
+
+document.querySelector<HTMLDivElement>('#checkout')!.appendChild(el);
+```
+
+### 5. Run it and pay
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173` and the card form appears. Enter card number `4242 4242 4242 4242`, any future expiry, and any CVC, then press **Pay now**. When the logged `payment result` shows `status: succeeded`, the payment is complete.
+
+</TabItem>
+<TabItem label="HonoX">
+
+In HonoX, use [`hono-stripe-elements`](https://www.npmjs.com/package/hono-stripe-elements), a set of hono/jsx components that wrap the Web Components. It registers the custom element lazily on the client, so inside an island you render it as plain JSX — no `document.createElement` or manual dynamic `import()`.
+
+### 1. Create the HonoX project
+
+```bash
+npm create hono@latest stripe-honox -- --template x-basic --install --pm npm
+cd stripe-honox
+```
+
+### 2. Add hono-stripe-elements
+
+```bash
+npm i hono-stripe-elements stripe-pwa-elements
+```
+
+`stripe-pwa-elements` is a peer dependency, so install it alongside.
+
+### 3. Create the island
+
+Create `app/islands/payment-form.tsx`.
+
+```tsx
+import { useEffect, useState } from 'hono/jsx';
+import { StripeCardElement } from 'hono-stripe-elements';
+
+const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+
+export default function PaymentForm() {
+  const [intent, setIntent] = useState<{ publishableKey: string; clientSecret: string } | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const appendLog = (message: string) => setLogs(prev => [...prev, message]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const { publishableKey } = await (await fetch(`${API}/config`)).json();
+      const { clientSecret } = await (
+        await fetch(`${API}/create-payment-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currency: 'jpy' }),
+        })
+      ).json();
+
+      if (!cancelled) setIntent({ publishableKey, clientSecret });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div class="mx-auto max-w-xl text-left">
+      {intent ? (
+        <StripeCardElement
+          publishableKey={intent.publishableKey}
+          intentClientSecret={intent.clientSecret}
+          buttonLabel="Pay now"
+          fallback={<p>Loading card form…</p>}
+          onStripeLoaded={() => appendLog('event: stripeLoaded')}
+          onFormSubmit={() => appendLog('event: formSubmit')}
+          onDefaultFormSubmitResult={event => {
+            const detail = event.detail;
+            if (detail instanceof Error) {
+              appendLog(`payment failed: ${detail.message}`);
+            } else {
+              const intent = 'paymentIntent' in detail ? detail.paymentIntent : 'setupIntent' in detail ? detail.setupIntent : undefined;
+              appendLog(`payment status: ${intent?.status}`);
+            }
+          }}
+        />
+      ) : (
+        <p>Preparing payment…</p>
+      )}
+      <pre class="mt-4 whitespace-pre-wrap text-xs">{logs.join('\n')}</pre>
+    </div>
+  );
+}
+```
+
+`onXxx` props subscribe to the camelCase custom events (`onFormSubmit` → `formSubmit`), and `fallback` is rendered until the Web Component is ready on the client.
+
+### 4. Mount it on the route
+
+Replace `app/routes/index.tsx`.
+
+```tsx
+import { createRoute } from 'honox/factory';
+import PaymentForm from '../islands/payment-form';
+
+export default createRoute(c => {
+  return c.render(
+    <div class="py-8 text-center">
+      <title>stripe-pwa-elements × HonoX</title>
+      <h1 class="text-3xl font-bold">Card demo</h1>
+      <PaymentForm />
+    </div>,
+  );
+});
+```
+
+### 5. Run it and pay
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173`, enter card number `4242 4242 4242 4242`, any future expiry, and any CVC, then press **Pay now**. When the log shows `payment status: succeeded`, the payment is complete.
+
+</TabItem>
+<TabItem label="No build (CDN)">
+
+Load the all-in-one bundle from the unpkg CDN — no npm, no bundler. `stripe-elements.esm.js` is the self-registering file the package's `unpkg` field points at; loading it registers every component.
+
+### 1. Create index.html
+
+Create `index.html`.
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>stripe-pwa-elements demo</title>
+    <script type="module" src="https://unpkg.com/stripe-pwa-elements@4/dist/stripe-elements/stripe-elements.esm.js"></script>
+  </head>
+  <body>
+    <h1>Card demo</h1>
+    <div id="checkout"></div>
+    <pre id="log"></pre>
+    <script type="module">
+      const API = 'https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api';
+      const log = message => (document.getElementById('log').textContent += message + '\n');
+
+      const { publishableKey } = await (await fetch(`${API}/config`)).json();
+      const { clientSecret } = await (
+        await fetch(`${API}/create-payment-intent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currency: 'jpy' }),
+        })
+      ).json();
+
+      const el = document.createElement('stripe-card-element');
+      el.setAttribute('publishable-key', publishableKey);
+      el.setAttribute('intent-client-secret', clientSecret);
+      el.setAttribute('button-label', 'Pay now');
+      el.addEventListener('stripeLoaded', () => log('event: stripeLoaded'));
+      el.addEventListener('defaultFormSubmitResult', event => {
+        const detail = event.detail;
+        log(detail instanceof Error ? `payment failed: ${detail.message}` : `payment status: ${detail.paymentIntent?.status}`);
+      });
+      document.getElementById('checkout').appendChild(el);
+    </script>
+  </body>
+</html>
+```
+
+### 2. Serve it statically
+
+```bash
+python3 -m http.server 4321
+```
+
+Open `http://localhost:4321`, enter card number `4242 4242 4242 4242`, any future expiry, and any CVC, then press **Pay now**. Serve the file from a `localhost` origin allowed by the demo API's CORS policy — opening it directly via `file://` will not work.
+
+</TabItem>
+</Tabs>
+
+## Troubleshooting
+
+- `Origin is not allowed` — check that your dev server runs on a port allowed by the demo API's CORS policy (`3000`, `4321`, or `5173`).
+- `Failed to fetch dynamically imported module` — check whether you are using the lazy loader `stripe-pwa-elements/loader`. In bundler environments, switch to static imports from `dist/components` as described in [Bundler integration](/en/guides/bundler-integration/).
+- The component shell renders but the card inputs never appear — check your version. In v4.0.0, per-component `dist/components` imports never mounted the inner Stripe element. This is fixed in `stripe-pwa-elements@4.0.1` and later.
+- Wallet buttons don't render — check device support. `<stripe-express-checkout-element>`'s Apple Pay, Google Pay, and Link buttons only render on capable browsers and devices.
+
+## Next
+
+- [Payment flows](/en/guides/payment-flows/) — the Payment Intent, Setup Intent, and Checkout Session flows, and how to think about your own production API
+- [Bundler integration](/en/guides/bundler-integration/) — import patterns for webpack, Rollup, Capacitor, and more
+- [Components](/en/components/) — Props, Events, and Methods for each component

@@ -9,4 +9,5 @@ description: 使い方のガイド。
 - [決済フロー](/guides/payment-flows/)
 - [バンドラ統合（Vite / webpack / Capacitor）](/guides/bundler-integration/)
 - [stripe-payment-request-button から stripe-express-checkout-element への移行](/guides/migrate-payment-request-button-to-express-checkout/)
+- [AI コーディングエージェントで使う](/guides/ai-agents/)
 

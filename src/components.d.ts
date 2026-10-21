@@ -152,7 +152,7 @@ export namespace Components {
          */
         "sheetTitle": string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction": boolean;
@@ -242,7 +242,7 @@ export namespace Components {
          */
         "sheetTitle": string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction": boolean;
@@ -664,7 +664,7 @@ export namespace Components {
          */
         "buttonLabel": string;
         /**
-          * The client secret of a Checkout Session created with `ui_mode: 'custom'`. Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
+          * The client secret of a Checkout Session created with `ui_mode: 'elements'` (named `custom` in older Stripe API versions). Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
          */
         "checkoutSessionClientSecret"?: string;
         /**
@@ -1085,7 +1085,7 @@ declare namespace LocalJSX {
          */
         "sheetTitle"?: string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction"?: boolean;
@@ -1153,7 +1153,7 @@ declare namespace LocalJSX {
          */
         "sheetTitle"?: string;
         /**
-          * The component will provide a function to call the `stripe.confirmCardPayment`API. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
+          * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`, `stripe.confirmCardSetup` when it is `'setup'`. If you want to customize the behavior, should set false. And listen the 'formSubmit' event on the element
           * @default true
          */
         "shouldUseDefaultFormSubmitAction"?: boolean;
@@ -1499,7 +1499,7 @@ declare namespace LocalJSX {
          */
         "buttonLabel"?: string;
         /**
-          * The client secret of a Checkout Session created with `ui_mode: 'custom'`. Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
+          * The client secret of a Checkout Session created with `ui_mode: 'elements'` (named `custom` in older Stripe API versions). Its format is not inspected. When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`). Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
          */
         "checkoutSessionClientSecret"?: string;
         /**

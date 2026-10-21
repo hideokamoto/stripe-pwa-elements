@@ -73,7 +73,8 @@ export class StripeCardElementModal {
   @Prop() intentClientSecret?: string;
 
   /**
-   * The component will provide a function to call the `stripe.confirmCardPayment`API.
+   * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`,
+   * `stripe.confirmCardSetup` when it is `'setup'`.
    * If you want to customize the behavior, should set false.
    * And listen the 'formSubmit' event on the element
    */

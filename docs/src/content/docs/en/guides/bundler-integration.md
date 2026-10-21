@@ -30,6 +30,13 @@ TypeError: Failed to fetch dynamically imported module
 Import the component you need directly from `dist/components`. Each module
 auto-registers its custom element on import, so a bare import is enough:
 
+:::note[Version requirement]
+This import path requires `stripe-pwa-elements@4.0.1` or later. In v4.0.0,
+per-component imports rendered the component shell but never mounted the inner
+Stripe element. If you are on 4.0.0, import the all-in-one bundle
+`stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js` instead.
+:::
+
 ```javascript
 // Registers <stripe-payment-element> — no defineCustomElements() needed
 import 'stripe-pwa-elements/dist/components/stripe-payment-element';

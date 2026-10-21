@@ -38,6 +38,11 @@ export const checkoutIgnoredOptionKeys = (options: PaymentSheetOptions | undefin
     keys.push('merchantDisplayName');
   }
 
+  // The extra billing elements and the wallet mapping are implemented for PaymentIntent / SetupIntent mode only
+  (['billingDetailsCollectionConfiguration', 'shippingDetails', 'enableApplePay', 'enableGooglePay'] as const)
+    .filter(key => options[key] !== undefined)
+    .forEach(key => keys.push(key));
+
   return keys.sort();
 };
 

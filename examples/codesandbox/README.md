@@ -43,11 +43,12 @@ import 'stripe-pwa-elements/dist/stripe-elements/stripe-elements.esm.js';
 - `stripeLoaded`, `formSubmit`, `defaultFormSubmitResult`,
   `expressCheckoutClick`, `confirm`, `cancel` events — logged live in each page
 
-> **Known limitation in v4.0.0:** `<stripe-payment-element>`'s
+> **v4.0.0 note:** In v4.0.0, `<stripe-payment-element>`'s
 > `intent-client-secret` flow and the per-component `dist/components/*` imports
-> render the component shell but never mount the inner Stripe element
-> (`stripe.elements()` is created without a clientSecret). These demos therefore
-> use the self-registering `stripe-elements.esm.js` bundle — the same file the
+> rendered the component shell but never mounted the inner Stripe element
+> (`stripe.elements()` was created without a clientSecret). This is fixed in
+> v4.0.1, so per-component imports now work; these demos still use the
+> self-registering `stripe-elements.esm.js` bundle — the same file the
 > `unpkg` field points at — and do not include a Payment Element page yet.
 
 ## Where the keys come from

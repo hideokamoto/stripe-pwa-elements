@@ -2,14 +2,23 @@ import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch,
 import type { PaymentIntentResult, SetupIntentResult, StripeCheckoutConfirmResult, StripeError } from '@stripe/stripe-js';
 import { i18n } from '../../utils/i18n';
 import { checkPlatform } from '../../utils/utils';
+import { findElement } from '../../utils/element-finder';
 import { serviceFactory } from '../../services/factory';
-import type { IStripeService, IPaymentElementManager } from '../../services/interfaces';
+import type { IStripeService, IPaymentElementManager, IAddressElementManager, ILinkAuthenticationElementManager } from '../../services/interfaces';
 import type { StripeLoadedEvent } from '../../interfaces';
 import { confirmPaymentOrSetup } from '../stripe-payment-element/stripe-payment-element.helpers';
 import { initialSheetState, transition } from './payment-sheet-state';
-import type { PaymentSheetEventName, SecretSource, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
-import { isRecoverableConfirmError, toAppearance, toPaymentElementOptions, unsupportedOptionKeys } from './stripe-payment-sheet.helpers';
-import type { PaymentSheetOptions, PaymentSheetPresentResult } from './stripe-payment-sheet.helpers';
+import type { IntentKind, PaymentSheetEventName, SecretSource, SheetEffect, SheetEvent, SheetState } from './payment-sheet-state';
+import {
+  collectedBillingDetails,
+  isRecoverableConfirmError,
+  isSheetValidationError,
+  planBillingDetailsCollection,
+  toAppearance,
+  toPaymentElementOptions,
+  unsupportedOptionKeys,
+} from './stripe-payment-sheet.helpers';
+import type { BillingDetailsCollectionPlan, PaymentSheetOptions, PaymentSheetPresentResult } from './stripe-payment-sheet.helpers';
 import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from './stripe-payment-sheet.checkout';
 
 const nonEmpty = (value: string | undefined): string | undefined => (value == null || value === '' ? undefined : value);
@@ -29,6 +38,10 @@ export class StripePaymentSheet {
 
   private stripeService: IStripeService;
   private paymentElementManager: IPaymentElementManager;
+  /** Extra elements, created from the same Elements instance as the Payment Element so that their values combine */
+  private billingAddressElementManager: IAddressElementManager;
+  private shippingAddressElementManager: IAddressElementManager;
+  private emailElementManager: ILinkAuthenticationElementManager;
 
   /** Pending `present()` promise; at most one */
   private presentPromise?: Promise<PaymentSheetPresentResult>;
@@ -56,7 +69,7 @@ export class StripePaymentSheet {
   @Prop() readonly intentClientSecret?: string;
 
   /**
-   * The client secret of a Checkout Session created with `ui_mode: 'custom'`. Its format is not inspected.
+   * The client secret of a Checkout Session created with `ui_mode: 'elements'` (named `custom` in older Stripe API versions). Its format is not inspected.
    * When it is set, it is used instead of `intent-client-secret` (the same rule as `stripe-payment-element`).
    * Create the session with `customer_email` or `customer`, or pass `options.defaultBillingDetails.email`, because the sheet has no email field.
    */
@@ -98,6 +111,9 @@ export class StripePaymentSheet {
   @State() visible = false;
 
   @State() errorMessage = '';
+
+  /** Extra elements of the current load and the billing details passed at confirmation */
+  @State() collection?: BillingDetailsCollectionPlan;
 
   /**
    * Stripe.js and the Payment Element are ready
@@ -165,6 +181,9 @@ export class StripePaymentSheet {
   constructor() {
     this.stripeService = serviceFactory.createStripeService();
     this.paymentElementManager = serviceFactory.createPaymentElementManager(this.stripeService);
+    this.billingAddressElementManager = serviceFactory.createAddressElementManager(this.stripeService);
+    this.shippingAddressElementManager = serviceFactory.createAddressElementManager(this.stripeService);
+    this.emailElementManager = serviceFactory.createLinkAuthenticationElementManager(this.stripeService);
   }
 
   /**
@@ -185,6 +204,13 @@ export class StripePaymentSheet {
 
   disconnectedCallback() {
     this.paymentElementManager.unmount();
+    this.unmountExtraElements();
+  }
+
+  private unmountExtraElements() {
+    this.billingAddressElementManager.unmount();
+    this.shippingAddressElementManager.unmount();
+    this.emailElementManager.unmount();
   }
 
   /**
@@ -239,7 +265,7 @@ export class StripePaymentSheet {
         if (effect.intentKind === 'checkoutSession') {
           this.loadCheckoutSession(effect.generation, effect.clientSecret);
         } else {
-          this.load(effect.generation, effect.clientSecret);
+          this.load(effect.generation, effect.clientSecret, effect.intentKind);
         }
 
         break;
@@ -273,17 +299,23 @@ export class StripePaymentSheet {
     }
   }
 
-  private async load(generation: number, clientSecret: string) {
-    this.warnUnsupportedOptions();
+  private async load(generation: number, clientSecret: string, intentKind: 'payment' | 'setup') {
+    this.warnUnsupportedOptions(intentKind);
+
+    // A newer load started while this one was waiting: stop before touching the elements, so that only the latest load mounts and emits
+    const superseded = () => generation !== this.sheet.generation;
 
     try {
+      // Fails before loading Stripe.js when a `never` field has no default value, so that Stripe never rejects the confirmation
+      const collection = planBillingDetailsCollection(this.options, intentKind);
+
       await this.stripeService.initialize(this.publishableKey, {
         stripeAccount: this.stripeAccount,
         applicationName: this.applicationName,
         clientSecret,
       });
 
-      if (generation !== this.sheet.generation) {
+      if (superseded()) {
         return;
       }
 
@@ -295,24 +327,116 @@ export class StripePaymentSheet {
 
       if (appearance != null) {
         await this.stripeService.getElements().update({ appearance });
+
+        if (superseded()) {
+          return;
+        }
+      }
+
+      if (!(await this.mountExtraElements(collection, superseded))) {
+        return;
       }
 
       await this.paymentElementManager.initialize(this.el, toPaymentElementOptions(this.options));
       this.dispatch({ type: 'loadSucceeded', generation });
     } catch (e) {
+      if (superseded()) {
+        return;
+      }
+
       this.lastError = e;
       this.dispatch({ type: 'loadFailed', generation });
     }
   }
 
-  private confirm(generation: number, intentKind: 'payment' | 'setup') {
-    const returnUrl = this.options?.returnURL ?? window.location.href;
+  /**
+   * Render the mount points of the plan's extra elements and mount them. Elements a previous load needed but this one does not are unmounted
+   * (the managers unmount their previous element themselves when initialized again).
+   */
+  private async mountExtraElements(collection: BillingDetailsCollectionPlan, superseded: () => boolean): Promise<boolean> {
+    this.collection = collection;
 
-    return this.runConfirm(generation, () => confirmPaymentOrSetup(this.stripeService.getStripe(), this.stripeService.getElements(), intentKind, returnUrl));
+    const { emailElement, shippingAddressElement, billingAddressElement } = collection;
+    const extraElements: { manager: { unmount(): void }; selector: string; mount?: (container: HTMLElement) => Promise<unknown> }[] = [
+      {
+        manager: this.emailElementManager,
+        selector: '.stripe-payment-sheet-email',
+        mount: emailElement && (container => this.emailElementManager.initialize(container, emailElement)),
+      },
+      {
+        manager: this.shippingAddressElementManager,
+        selector: '.stripe-payment-sheet-shipping-address',
+        mount: shippingAddressElement && (container => this.shippingAddressElementManager.initialize(container, shippingAddressElement)),
+      },
+      {
+        manager: this.billingAddressElementManager,
+        selector: '.stripe-payment-sheet-billing-address',
+        mount: billingAddressElement && (container => this.billingAddressElementManager.initialize(container, billingAddressElement)),
+      },
+    ];
+
+    for (const { manager, selector, mount } of extraElements) {
+      if (mount == null) {
+        manager.unmount();
+        continue;
+      }
+
+      // The container is looked up with findElement, which waits for it in case the sheet has not rendered yet
+      const container = await findElement(this.el, selector);
+
+      if (superseded()) {
+        return false;
+      }
+
+      await mount(container);
+
+      if (superseded()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Billing details read from the extra elements and the `never` fields, as extra confirm params
+   */
+  private async confirmParams() {
+    const collection = this.collection;
+
+    if (collection == null) {
+      return undefined;
+    }
+
+    const billingAddress = collection.billingAddressElement != null ? await this.billingAddressElementManager.getElement()?.getValue() : undefined;
+    const emailState = collection.emailElement != null ? this.emailElementManager.getState() : undefined;
+    const billingDetails = collectedBillingDetails(collection, { billingAddress, email: emailState?.email, emailComplete: emailState?.complete });
+
+    return billingDetails == null ? undefined : { payment_method_data: { billing_details: billingDetails } };
+  }
+
+  private confirm(generation: number, intentKind: 'payment' | 'setup') {
+    return this.runConfirm(generation, async () => {
+      const elements = this.stripeService.getElements();
+      // elements.submit() comes first, with nothing awaited before it, as in Stripe's submit handler examples:
+      // it validates the elements and collects what wallets (Apple Pay, Google Pay) need while the customer's click still counts,
+      // and other asynchronous work may follow once it has resolved
+      const { error: submitError } = await elements.submit();
+
+      if (submitError != null) {
+        throw submitError;
+      }
+
+      const returnUrl = this.options?.returnURL ?? window.location.href;
+      const extraConfirmParams = await this.confirmParams();
+
+      return confirmPaymentOrSetup(this.stripeService.getStripe(), elements, intentKind, returnUrl, extraConfirmParams);
+    });
   }
 
   /**
    * Run a confirmation and report its result to the state machine.
+   * `confirm` is called synchronously, so that its first step still runs inside the customer's submit event.
    * Errors the customer can fix or retry keep the sheet open; others end it with `paymentSheetFailed`.
    */
   private async runConfirm(generation: number, confirm: () => Promise<PaymentIntentResult | SetupIntentResult | StripeCheckoutConfirmResult>) {
@@ -320,7 +444,9 @@ export class StripePaymentSheet {
       this.lastResult = await confirm();
       this.dispatch({ type: 'confirmSucceeded', generation });
     } catch (e) {
-      const message = (e as StripeError).message ?? String(e);
+      const rawMessage = (e as StripeError).message ?? String(e);
+      // Stripe's messages are already localized; the sheet's own validation messages are i18n keys
+      const message = isSheetValidationError(e) ? i18n.t(rawMessage) : rawMessage;
 
       if (isRecoverableConfirmError(e)) {
         this.dispatch({ type: 'confirmDeclined', generation, message });
@@ -334,8 +460,12 @@ export class StripePaymentSheet {
   }
 
   private async loadCheckoutSession(generation: number, clientSecret: string) {
-    this.warnUnsupportedOptions();
+    this.warnUnsupportedOptions('checkoutSession');
     this.warnCheckoutIgnoredOptions();
+
+    // The extra billing elements belong to intent mode; remove those of an earlier intent load
+    this.collection = undefined;
+    this.unmountExtraElements();
 
     try {
       await this.stripeService.initializeWithCheckoutSession(this.publishableKey, clientSecret, {
@@ -355,6 +485,11 @@ export class StripePaymentSheet {
       await this.paymentElementManager.initialize(this.el, toCheckoutPaymentElementOptions(this.options));
       this.dispatch({ type: 'loadSucceeded', generation });
     } catch (e) {
+      // An error of a load that a newer load replaced is not reported
+      if (generation !== this.sheet.generation) {
+        return;
+      }
+
       this.lastError = e;
       this.dispatch({ type: 'loadFailed', generation });
     }
@@ -394,8 +529,8 @@ export class StripePaymentSheet {
     }
   }
 
-  private warnUnsupportedOptions() {
-    const keys = unsupportedOptionKeys(this.options);
+  private warnUnsupportedOptions(intentKind: IntentKind) {
+    const keys = unsupportedOptionKeys(this.options, intentKind);
 
     if (this.warnedUnsupportedOptions || keys.length === 0) {
       return;
@@ -445,6 +580,10 @@ export class StripePaymentSheet {
             <form id="stripe-payment-sheet" onSubmit={this.handleSubmit}>
               <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
               <div class="payment-info visible">
+                {/* Each extra element gets its own container because the managers look up a fixed id inside the given container */}
+                <div class="stripe-payment-sheet-email">{this.collection?.emailElement != null && <div id="link-authentication-element" />}</div>
+                <div class="stripe-payment-sheet-shipping-address">{this.collection?.shippingAddressElement != null && <div id="address-element" />}</div>
+                <div class="stripe-payment-sheet-billing-address">{this.collection?.billingAddressElement != null && <div id="address-element" />}</div>
                 <div id="payment-element" />
               </div>
               <div class="stripe-element-errors" role="alert">

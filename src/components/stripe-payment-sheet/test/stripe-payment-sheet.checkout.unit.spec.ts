@@ -34,6 +34,17 @@ describe('checkoutIgnoredOptionKeys', () => {
     );
     expect(checkoutIgnoredOptionKeys({ defaultBillingDetails: { email: 'jenny@example.com' } })).toEqual([]);
   });
+
+  it('lists the billing details, shipping and wallet options that only intent mode supports', () => {
+    expect(
+      checkoutIgnoredOptionKeys({
+        billingDetailsCollectionConfiguration: { email: 'always' },
+        shippingDetails: { name: 'Jenny', address: { country: 'JP' } },
+        enableApplePay: true,
+        enableGooglePay: false,
+      }),
+    ).toEqual(['billingDetailsCollectionConfiguration', 'enableApplePay', 'enableGooglePay', 'shippingDetails']);
+  });
 });
 
 describe('toCheckoutElementsOptions', () => {
