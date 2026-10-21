@@ -12,6 +12,9 @@ describe('i18n (ja)', () => {
     ['Billing address', '請求先住所'],
     ['Save', '保存'],
     ['Close', '閉じる'],
+    ['Please complete your billing address.', '請求先住所を入力してください。'],
+    ['Please enter your email address.', 'メールアドレスを入力してください。'],
+    ['Please enter a valid email address.', '有効なメールアドレスを入力してください。'],
   ])('translates "%s" to Japanese', async (key, expected) => {
     await i18n.changeLanguage('ja');
     expect(i18n.t(key)).toBe(expected);
