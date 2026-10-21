@@ -60,7 +60,7 @@ mode**) provides:
 |---|---|---|
 | `/api/config` | GET | `{ publishableKey }` |
 | `/api/create-payment-intent` | POST `{ currency }` | `{ clientSecret }` |
-| `/api/create-checkout-session` | POST `{ currency }` | `{ clientSecret }` |
+| `/api/create-checkout-session` | POST `{ currency, uiMode? }` (`uiMode`: `embedded_page` default, or `elements` for stripe-payment-element) | `{ clientSecret }` |
 
 A clientSecret is bound to the account that created it, so both values must come
 from the same account — that is why the demos fetch the publishable key rather

@@ -1,5 +1,11 @@
 # stripe-pwa-elements
 
+## 4.0.3
+
+### Patch Changes
+
+- 72aa0d8: Let content taller than the viewport scroll inside `<stripe-modal>` (and so inside `<stripe-card-element-modal>` and `<stripe-payment-sheet>`). The modal panel is now capped at the viewport height and scrolls its own overflow, so the close button and the top of the form are no longer pushed off-screen.
+
 ## 4.0.2
 
 ### Patch Changes

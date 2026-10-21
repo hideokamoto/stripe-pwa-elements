@@ -172,7 +172,7 @@ jobs:
           node-version: "22"
       - run:
           name: Quint simulation (payment sheet)
-          command: npx -y @informalsystems/quint@0.33.0 run spec/payment-sheet/sheet_v2.qnt --invariant=allProps --max-steps=15 --max-samples=10000 --seed=1
+          command: npx -y @informalsystems/quint@0.33.0 run spec/payment-sheet/sheet_v3.qnt --invariant=allProps --max-steps=15 --max-samples=10000 --seed=1
 
 # ---------------------------------------------------------------------------
 # Workflow

@@ -72,6 +72,12 @@
   padding: 16px 8px 24px;
   background-color: #fff;
   width: 100%;
+  // Content taller than the viewport (e.g. a Payment Element with many methods) scrolls inside the panel
+  // instead of being pushed off-screen. `vh` is the fallback for browsers without `dvh`.
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-close-button-wrap {

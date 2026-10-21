@@ -8,8 +8,8 @@ import { PaymentSheetHarness, TEST_CARDS } from './support/payment-sheet';
  */
 test.describe('stripe-payment-sheet (real Stripe.js, test mode)', () => {
   // The sheet with the demo account's Payment Element (card + Link sign-up) is about 810px tall on desktop.
-  // `<stripe-modal>` does not scroll, so on shorter viewports its top (title and close button) is cut off;
-  // see the "close button is reachable" check below. Use a viewport that fits the whole sheet here.
+  // A viewport that fits the whole sheet keeps these checks free of scrolling; scrolling is covered by the
+  // "close button is reachable" check below.
   test.use({ viewport: { width: 1280, height: 1100 } });
 
   let harness: PaymentSheetHarness;
@@ -71,13 +71,9 @@ test.describe('stripe-payment-sheet (real Stripe.js, test mode)', () => {
   test.describe('on a phone-sized viewport', () => {
     test.use({ viewport: { width: 390, height: 844 } });
 
-    // Known issue, expected to fail until fixed: `<stripe-modal>` is `position: fixed` and bottom-aligned with no
-    // max-height or overflow, so a sheet taller than the viewport (about 1040px at this width) is pushed above the
-    // top edge. The title and the close button cannot be seen or reached by scrolling.
-    // When this starts passing, Playwright reports it; remove `test.fail()` then.
+    // The sheet is taller than the viewport at this width (about 1040px): `<stripe-modal>` caps its panel at the
+    // viewport height and scrolls inside it, so the title and the close button stay reachable
     test('the close button is reachable when the sheet is taller than the viewport', async ({ page }) => {
-      test.fail();
-
       const publishableKey = await fetchPublishableKey(page);
       const clientSecret = await createPaymentIntent(page);
 
@@ -86,7 +82,23 @@ test.describe('stripe-payment-sheet (real Stripe.js, test mode)', () => {
       await harness.waitForEvent('paymentSheetLoaded');
       await harness.expectVisible();
 
+      // The panel scrolls inside itself: its content is taller than the panel
+      const panel = harness.sheet.locator('stripe-modal .modal-child');
+      const title = harness.sheet.locator('.stripe-heading');
+      const { scrollHeight, clientHeight } = await panel.evaluate(element => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+
+      expect(scrollHeight).toBeGreaterThan(clientHeight);
+      await expect(title).toBeInViewport();
       await expect(harness.closeButton).toBeInViewport({ timeout: 5_000 });
+
+      // Scrolling down reaches the submit button, and scrolling back up reaches the title and the close button again
+      await panel.evaluate(element => (element.scrollTop = element.scrollHeight));
+      await expect(harness.submitButton).toBeInViewport();
+      await expect(title).not.toBeInViewport();
+      await panel.evaluate(element => (element.scrollTop = 0));
+      await expect(title).toBeInViewport();
+      await expect(harness.closeButton).toBeInViewport();
+
       await harness.closeButton.click({ timeout: 5_000 });
       expect(await harness.waitForPresentResult()).toEqual({ paymentResult: 'paymentSheetCanceled' });
     });
