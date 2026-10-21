@@ -374,6 +374,23 @@ To run the unit tests for the components, run:
 npm test
 ```
 
+### Real-browser checks against Stripe test mode
+
+`e2e/stripe/` holds Playwright checks that drive the built components in Chromium against the real Stripe.js, in Stripe **test mode**. They use the docs site's demo API (`https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/api`) for the `pk_test_` key and for new PaymentIntents, so no keys are needed. They need network access to `js.stripe.com` and to that API, so they are not part of CI.
+
+```bash
+pnpm run build                            # the harness serves www/build
+pnpm exec playwright install chromium     # once, if Playwright has no Chromium yet
+pnpm run test:e2e:stripe
+```
+
+- The harness is served on `http://localhost:4321`, an origin the demo API allows. Set `STRIPE_E2E_PORT` only if the demo API allows that origin too.
+- To use an already installed Chromium, set `PLAYWRIGHT_BROWSERS_PATH`, or point `STRIPE_E2E_CHROMIUM_PATH` at the executable.
+- Traces and screenshots of failed tests go to `test-reports/stripe-e2e/`.
+- Type-check the suite with `pnpm exec tsc -p e2e/stripe/tsconfig.json`.
+
+To add a check: add a scenario to `e2e/stripe/*.pw.ts` using `PaymentSheetHarness` (`e2e/stripe/support/payment-sheet.ts`) and the demo API helpers (`e2e/stripe/support/demo-api.ts`). Element options and attributes go through `harness.mount({ publishableKey, clientSecret, options, attributes })`. For a different page, add an HTML file to `e2e/stripe/pages/` that exposes the same `window.harness` contract and open it with `harness.goto('/e2e/<file>.html')`.
+
 ### Keep the Agent Skill up to date
 
 When you add, rename or remove a component, or change its props, events, methods or how it is loaded,

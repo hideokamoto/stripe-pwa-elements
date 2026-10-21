@@ -13,6 +13,7 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
   private store = createStore<LinkAuthenticationElementState>({
     errorMessage: '',
     email: undefined,
+    complete: undefined,
   });
 
   /**
@@ -56,6 +57,10 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
       this.unmount();
     }
 
+    // The values of a previous element do not apply to the new one
+    this.store.set('email', undefined);
+    this.store.set('complete', undefined);
+
     // Create link authentication element
     const linkAuthentication = elements.create('linkAuthentication', options);
     const linkAuthenticationElementDiv = await findElement(containerElement, '#link-authentication-element');
@@ -67,6 +72,7 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
       // Unconditionally set email from event.value.email
       // This handles all cases: valid email, empty string, or undefined
       this.store.set('email', event.value?.email);
+      this.store.set('complete', event.complete);
     });
 
     this.linkAuthenticationElement = linkAuthentication;

@@ -1,0 +1,81 @@
+<!doctype html>
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stripe-payment-sheet e2e harness</title>
+    <!-- Lazy-loaded build from `pnpm run build` (www/build), served by e2e/stripe/server.mjs -->
+    <script type="module" src="/build/stripe-elements.esm.js"></script>
+  </head>
+  <body>
+    <main id="root"></main>
+    <script>
+      /*
+       * Contract used by e2e/stripe/support/payment-sheet.ts:
+       *   harness.mount({ publishableKey, clientSecret, options?, attributes? })
+       *   harness.startPresent()        calls present() and stores its result in harness.presentResult
+       *   harness.presentResult          null while pending
+       *   harness.events                 [{ name, detail }] for every paymentSheet* event, in order
+       */
+      const EVENT_NAMES = ['paymentSheetLoaded', 'paymentSheetFailedToLoad', 'paymentSheetCompleted', 'paymentSheetCanceled', 'paymentSheetFailed'];
+
+      // Event details can hold Stripe objects or Errors; keep a JSON-safe copy
+      const summarize = detail => {
+        if (detail == null) {
+          return null;
+        }
+
+        // A thrown non-Error (e.g. a string) must not make the `in` checks below throw
+        if (typeof detail !== 'object') {
+          return String(detail);
+        }
+
+        if (detail instanceof Error || detail.message != null) {
+          return { message: detail.message, type: detail.type, code: detail.code };
+        }
+
+        if ('paymentIntent' in detail || 'setupIntent' in detail) {
+          const intent = detail.paymentIntent ?? detail.setupIntent;
+
+          return { [detail.paymentIntent ? 'paymentIntent' : 'setupIntent']: { id: intent.id, status: intent.status } };
+        }
+
+        return 'stripe' in detail ? { stripe: 'loaded' } : String(detail);
+      };
+
+      window.harness = {
+        events: [],
+        presentResult: null,
+        presentError: null,
+
+        async mount({ publishableKey, clientSecret, options, attributes = {} }) {
+          await customElements.whenDefined('stripe-payment-sheet');
+
+          const sheet = document.createElement('stripe-payment-sheet');
+
+          EVENT_NAMES.forEach(name => sheet.addEventListener(name, e => this.events.push({ name, detail: summarize(e.detail) })));
+          Object.entries(attributes).forEach(([key, value]) => sheet.setAttribute(key, value));
+
+          if (options != null) {
+            sheet.options = options;
+          }
+
+          sheet.publishableKey = publishableKey;
+          sheet.intentClientSecret = clientSecret;
+          document.getElementById('root').appendChild(sheet);
+          await sheet.componentOnReady();
+        },
+
+        startPresent() {
+          document
+            .querySelector('stripe-payment-sheet')
+            .present()
+            .then(
+              result => (this.presentResult = result),
+              error => (this.presentError = String(error)),
+            );
+        },
+      };
+    </script>
+  </body>
+</html>

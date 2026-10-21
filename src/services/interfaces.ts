@@ -83,6 +83,8 @@ export type AddressElementState = {
 export type LinkAuthenticationElementState = {
   errorMessage: string;
   email?: string;
+  /** `complete` of the latest change event: whether the email is valid. Undefined until the element reports a change */
+  complete?: boolean;
 };
 
 /**
