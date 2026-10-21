@@ -38,7 +38,8 @@
     "prepublishOnly": "pnpm run build",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "pnpm run build && pnpm -F hono-stripe-elements run build && changeset publish"
+    "changeset:publish": "pnpm run build && pnpm -F hono-stripe-elements run build && changeset publish",
+    "test:e2e:stripe": "playwright test -c e2e/stripe/playwright.config.ts"
   },
   "dependencies": {
     "@stencil/core": "^4.38.3",
@@ -90,6 +91,7 @@
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@jsr/circleci__jest-circleci-coverage": "^0.4.0",
+    "@playwright/test": "1.56.1",
     "@stencil-community/eslint-plugin": "^0.10.0",
     "@stencil/sass": "^3.2.3",
     "@stencil/store": "^2.2.1",
