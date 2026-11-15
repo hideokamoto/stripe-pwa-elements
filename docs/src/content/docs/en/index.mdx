@@ -4,8 +4,6 @@ description: Stencil-based Stripe Elements Web Components for PWAs.
 template: splash
 hero:
   tagline: Stripe payment UI as Web Components.
-  image:
-    file: ../../../assets/houston.webp
   actions:
     - text: Getting Started
       link: /en/guides/getting-started/
@@ -17,6 +15,13 @@ hero:
 ---
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+import PromoVideo from '../../../components/PromoVideo.astro';
+
+<PromoVideo
+	src="/videos/stripe-pwa-elements-intro-en.mp4"
+	poster="/videos/stripe-pwa-elements-intro-en-poster.jpg"
+	title="From card input to a completed payment (test mode, about 30 seconds)"
+/>
 
 ## Start here
 
