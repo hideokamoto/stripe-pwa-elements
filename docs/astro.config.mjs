@@ -26,6 +26,7 @@ export default defineConfig({
 		starlight({
 			plugins: [starlightLlmsTxt({ details: llmsTxtDetails })],
 			title: 'stripe-pwa-elements',
+			customCss: ['./src/styles/setchu.css'],
 			// llms.txt v2: rel="describedby" points every page at the llms.txt that covers it.
 			head: [{ tag: 'link', attrs: { rel: 'describedby', href: '/llms.txt' } }],
 			defaultLocale: 'root',

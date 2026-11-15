@@ -1,0 +1,30 @@
+/* Setchū palette: porcelain-and-ink neutrals, indigo primary. */
+:root {
+	--sl-font: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+	--sl-font-mono: ui-monospace, 'SF Mono', monospace;
+	--setchu-font-heading: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+
+	--sl-color-black: #16181c;
+	--sl-color-accent-low: #2e3138;
+	--sl-color-accent: #6e9bc0;
+	--sl-color-accent-high: #6e9bc0;
+}
+
+:root[data-theme='light'] {
+	--sl-color-white: #23262b;
+	--sl-color-black: #f8faf7;
+	--sl-color-accent-low: #e4e9e2;
+	--sl-color-accent: #2f5375;
+	--sl-color-accent-high: #2f5375;
+}
+
+.hero h1,
+.sl-markdown-content :is(h1, h2, h3),
+h1#_top {
+	font-family: var(--setchu-font-heading);
+}
+
+:focus-visible {
+	outline: 2px solid var(--sl-color-text-accent);
+	outline-offset: 2px;
+}
