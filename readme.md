@@ -29,8 +29,6 @@ There is no `<stripe-payment-element>` demo yet. See [`examples/codesandbox`](ex
 
 This library powers the Web implementation of [`@capacitor-community/stripe`](https://github.com/capacitor-community/stripe), which receives 4,000+ weekly downloads. If you use Capacitor for cross-platform apps, `stripe-pwa-elements` handles all Stripe UI on the web layer.
 
-> **Manual follow-up (external repo):** Add a reciprocal link in the [capacitor-community/stripe README](https://github.com/capacitor-community/stripe) pointing back to this package.
-
 ## Why stripe-pwa-elements?
 
 Integrating Stripe from scratch requires wiring up several moving parts. This library collapses all of that into a single HTML element.
@@ -358,20 +356,20 @@ The documentation site also serves the skill over HTTP, built from the same file
 ### Getting Started
 
 ```bash
-npm install
-npm start
+pnpm install
+pnpm start
 ```
 
 To build the component for production, run:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 To run the unit tests for the components, run:
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Real-browser checks against Stripe test mode
@@ -472,7 +470,7 @@ The custom-elements entry `stripe-pwa-elements/dist/components/<tag>` is a suppo
 
 ### Semver policy
 
-All types exported from the package root (`stripe-pwa-elements`) are considered **public API** and follow [Semantic Versioning](https://semver.org/). Within the `^3.0.0` range:
+All types exported from the package root (`stripe-pwa-elements`) are considered **public API** and follow [Semantic Versioning](https://semver.org/). Within a major version range (for example `^4.0.0`):
 
 - No breaking changes will be made to the shape of any publicly exported type.
 - New optional fields may be added to event objects without a major bump.
