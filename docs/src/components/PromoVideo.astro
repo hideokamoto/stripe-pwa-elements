@@ -1,0 +1,34 @@
+---
+interface Props {
+	src: string;
+	poster: string;
+	title: string;
+}
+
+const { src, poster, title } = Astro.props;
+---
+
+<figure>
+	<video controls preload="none" playsinline poster={poster} width="1920" height="1080" aria-label={title}>
+		<source src={src} type="video/mp4" />
+		Your browser does not support video playback. <a href={src}>Download the video</a>.
+	</video>
+	<figcaption>{title}</figcaption>
+</figure>
+
+<style>
+	video {
+		display: block;
+		width: 100%;
+		height: auto;
+		border: 1px solid var(--sl-color-hairline);
+		border-radius: 12px;
+	}
+
+	figcaption {
+		margin-top: 0.5rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+		text-align: center;
+	}
+</style>

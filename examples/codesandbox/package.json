@@ -8,7 +8,7 @@
     "dev": "vite --host 0.0.0.0 --port 3000 --strictPort"
   },
   "dependencies": {
-    "stripe-pwa-elements": "4.0.0"
+    "stripe-pwa-elements": "4.0.3"
   },
   "devDependencies": {
     "vite": "^6.3.5"

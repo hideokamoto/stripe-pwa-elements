@@ -4,8 +4,6 @@ description: Stencil 製の Stripe Elements Web Components（PWA向け）ドキ�
 template: splash # Remove or comment out this line to display the site sidebar on this page.
 hero:
   tagline: Stripe の決済UIを Web Components として提供します。
-  image:
-    file: ../../assets/houston.webp
   actions:
     - text: Getting Started
       link: /guides/getting-started/
@@ -17,6 +15,13 @@ hero:
 ---
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+import PromoVideo from '../../components/PromoVideo.astro';
+
+<PromoVideo
+	src="/videos/stripe-pwa-elements-intro-ja.mp4"
+	poster="/videos/stripe-pwa-elements-intro-ja-poster.jpg"
+	title="カード入力から決済完了まで（テストモード、約 30 秒）"
+/>
 
 ## はじめに
 
