@@ -72,11 +72,11 @@ From the Stripe docs ([API keys](https://docs.stripe.com/keys),
 npm install stripe-pwa-elements
 ```
 
-Register the custom elements once at app startup (bundler/ESM):
+With a bundler (Vite, webpack, …), import each component you use from the
+custom-elements build. Importing it registers the tag:
 
 ```js
-import { defineCustomElements } from 'stripe-pwa-elements/loader';
-defineCustomElements();
+import 'stripe-pwa-elements/dist/components/stripe-payment-element';
 ```
 
 Or load directly from a CDN (no build step):
@@ -122,8 +122,8 @@ and the payment methods enabled in the Stripe Dashboard.
 
 4. **Attributes are kebab-case; events are camelCase `CustomEvent`s.** A prop like
    `intentClientSecret` is the HTML attribute `intent-client-secret`. Read event
-   payloads from `event.detail`. In React use `onFormSubmit`; in Vue use
-   `@formSubmit`.
+   payloads from `event.detail`. In React attach listeners with `addEventListener`
+   on a `ref` (`onFormSubmit` does not fire); in Vue use `@formSubmit`.
 
 5. **Default vs. manual submit.** By default the form components confirm the payment
    for you and emit the result on `defaultFormSubmitResult` (or `defaultConfirmResult`
@@ -334,11 +334,14 @@ const email = await el.getEmail();
 
 ### Framework notes
 
-- **React**: register once with `defineCustomElements()`; bind events with the
-  camelCase `on` prop, e.g. `onFormSubmit={handler}`. Set array/object props
-  (like `allowedCountries`) via a `ref` since they aren't attributes.
-- **Vue**: use `@formSubmit="handler"`; make sure custom elements are allowed in
-  your compiler options.
+- **React**: import the component from `stripe-pwa-elements/dist/components/<tag>`
+  (the lazy `loader` fails under Vite). Attach event listeners with
+  `addEventListener` on a `ref`: React 18 ignores custom element event props, and
+  React 19 takes the text after `on` as the event name, so `onFormSubmit` waits
+  for `FormSubmit` and never fires. Set array/object props (like
+  `allowedCountries`) via the same `ref` since they aren't attributes.
+- **Vue**: import from `dist/components/<tag>`; use `@formSubmit="handler"`; set
+  `isCustomElement: (tag) => tag.startsWith('stripe-')` in the Vue compiler options.
 - **Angular**: add `CUSTOM_ELEMENTS_SCHEMA`; bind with `(formSubmit)="handler($event)"`.
 - **Plain HTML**: load the unpkg script tag and use `customElements.whenDefined`.
 

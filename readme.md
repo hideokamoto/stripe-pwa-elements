@@ -251,46 +251,82 @@ Combined Card Element with Modal wrapper.
 
 ### React
 
+Import the component from the custom-elements build, then listen for events through a `ref`. React 18 does not attach custom element events from props, and React 19 uses the text after `on` as the event name unchanged, so `onFormSubmit` would listen for `FormSubmit` instead of `formSubmit`. `addEventListener` works in both.
+
 ```jsx
-import { defineCustomElements } from 'stripe-pwa-elements/loader';
+import { useEffect, useRef } from 'react';
+import 'stripe-pwa-elements/dist/components/stripe-card-element';
 
-defineCustomElements();
+export function PaymentForm({ publishableKey, clientSecret }) {
+  const ref = useRef(null);
 
-function PaymentForm() {
-  const handleFormSubmit = (e) => {
-    const { stripe, cardNumber } = e.detail;
-    stripe.createPaymentMethod({ type: 'card', card: cardNumber });
-  };
+  useEffect(() => {
+    const el = ref.current;
+    const onResult = (e) => {
+      if (e.detail instanceof Error) {
+        console.error('Payment failed:', e.detail.message);
+      } else {
+        console.log('Payment result:', e.detail.paymentIntent.status);
+      }
+    };
+    el.addEventListener('defaultFormSubmitResult', onResult);
+    return () => el.removeEventListener('defaultFormSubmitResult', onResult);
+  }, []);
 
   return (
     <stripe-card-element
-      publishable-key="pk_test_xxxxx"
-      intent-client-secret="pi_xxxxx_secret_xxxxx"
-      onFormSubmit={handleFormSubmit}
+      ref={ref}
+      publishable-key={publishableKey}
+      intent-client-secret={clientSecret}
     />
   );
 }
 ```
 
+The component confirms the payment itself and emits the result on `defaultFormSubmitResult`.
+
 ### Vue
+
+Tell the Vue compiler that `stripe-*` tags are custom elements:
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+
+export default defineConfig({
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith('stripe-'),
+        },
+      },
+    }),
+  ],
+});
+```
 
 ```vue
 <template>
   <stripe-card-element
-    publishable-key="pk_test_xxxxx"
-    intent-client-secret="pi_xxxxx_secret_xxxxx"
-    @formSubmit="handleFormSubmit"
+    :publishable-key="publishableKey"
+    :intent-client-secret="clientSecret"
+    @defaultFormSubmitResult="onResult"
   />
 </template>
 
 <script setup>
-import { defineCustomElements } from 'stripe-pwa-elements/loader';
+import 'stripe-pwa-elements/dist/components/stripe-card-element';
 
-defineCustomElements();
+defineProps({ publishableKey: String, clientSecret: String });
 
-const handleFormSubmit = (e) => {
-  const { stripe, cardNumber } = e.detail;
-  stripe.createPaymentMethod({ type: 'card', card: cardNumber });
+const onResult = (e) => {
+  if (e.detail instanceof Error) {
+    console.error('Payment failed:', e.detail.message);
+  } else {
+    console.log('Payment result:', e.detail.paymentIntent.status);
+  }
 };
 </script>
 ```
