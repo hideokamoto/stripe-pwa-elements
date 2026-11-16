@@ -329,6 +329,11 @@ export class StripeCardElement {
 
   /**
    * Form submit event
+   *
+   * Note: this event fires after the submit handling completes, not when the form is
+   * submitted. With the default submit action it is emitted only after the payment
+   * succeeds; a declined payment shows an error inside the form and this event does
+   * not fire. Listen to `defaultFormSubmitResult` for the outcome of the default action.
    * @example
    * ```
    * const stripeElement = document.createElement('stripe-card-element');

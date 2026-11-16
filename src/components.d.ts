@@ -1066,7 +1066,7 @@ declare namespace LocalJSX {
          */
         "onDefaultFormSubmitResult"?: (event: StripeCardElementCustomEvent<DefaultFormSubmitResult>) => void;
         /**
-          * Form submit event
+          * Form submit event  Note: this event fires after the submit handling completes, not when the form is submitted. With the default submit action it is emitted only after the payment succeeds; a declined payment shows an error inside the form and this event does not fire. Listen to `defaultFormSubmitResult` for the outcome of the default action.
           * @example ``` const stripeElement = document.createElement('stripe-card-element'); customElements  .whenDefined('stripe-card-element')  .then(() => {     stripeElement       .addEventListener('formSubmit', async props => {         const {           detail: { stripe, cardNumber, event },         } = props;         const result = await stripe.createPaymentMethod({           type: 'card',           card: cardNumber,         });         console.log(result);       })   }) ```
          */
         "onFormSubmit"?: (event: StripeCardElementCustomEvent<FormSubmitEvent>) => void;
@@ -1402,7 +1402,7 @@ declare namespace LocalJSX {
          */
         "onDefaultFormSubmitResult"?: (event: StripePaymentElementCustomEvent<DefaultFormSubmitResult>) => void;
         /**
-          * Form submit event
+          * Form submit event  Note: this event fires after the submit handling completes, not when the form is submitted. With the default submit action it is emitted only after the payment succeeds; a declined payment shows an error inside the form and this event does not fire. Listen to `defaultFormSubmitResult` for the outcome of the default action.
           * @example ``` const stripeElement = document.createElement('stripe-payment-element'); customElements  .whenDefined('stripe-payment-element')  .then(() => {     stripeElement       .addEventListener('formSubmit', async props => {         const { detail: { stripe, elements } } = props;         console.log('Form submitted', stripe, elements);       })   }) ```
          */
         "onFormSubmit"?: (event: StripePaymentElementCustomEvent<PaymentElementSubmitEvent>) => void;
