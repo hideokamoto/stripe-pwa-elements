@@ -561,7 +561,8 @@ export class StripeCardElement {
       return <p>{i18n.t('Failed to load Stripe')}</p>;
     }
 
-    const disabled = this.progress === 'loading';
+    // A succeeded intent cannot be confirmed again, so the form must not accept a second submit
+    const disabled = this.progress === 'loading' || this.progress === 'success';
 
     return (
       // NOTE: `stripe-payment-sheet-wrap` is a legacy class name (leftover from a former

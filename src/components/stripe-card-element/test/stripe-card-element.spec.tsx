@@ -97,6 +97,24 @@ describe('stripe-card-element component tests', () => {
       expect(page.root).toMatchSnapshot();
     });
 
+    it('disables the submit button after success and keeps it enabled after failure', async () => {
+      const page = await newSpecPage({
+        components: [StripeCardElement],
+        html: `<stripe-card-element publishable-key='pk_test_xxx'></stripe-card-element>`,
+      });
+
+      const getButton = () => page.root.querySelector('button') as HTMLButtonElement;
+      expect(getButton().hasAttribute('disabled')).toBe(false);
+
+      await page.rootInstance.updateProgress('success');
+      await page.waitForChanges();
+      expect(getButton().hasAttribute('disabled')).toBe(true);
+
+      await page.rootInstance.updateProgress('failure');
+      await page.waitForChanges();
+      expect(getButton().hasAttribute('disabled')).toBe(false);
+    });
+
     it('should load stripe after setting the publishable-key', async () => {
       const page = await newSpecPage({
         components: [StripeCardElement],

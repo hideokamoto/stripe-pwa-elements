@@ -7,6 +7,8 @@ import type { PaymentElementSubmitEvent } from './stripe-payment-element';
  * Determine whether the submit button should be disabled.
  * For Checkout Session mode: the checkout is ready once Stripe finished loading.
  * For Payment Intent / Setup Intent mode: an intent client secret must be present.
+ * The button stays disabled after a successful payment as well: the intent or
+ * checkout is already confirmed and cannot be submitted again.
  * @param params progress / loading state and the current mode information
  * @returns true when the submit button should be disabled
  */
@@ -19,7 +21,7 @@ export const isSubmitButtonDisabled = (params: {
   const { progress, isCheckoutSession, loadStripeStatus, intentClientSecret } = params;
   const hasValidSecret = isCheckoutSession ? loadStripeStatus === 'success' : intentClientSecret != null && intentClientSecret !== '';
 
-  return progress === 'loading' || !hasValidSecret;
+  return progress === 'loading' || progress === 'success' || !hasValidSecret;
 };
 
 /**
