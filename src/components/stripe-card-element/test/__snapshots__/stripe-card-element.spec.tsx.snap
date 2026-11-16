@@ -115,7 +115,7 @@ exports[`stripe-card-element component tests Rendering with the api key 1`] = `
       <div class="stripe-element-errors" id="card-errors"></div>
       <div style="margin-top: 1.5rem;">
         <div class="stripe-section-title">
-          Country or region
+          Postal Code
         </div>
       </div>
       <div class="card payment-info visible">

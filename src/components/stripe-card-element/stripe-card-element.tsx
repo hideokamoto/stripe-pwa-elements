@@ -599,7 +599,7 @@ export class StripeCardElement {
           </div>
           {this.zip ? (
             <div style={{ marginTop: '1.5rem' }}>
-              <div class="stripe-section-title">{i18n.t('Country or region')}</div>
+              <div class="stripe-section-title">{i18n.t('Postal Code')}</div>
             </div>
           ) : null}
           {this.zip ? (
