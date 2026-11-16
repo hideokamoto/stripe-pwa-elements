@@ -272,6 +272,11 @@ export class StripePaymentElement {
     }
 
     await this.initStripe(publishableKey, { stripeAccount });
+
+    // A new secret starts a fresh payment, so re-enable the submit button after a previous success
+    if (this.progress === 'success') {
+      this.progress = '';
+    }
   }
 
   /**
@@ -298,6 +303,11 @@ export class StripePaymentElement {
       await this.initStripeWithCheckoutSession(this.publishableKey, newValue, {
         stripeAccount: this.stripeAccount,
       });
+
+      // A new secret starts a fresh payment, so re-enable the submit button after a previous success
+      if (this.progress === 'success') {
+        this.progress = '';
+      }
     }
   }
 

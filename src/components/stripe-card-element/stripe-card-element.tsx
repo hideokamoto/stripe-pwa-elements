@@ -235,6 +235,14 @@ export class StripeCardElement {
    */
   @Prop() intentClientSecret?: string;
 
+  @Watch('intentClientSecret')
+  updateIntentClientSecret() {
+    // Card Elements are not bound to the client secret, so a new secret starts a fresh payment
+    if (this.progress === 'success') {
+      this.progress = '';
+    }
+  }
+
   /**
    * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`,
    * `stripe.confirmCardSetup` when it is `'setup'`.
