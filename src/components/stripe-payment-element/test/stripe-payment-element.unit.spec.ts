@@ -203,6 +203,15 @@ describe('stripe-payment-element unit tests', () => {
 
       expect(mockStripeService.initialize).not.toHaveBeenCalled();
     });
+
+    it('#updateIntentClientSecret should re-enable the submit button after a successful payment', async () => {
+      mockStripeService.state.publishableKey = 'pk_test_xxx';
+      (element as any).intentClientSecret = 'pi_new_secret_new';
+      (element as any).progress = 'success';
+      await element.updateIntentClientSecret();
+
+      expect((element as any).progress).toBe('');
+    });
   });
 
   describe('#componentWillRender retry mode', () => {
@@ -271,6 +280,16 @@ describe('stripe-payment-element unit tests', () => {
 
       expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_secret', { stripeAccount: 'acct_new' });
       expect(element.initStripe).not.toHaveBeenCalled();
+    });
+
+    it('#updateCheckoutSessionClientSecret re-enables the submit button after a successful payment', async () => {
+      (element as any).publishableKey = 'pk_test_xxx';
+      (element as any).progress = 'success';
+
+      await element.updateCheckoutSessionClientSecret('cs_test_new');
+
+      expect(element.initStripeWithCheckoutSession).toHaveBeenCalledWith('pk_test_xxx', 'cs_test_new', { stripeAccount: undefined });
+      expect((element as any).progress).toBe('');
     });
   });
 

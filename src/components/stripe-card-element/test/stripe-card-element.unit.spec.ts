@@ -271,4 +271,26 @@ describe('stripe-card-element unit tests', () => {
       });
     });
   });
+
+  describe('#updateIntentClientSecret', () => {
+    let element: StripeCardElement;
+
+    beforeEach(() => {
+      element = new StripeCardElement();
+    });
+
+    it('resets a successful progress so a fresh payment can be submitted', () => {
+      (element as any).progress = 'success';
+      element.updateIntentClientSecret();
+
+      expect((element as any).progress).toBe('');
+    });
+
+    it('keeps a failure progress so the error state is preserved', () => {
+      (element as any).progress = 'failure';
+      element.updateIntentClientSecret();
+
+      expect((element as any).progress).toBe('failure');
+    });
+  });
 });

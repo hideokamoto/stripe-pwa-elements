@@ -235,6 +235,14 @@ export class StripeCardElement {
    */
   @Prop() intentClientSecret?: string;
 
+  @Watch('intentClientSecret')
+  updateIntentClientSecret() {
+    // Card Elements are not bound to the client secret, so a new secret starts a fresh payment
+    if (this.progress === 'success') {
+      this.progress = '';
+    }
+  }
+
   /**
    * The component will confirm the intent for you: `stripe.confirmCardPayment` when `intentType` is `'payment'`,
    * `stripe.confirmCardSetup` when it is `'setup'`.
@@ -561,7 +569,8 @@ export class StripeCardElement {
       return <p>{i18n.t('Failed to load Stripe')}</p>;
     }
 
-    const disabled = this.progress === 'loading';
+    // A succeeded intent cannot be confirmed again, so the form must not accept a second submit
+    const disabled = this.progress === 'loading' || this.progress === 'success';
 
     return (
       // NOTE: `stripe-payment-sheet-wrap` is a legacy class name (leftover from a former
