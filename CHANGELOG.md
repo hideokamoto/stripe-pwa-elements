@@ -1,5 +1,12 @@
 # stripe-pwa-elements
 
+## 4.0.5
+
+### Patch Changes
+
+- 5f4cca0: Fix the section heading above the postal code field in `<stripe-card-element>`: it read "Country or region" ("地域" in Japanese) even though the component only collects a postal code and has no country selector. It now reads "Postal Code" ("郵便番号"), and the unused `Country or region` translations were removed.
+- f0c4741: Stop i18next from printing its one-time Locize promotional notice to the console on initialization by setting `showSupportNotice: false`.
+
 ## 4.0.4
 
 ### Patch Changes
