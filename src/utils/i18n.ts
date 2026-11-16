@@ -4,6 +4,8 @@ import I18nextBrowserLanguageDetector from 'i18next-browser-languagedetector';
 i18next.use(I18nextBrowserLanguageDetector).init({
   fallbackLng: 'en',
   debug: false,
+  // i18next prints a one-time Locize promo to the console unless this is false
+  showSupportNotice: false,
   resources: {
     'en': {
       translation: {},
