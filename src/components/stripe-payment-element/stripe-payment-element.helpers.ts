@@ -1,5 +1,6 @@
 import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult, ConfirmPaymentData, ConfirmSetupData } from '@stripe/stripe-js';
 import type { IntentType, ProgressStatus } from '../../interfaces';
+import { confirmCheckoutActions } from '../../utils/checkout-confirm';
 import { StripeAPIError } from '../../utils/error';
 import type { PaymentElementSubmitEvent } from './stripe-payment-element';
 
@@ -72,48 +73,19 @@ export const confirmPaymentOrSetup = async (stripe: Stripe, elements: StripeElem
 
 /**
  * Confirm a Checkout Session payment using the checkout actions.
+ *
+ * Stripe requires exactly one of `returnUrl` (confirm argument) or the session's `return_url`, and the client
+ * cannot tell which one a session has (`getSession()` does not expose it). The shared implementation passes
+ * `returnUrl` first and retries without it when Stripe rejects it because the session already has
+ * `return_url`. See `confirmCheckoutActions` for the full behavior and error classification.
  * @param checkout the Stripe Checkout instance
- * @param returnUrl the URL Stripe should redirect back to when required
+ * @param returnUrl URL Stripe should redirect back to when the session has no `return_url`
+ * @param email customer email, required when the session was created without `customer_email` or `customer`
  * @returns the confirmation result
  * @throws StripeAPIError when loading actions or confirming fails
  */
-export const confirmCheckoutSession = async (checkout: StripeCheckoutElementsSdk, returnUrl: string): Promise<StripeCheckoutConfirmResult> => {
-  // Load actions from the checkout session
-  const loadActionsResult = await checkout.loadActions();
-
-  if (loadActionsResult.type === 'error') {
-    // Create a StripeError-compatible object from the Checkout Session error
-    const stripeError = {
-      type: 'api_error' as const,
-      code: loadActionsResult.error.code || 'checkout_session_error',
-      message: loadActionsResult.error.message,
-    };
-
-    throw new StripeAPIError(stripeError);
-  }
-
-  const { actions } = loadActionsResult;
-
-  // Confirm the payment using checkout session actions
-  const result = await actions.confirm({
-    returnUrl,
-    redirect: 'if_required',
-  });
-
-  if (result.type === 'error') {
-    // Create a StripeError-compatible object from the confirm error
-    const stripeError = {
-      type: 'card_error' as const,
-      code: result.error.code || 'payment_failed',
-      message: result.error.message,
-      decline_code: result.error.code === 'paymentFailed' ? (result.error as { paymentFailed?: { declineCode?: string } }).paymentFailed?.declineCode : undefined,
-    };
-
-    throw new StripeAPIError(stripeError);
-  }
-
-  return result;
-};
+export const confirmCheckoutSession = async (checkout: StripeCheckoutElementsSdk, returnUrl: string, email?: string): Promise<StripeCheckoutConfirmResult> =>
+  confirmCheckoutActions(checkout, returnUrl, email);
 
 /**
  * Resolve the mode-specific properties for a submit event.

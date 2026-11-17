@@ -15,6 +15,7 @@ import {
   StripeExpressCheckoutElementShippingRateChangeEvent,
   StripeCheckoutElementsSdk,
   StripeCheckoutElementsOptions,
+  StripeCheckoutElementsSdkOptions,
 } from '@stripe/stripe-js';
 import { ProgressStatus } from '../interfaces';
 
@@ -23,6 +24,8 @@ import { ProgressStatus } from '../interfaces';
  */
 export type CheckoutSessionOptions = {
   elementsOptions?: StripeCheckoutElementsOptions;
+  /** Prefilled values of the Checkout Elements (email, phone, billing or shipping address) */
+  defaultValues?: StripeCheckoutElementsSdkOptions['defaultValues'];
 };
 
 /**

@@ -175,6 +175,7 @@ class StripeServiceClass implements IStripeService {
       const checkout = stripe.initCheckoutElementsSdk({
         clientSecret: checkoutSessionClientSecret,
         elementsOptions: options?.elementsOptions,
+        defaultValues: options?.defaultValues,
       });
 
       this.store.state.checkout = checkout;

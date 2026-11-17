@@ -1,8 +1,17 @@
 import type { StripeCheckoutElementsSdk } from '@stripe/stripe-js';
-import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from '../stripe-payment-sheet.checkout';
+import {
+  checkoutIgnoredOptionKeys,
+  confirmCheckoutSessionSheet,
+  toCheckoutDefaultValues,
+  toCheckoutElementsOptions,
+  toCheckoutPaymentElementOptions,
+} from '../stripe-payment-sheet.checkout';
 import { isRecoverableConfirmError } from '../stripe-payment-sheet.helpers';
 
 const RETURN_URL = 'https://example.com/return';
+
+const RETURN_URL_CONFLICT_MESSAGE =
+  'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
 
 const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: jest.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
 
@@ -28,11 +37,20 @@ describe('checkoutIgnoredOptionKeys', () => {
     expect(checkoutIgnoredOptionKeys({ paymentMethodLayout: 'vertical', style: 'alwaysLight', returnURL: 'https://example.com' })).toEqual([]);
   });
 
-  it('lists the options a Checkout Session does not use, keeping the email that is passed to confirm', () => {
+  it('lists the options a Checkout Session does not use, keeping the details prefilled through defaultValues', () => {
     expect(checkoutIgnoredOptionKeys({ merchantDisplayName: 'Example', defaultBillingDetails: { email: 'jenny@example.com', name: 'Jenny', address: { country: 'JP' } } })).toEqual(
-      ['defaultBillingDetails.address', 'defaultBillingDetails.name', 'merchantDisplayName'],
+      ['merchantDisplayName'],
     );
     expect(checkoutIgnoredOptionKeys({ defaultBillingDetails: { email: 'jenny@example.com' } })).toEqual([]);
+  });
+
+  it('lists name and address that cannot be prefilled because they lack a country', () => {
+    expect(
+      checkoutIgnoredOptionKeys({
+        merchantDisplayName: 'Example',
+        defaultBillingDetails: { name: 'Jenny', phone: '+81 90 1234 5678', address: { city: 'Tokyo', postalCode: '100-0001' } },
+      }),
+    ).toEqual(['defaultBillingDetails.address', 'defaultBillingDetails.name', 'merchantDisplayName']);
   });
 
   it('lists the billing details, shipping and wallet options that only intent mode supports', () => {
@@ -44,6 +62,44 @@ describe('checkoutIgnoredOptionKeys', () => {
         enableGooglePay: false,
       }),
     ).toEqual(['billingDetailsCollectionConfiguration', 'enableApplePay', 'enableGooglePay', 'shippingDetails']);
+  });
+});
+
+describe('toCheckoutDefaultValues', () => {
+  it('returns undefined without default billing details', () => {
+    expect(toCheckoutDefaultValues(undefined)).toBeUndefined();
+    expect(toCheckoutDefaultValues({})).toBeUndefined();
+    expect(toCheckoutDefaultValues({ defaultBillingDetails: {} })).toBeUndefined();
+  });
+
+  it('maps email and phone to the Checkout Elements default values', () => {
+    expect(toCheckoutDefaultValues({ defaultBillingDetails: { email: 'jenny@example.com', phone: '+81 90 1234 5678' } })).toEqual({
+      email: 'jenny@example.com',
+      phoneNumber: '+81 90 1234 5678',
+    });
+  });
+
+  it('maps the billing address with the Stripe field names, keeping the country', () => {
+    expect(
+      toCheckoutDefaultValues({
+        defaultBillingDetails: {
+          name: 'Jenny',
+          address: { country: 'JP', city: 'Tokyo', line1: '1-1 Chiyoda', postalCode: '100-0001', state: 'Tokyo' },
+        },
+      }),
+    ).toEqual({
+      billingAddress: {
+        name: 'Jenny',
+        address: { country: 'JP', city: 'Tokyo', line1: '1-1 Chiyoda', postal_code: '100-0001', state: 'Tokyo' },
+      },
+    });
+  });
+
+  it('drops the name and address when the address has no country', () => {
+    expect(toCheckoutDefaultValues({ defaultBillingDetails: { name: 'Jenny', address: { city: 'Tokyo' } } })).toBeUndefined();
+    expect(toCheckoutDefaultValues({ defaultBillingDetails: { email: 'jenny@example.com', name: 'Jenny', address: { city: 'Tokyo' } } })).toEqual({
+      email: 'jenny@example.com',
+    });
   });
 });
 
@@ -73,6 +129,35 @@ describe('confirmCheckoutSessionSheet', () => {
     await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL, 'jenny@example.com');
 
     expect(confirm).toHaveBeenCalledWith({ returnUrl: RETURN_URL, redirect: 'if_required', email: 'jenny@example.com' });
+  });
+
+  it('retries without returnUrl when a session created with return_url rejects it with a thrown error', async () => {
+    const confirm = jest.fn().mockRejectedValueOnce(new Error(RETURN_URL_CONFLICT_MESSAGE)).mockResolvedValueOnce({ type: 'success', session: {} });
+
+    await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL, 'jenny@example.com');
+
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenNthCalledWith(1, { returnUrl: RETURN_URL, redirect: 'if_required', email: 'jenny@example.com' });
+    expect(confirm).toHaveBeenNthCalledWith(2, { redirect: 'if_required', email: 'jenny@example.com' });
+  });
+
+  it('retries without returnUrl when the conflict is returned as an error result', async () => {
+    const confirm = jest
+      .fn()
+      .mockResolvedValueOnce({ type: 'error', error: { code: null, message: RETURN_URL_CONFLICT_MESSAGE } })
+      .mockResolvedValueOnce({ type: 'success', session: {} });
+
+    await expect(confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL)).resolves.toEqual({ type: 'success', session: {} });
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenNthCalledWith(2, { redirect: 'if_required' });
+  });
+
+  it('does not retry a thrown error that is not the return_url conflict', async () => {
+    const networkError = new Error('Network error');
+    const confirm = jest.fn().mockRejectedValue(networkError);
+
+    await expect(confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL)).rejects.toBe(networkError);
+    expect(confirm).toHaveBeenCalledTimes(1);
   });
 
   it('throws a recoverable card_error when the payment failed', async () => {

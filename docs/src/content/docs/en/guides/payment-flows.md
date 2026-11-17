@@ -77,7 +77,7 @@ sequenceDiagram
 
 ## Checkout Session Flow
 
-An integrated payment flow using Stripe Checkout. Use `<stripe-payment-element>` with the `initCheckoutSession` method.
+An integrated payment flow using Stripe Checkout in Elements mode (`ui_mode: 'elements'`). `<stripe-payment-element>` and `<stripe-payment-sheet>` accept a Checkout Session client secret (`cs_xxxxx_secret_xxxxx`).
 
 ```mermaid
 sequenceDiagram
@@ -85,22 +85,36 @@ sequenceDiagram
     participant Client as Browser
     participant Stripe
 
-    Server->>Stripe: Create Checkout Session
+    Server->>Stripe: Create Checkout Session (ui_mode: elements)
     Stripe-->>Server: Return client_secret
     Server-->>Client: Pass client_secret to frontend
-    Client->>Client: initCheckoutSession(publishableKey, options)
+    Client->>Client: Set checkout-session-client-secret
     Client->>Client: User enters payment details
-    Client->>Stripe: checkout.confirm()
+    Client->>Stripe: checkout.actions.confirm()
     Stripe-->>Client: Redirect or result
 ```
 
 ### Code Example
 
+```html
+<stripe-payment-element
+  publishable-key="pk_test_xxxxx"
+  checkout-session-client-secret="cs_xxxxx_secret_xxxxx"
+  checkout-session-return-url="https://example.com/return"
+  checkout-session-email="customer@example.com"
+></stripe-payment-element>
+```
+
+- Setting `checkout-session-client-secret` initializes the component in Checkout Session mode. Do not set it together with `intent-client-secret`.
+- The redirect destination is either `return_url` set when the Session was created or `checkout-session-return-url` (the current page URL when omitted) — exactly one is used. When the Session already has `return_url`, the component switches automatically, so both ways of creating the Session work.
+- When the Session was created without `customer_email`/`customer`, confirming requires an email address: pass it through `checkout-session-email` (`options.defaultBillingDetails.email` for `<stripe-payment-sheet>`).
+- Prefill email or address values with `checkoutSessionDefaultValues` (a JavaScript property). `options.defaultBillingDetails` plays the same role for `<stripe-payment-sheet>`.
+- Results arrive through the `checkoutSessionConfirmResult` event (`paymentSheetCompleted` for `<stripe-payment-sheet>`).
+
 ```js
 const el = document.querySelector('stripe-payment-element');
-await customElements.whenDefined('stripe-payment-element');
-await el.initCheckoutSession('pk_test_xxxxx', {
-  checkoutSessionClientSecret: 'cs_xxxxx_secret_xxxxx',
+el.addEventListener('checkoutSessionConfirmResult', ({ detail }) => {
+  console.log(detail instanceof Error ? detail.message : detail.type);
 });
 ```
 

@@ -246,6 +246,15 @@ el.addEventListener('checkoutSessionConfirmResult', ({ detail }) => {
 You can also set the `checkout-session-client-secret` attribute declaratively
 instead of calling the method.
 
+Related attributes (Checkout Session mode only):
+
+- `checkout-session-return-url` — redirect target used when the Session was created
+  WITHOUT `return_url` (defaults to the current page; a Session created WITH
+  `return_url` redirects there automatically)
+- `checkout-session-email` — required when the Session has no `customer_email`/`customer`
+- `checkoutSessionDefaultValues` (JS property only) — prefill email/address, same shape as
+  `defaultValues` of `stripe.initCheckoutElementsSdk`
+
 ### 4. Express Checkout (Apple Pay / Google Pay / Link)
 
 ```js

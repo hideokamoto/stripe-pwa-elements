@@ -77,7 +77,7 @@ sequenceDiagram
 
 ## Checkout Session フロー
 
-Stripe Checkout を使用した統合型の決済フローです。`<stripe-payment-element>` で `initCheckoutSession` メソッドを使用します。
+Stripe Checkout の Elements モード（`ui_mode: 'elements'`）を使ったフローです。`<stripe-payment-element>` と`<stripe-payment-sheet>`が Checkout Session の client secret（`cs_xxxxx_secret_xxxxx`）に対応しています。
 
 ```mermaid
 sequenceDiagram
@@ -85,22 +85,36 @@ sequenceDiagram
     participant Client as ブラウザ
     participant Stripe
 
-    Server->>Stripe: Checkout Session 作成
+    Server->>Stripe: Checkout Session 作成（ui_mode: elements）
     Stripe-->>Server: client_secret を返却
     Server-->>Client: client_secret をフロントへ渡す
-    Client->>Client: initCheckoutSession(publishableKey, options)
+    Client->>Client: checkout-session-client-secret をセット
     Client->>Client: ユーザーが支払い情報を入力
-    Client->>Stripe: checkout.confirm()
+    Client->>Stripe: checkout.actions.confirm()
     Stripe-->>Client: リダイレクト or 結果
 ```
 
 ### コード例
 
+```html
+<stripe-payment-element
+  publishable-key="pk_test_xxxxx"
+  checkout-session-client-secret="cs_xxxxx_secret_xxxxx"
+  checkout-session-return-url="https://example.com/return"
+  checkout-session-email="customer@example.com"
+></stripe-payment-element>
+```
+
+- `checkout-session-client-secret`を設定すると Checkout Session モードで初期化されます。`intent-client-secret`とは同時に設定しません。
+- 戻り先は、Session 作成時の`return_url`と`checkout-session-return-url`（省略時は現在のページ URL）のどちらか一方が使われます。Session 作成時に`return_url`を設定している場合はそちらが優先され、コンポーネントが自動で切り替えるため、どちらの作り方でも動作します。
+- `customer_email`/`customer`を指定せずに作成した Session では、確認時にメールアドレスが必須です。`checkout-session-email`で渡してください（`<stripe-payment-sheet>`では`options.defaultBillingDetails.email`）。
+- メールアドレスや住所のプリフィルは`checkoutSessionDefaultValues`（JavaScript プロパティ）で指定できます。`<stripe-payment-sheet>`では`options.defaultBillingDetails`が同じ役割を果たします。
+- 結果は`checkoutSessionConfirmResult`イベント（`<stripe-payment-sheet>`では`paymentSheetCompleted`）で受け取れます。
+
 ```js
 const el = document.querySelector('stripe-payment-element');
-await customElements.whenDefined('stripe-payment-element');
-await el.initCheckoutSession('pk_test_xxxxx', {
-  checkoutSessionClientSecret: 'cs_xxxxx_secret_xxxxx',
+el.addEventListener('checkoutSessionConfirmResult', ({ detail }) => {
+  console.log(detail instanceof Error ? detail.message : detail.type);
 });
 ```
 

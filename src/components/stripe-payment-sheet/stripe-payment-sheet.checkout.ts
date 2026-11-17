@@ -1,11 +1,13 @@
 import type {
+  StripeCheckoutAddress,
   StripeCheckoutConfirmResult,
+  StripeCheckoutContact,
   StripeCheckoutElementsOptions,
   StripeCheckoutElementsSdk,
+  StripeCheckoutElementsSdkOptions,
   StripeCheckoutPaymentElementOptions,
-  StripeCheckoutStatus,
 } from '@stripe/stripe-js';
-import { StripeAPIError } from '../../utils/error';
+import { confirmCheckoutActions } from '../../utils/checkout-confirm';
 import { toAppearance, toPaymentElementOptions } from './stripe-payment-sheet.helpers';
 import type { PaymentSheetOptions } from './stripe-payment-sheet.helpers';
 
@@ -21,9 +23,60 @@ export const toCheckoutPaymentElementOptions = (options: PaymentSheetOptions | u
   return layout == null ? {} : { layout };
 };
 
+type CheckoutDefaultValues = NonNullable<StripeCheckoutElementsSdkOptions['defaultValues']>;
+
+/**
+ * Drop keys whose value is undefined.
+ */
+const compact = <T extends object>(value: T): T => Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T;
+
+/**
+ * Build the `defaultValues` passed to `initCheckoutElementsSdk` from the payment sheet options.
+ * The email and phone prefill the Checkout Elements; name and address are passed as `billingAddress`,
+ * which Stripe only accepts with a country, so a name or address without `country` cannot be prefilled.
+ * @param options - Payment sheet options
+ */
+export const toCheckoutDefaultValues = (options: PaymentSheetOptions | undefined): CheckoutDefaultValues | undefined => {
+  const details = options?.defaultBillingDetails;
+
+  if (details == null) {
+    return undefined;
+  }
+
+  const values: CheckoutDefaultValues = {};
+
+  if (details.email != null && details.email !== '') {
+    values.email = details.email;
+  }
+
+  if (details.phone != null && details.phone !== '') {
+    values.phoneNumber = details.phone;
+  }
+
+  const country = details.address?.country;
+
+  if (country != null && country !== '') {
+    const address = details.address;
+    const checkoutAddress: StripeCheckoutAddress = compact({
+      country,
+      line1: address?.line1,
+      line2: address?.line2,
+      city: address?.city,
+      postal_code: address?.postalCode,
+      state: address?.state,
+    });
+    const contact: StripeCheckoutContact = { name: details.name ?? null, address: checkoutAddress };
+
+    values.billingAddress = contact;
+  }
+
+  return Object.keys(values).length === 0 ? undefined : values;
+};
+
 /**
  * List the given options that a Checkout Session does not use, sorted by name.
- * Name, phone and address come from the session or from other Checkout elements; the email is passed to `confirm`.
+ * Name and address are prefilled through `defaultValues`, which Stripe only accepts with a country, so they are
+ * listed when they cannot be used. The email is passed to `confirm` and the phone prefilled through `defaultValues`.
  * @param options - Payment sheet options
  */
 export const checkoutIgnoredOptionKeys = (options: PaymentSheetOptions | undefined): string[] => {
@@ -32,7 +85,16 @@ export const checkoutIgnoredOptionKeys = (options: PaymentSheetOptions | undefin
   }
 
   const { merchantDisplayName, defaultBillingDetails } = options;
-  const keys = (['name', 'phone', 'address'] as const).filter(key => defaultBillingDetails?.[key] != null).map(key => `defaultBillingDetails.${key}`);
+  const keys: string[] = [];
+  const country = defaultBillingDetails?.address?.country;
+
+  if ((defaultBillingDetails?.name != null || defaultBillingDetails?.address != null) && (country == null || country === '')) {
+    for (const key of ['name', 'address'] as const) {
+      if (defaultBillingDetails?.[key] != null) {
+        keys.push(`defaultBillingDetails.${key}`);
+      }
+    }
+  }
 
   if (merchantDisplayName != null) {
     keys.push('merchantDisplayName');
@@ -57,67 +119,20 @@ export const toCheckoutElementsOptions = (options: PaymentSheetOptions | undefin
 };
 
 /**
- * Throw when the session can no longer be paid. Stripe documents an `expired` session as "No further processing will occur",
- * and a `complete` one is already paid or being paid, so confirming again cannot succeed.
- * @param status - `session.status` from `getSession()`; undefined when it cannot be read
- * @param message - Message of the confirm error, if any
- * @throws StripeAPIError of type `invalid_request_error` (unrecoverable), with the code `checkout_session_expired` or `checkout_session_complete`
- */
-const assertSessionOpen = (status: StripeCheckoutStatus | undefined, message?: string) => {
-  if (status == null || status.type === 'open') {
-    return;
-  }
-
-  throw new StripeAPIError({
-    type: 'invalid_request_error',
-    code: `checkout_session_${status.type}`,
-    message: message ?? `The Checkout Session is ${status.type} and can no longer be paid.`,
-  });
-};
-
-/**
  * Confirm a Checkout Session from the payment sheet.
  *
- * Unlike the default of `confirm`, which always redirects to `returnUrl`, this passes `redirect: 'if_required'`
- * so that payment methods without a redirect finish in the page and can be reported as `paymentSheetCompleted`.
+ * The shared implementation (see `confirmCheckoutActions`) retries without `returnUrl` when the session was
+ * created with `return_url`, and passes `redirect: 'if_required'` so that payment methods without a redirect
+ * finish in the page and can be reported as `paymentSheetCompleted`.
  *
- * Errors are thrown as `StripeAPIError` with a `type` that `isRecoverableConfirmError` understands.
- * A confirm error only carries `code: 'paymentFailed'` or `code: null` (`StripeCheckoutConfirmResult` in @stripe/stripe-js),
- * so whether the session can still be paid is read from `session.status`:
- * - session `expired` or `complete` (before confirming or after a failed confirm): `invalid_request_error`, which ends the sheet
- * - `paymentFailed` on an open session (a decline): `card_error`, which keeps the sheet open
- * - any other confirm error on an open session, or a failure to load the actions: `api_error`, which keeps the sheet open
+ * Errors are thrown as `StripeAPIError` with a `type` that `isRecoverableConfirmError` understands:
+ * an expired or complete session is an `invalid_request_error` (unrecoverable), a decline is a `card_error`,
+ * and any other failure is an `api_error` (both recoverable).
  * @param checkout - The Checkout instance from `initCheckoutElementsSdk`
- * @param returnUrl - Where Stripe redirects after a redirect-based payment method
+ * @param returnUrl - Where Stripe redirects after a redirect-based payment method, when the session has no `return_url`
  * @param email - Customer email; needed when the session was created without `customer_email` or `customer`
  * @returns The confirmation result
  * @throws StripeAPIError when the actions cannot be loaded, the session can no longer be paid, or the confirmation fails
  */
-export const confirmCheckoutSessionSheet = async (checkout: StripeCheckoutElementsSdk, returnUrl: string, email?: string): Promise<StripeCheckoutConfirmResult> => {
-  const loadActionsResult = await checkout.loadActions();
-
-  if (loadActionsResult.type === 'error') {
-    throw new StripeAPIError({ type: 'api_error', code: 'checkout_session_error', message: loadActionsResult.error.message });
-  }
-
-  const { actions } = loadActionsResult;
-  const sessionStatus = () => actions.getSession?.()?.status;
-
-  assertSessionOpen(sessionStatus());
-
-  const result = await actions.confirm({ returnUrl, redirect: 'if_required', ...(email != null && email !== '' ? { email } : {}) });
-
-  if (result.type === 'error') {
-    const { code, message } = result.error;
-
-    assertSessionOpen(sessionStatus(), message);
-
-    if (code === 'paymentFailed') {
-      throw new StripeAPIError({ type: 'card_error', code, message });
-    }
-
-    throw new StripeAPIError({ type: 'api_error', code: 'checkout_session_error', message });
-  }
-
-  return result;
-};
+export const confirmCheckoutSessionSheet = async (checkout: StripeCheckoutElementsSdk, returnUrl: string, email?: string): Promise<StripeCheckoutConfirmResult> =>
+  confirmCheckoutActions(checkout, returnUrl, email);
