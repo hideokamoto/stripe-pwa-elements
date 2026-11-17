@@ -140,6 +140,7 @@ export class StripePaymentElement {
       stripeAccount: options?.stripeAccount,
       applicationName: this.applicationName,
       elementsOptions: options?.elementsOptions,
+      defaultValues: options?.defaultValues,
     });
 
     await this.mountWhenLoaded(generation);
@@ -203,7 +204,10 @@ export class StripePaymentElement {
     const hasOptionValue = Object.values(options).filter(value => value != null && value !== '').length > 0;
 
     if (this.hasCheckoutSessionClientSecret()) {
-      this.initStripeWithCheckoutSession(publishableKey, this.checkoutSessionClientSecret, { stripeAccount: options.stripeAccount });
+      this.initStripeWithCheckoutSession(publishableKey, this.checkoutSessionClientSecret, {
+        stripeAccount: options.stripeAccount,
+        defaultValues: this.checkoutSessionDefaultValues,
+      });
 
       return;
     }
@@ -220,7 +224,10 @@ export class StripePaymentElement {
   @Watch('stripeAccount')
   updateStripeAccountId(stripeAccount: string) {
     if (this.hasCheckoutSessionClientSecret()) {
-      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, { stripeAccount });
+      this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, {
+        stripeAccount: stripeAccount,
+        defaultValues: this.checkoutSessionDefaultValues,
+      });
 
       return;
     }
@@ -302,6 +309,7 @@ export class StripePaymentElement {
     if (this.publishableKey != null && this.publishableKey !== '' && newValue != null && newValue !== '') {
       await this.initStripeWithCheckoutSession(this.publishableKey, newValue, {
         stripeAccount: this.stripeAccount,
+        defaultValues: this.checkoutSessionDefaultValues,
       });
 
       // A new secret starts a fresh payment, so re-enable the submit button after a previous success
@@ -317,6 +325,42 @@ export class StripePaymentElement {
    * And listen the 'formSubmit' event on the element
    */
   @Prop() readonly shouldUseDefaultFormSubmitAction: boolean = true;
+
+  /**
+   * URL Stripe redirects to after a redirect-based payment method (Checkout Session mode only).
+   * Used when the Checkout Session was created WITHOUT `return_url`. Defaults to the current page URL.
+   * A session created with `return_url` ignores this value: Stripe redirects there automatically.
+   * @example
+   * ```
+   * <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-return-url="https://example.com/return" />
+   * ```
+   */
+  @Prop() readonly checkoutSessionReturnUrl?: string;
+
+  /**
+   * Customer email passed to `confirm()` (Checkout Session mode only).
+   * Required when the Checkout Session was created without `customer_email` or `customer`,
+   * because confirming such a session fails with "An email address is required".
+   * @example
+   * ```
+   * <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-email="customer@example.com" />
+   * ```
+   */
+  @Prop() readonly checkoutSessionEmail?: string;
+
+  /**
+   * Prefilled values of the Checkout Elements (Checkout Session mode only): `email`, `phoneNumber`,
+   * `billingAddress` and `shippingAddress` as supported by `initCheckoutElementsSdk`.
+   * JavaScript property only: it cannot be set through an HTML attribute.
+   * @example
+   * ```
+   * const stripeElement = document.createElement('stripe-payment-element');
+   * customElements.whenDefined('stripe-payment-element').then(() => {
+   *   stripeElement.checkoutSessionDefaultValues = { email: 'customer@example.com' };
+   * });
+   * ```
+   */
+  @Prop() readonly checkoutSessionDefaultValues?: CheckoutSessionOptions['defaultValues'];
 
   /**
    * Form submit event handler
@@ -479,6 +523,7 @@ export class StripePaymentElement {
     if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
       this.initStripeWithCheckoutSession(this.stripeService.state.publishableKey, this.checkoutSessionClientSecret, {
         stripeAccount: this.stripeService.state.stripeAccount,
+        defaultValues: this.checkoutSessionDefaultValues,
       });
 
       return;
@@ -520,9 +565,9 @@ export class StripePaymentElement {
   private async checkoutSessionFormSubmitAction(event: Event, checkout: StripeCheckoutElementsSdk) {
     event.preventDefault();
     try {
-      // Get current page URL for return_url
-      const returnUrl = window.location.href;
-      const result = await confirmCheckoutSession(checkout, returnUrl);
+      // returnUrl defaults to the current page; confirmCheckoutSession retries without it when the
+      // session was created with `return_url` (which rejects the argument before processing)
+      const result = await confirmCheckoutSession(checkout, this.checkoutSessionReturnUrl ?? window.location.href, this.checkoutSessionEmail);
 
       this.checkoutSessionConfirmResultHandler(result);
     } catch (e) {
@@ -611,6 +656,7 @@ export class StripePaymentElement {
     if (this.checkoutSessionClientSecret != null && this.checkoutSessionClientSecret !== '') {
       this.initStripeWithCheckoutSession(this.publishableKey, this.checkoutSessionClientSecret, {
         stripeAccount: this.stripeAccount,
+        defaultValues: this.checkoutSessionDefaultValues,
       });
 
       return;

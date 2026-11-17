@@ -19,7 +19,13 @@ import {
   unsupportedOptionKeys,
 } from './stripe-payment-sheet.helpers';
 import type { BillingDetailsCollectionPlan, PaymentSheetOptions, PaymentSheetPresentResult } from './stripe-payment-sheet.helpers';
-import { checkoutIgnoredOptionKeys, confirmCheckoutSessionSheet, toCheckoutElementsOptions, toCheckoutPaymentElementOptions } from './stripe-payment-sheet.checkout';
+import {
+  checkoutIgnoredOptionKeys,
+  confirmCheckoutSessionSheet,
+  toCheckoutDefaultValues,
+  toCheckoutElementsOptions,
+  toCheckoutPaymentElementOptions,
+} from './stripe-payment-sheet.checkout';
 
 const nonEmpty = (value: string | undefined): string | undefined => (value == null || value === '' ? undefined : value);
 
@@ -472,6 +478,7 @@ export class StripePaymentSheet {
         stripeAccount: this.stripeAccount,
         applicationName: this.applicationName,
         elementsOptions: toCheckoutElementsOptions(this.options),
+        defaultValues: toCheckoutDefaultValues(this.options),
       });
 
       if (generation !== this.sheet.generation) {
@@ -496,6 +503,8 @@ export class StripePaymentSheet {
   }
 
   private confirmCheckoutSession(generation: number) {
+    // returnUrl defaults to the current page; confirmCheckoutSessionSheet retries without it when the
+    // session was created with `return_url` (which rejects the argument before processing)
     const returnUrl = this.options?.returnURL ?? window.location.href;
 
     return this.runConfirm(generation, async () => {

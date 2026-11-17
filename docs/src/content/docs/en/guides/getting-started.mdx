@@ -37,6 +37,8 @@ The publishable key also comes from the demo API. A clientSecret is bound to the
 
 Note that the demo API is for trying these steps only. In production, create the Payment Intent or Checkout Session on your own server and pass its clientSecret to the browser. See [Payment flows](/en/guides/payment-flows/) for the full picture.
 
+You can also try the Checkout Session flow: set the clientSecret from `/api/create-checkout-session` as `checkout-session-client-secret` on `<stripe-payment-element>`. The Checkout Session–based implementation that Stripe recommends is covered in [Payment flows](/en/guides/payment-flows/).
+
 ## Pick your environment
 
 Choose the tab for your environment. Every path ends with the same test-card payment.

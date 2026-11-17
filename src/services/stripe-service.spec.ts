@@ -348,6 +348,18 @@ describe('StripeServiceClass', () => {
       });
     });
 
+    it('passes defaultValues to initCheckoutElementsSdk', async () => {
+      const defaultValues = { email: 'jenny@example.com', billingAddress: { name: 'Jenny', address: { country: 'JP' } } };
+
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { defaultValues });
+
+      expect(mockStripe.initCheckoutElementsSdk).toHaveBeenCalledWith({
+        clientSecret: 'cs_test_secret',
+        elementsOptions: undefined,
+        defaultValues,
+      });
+    });
+
     it('stores checkout instance', async () => {
       await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
 

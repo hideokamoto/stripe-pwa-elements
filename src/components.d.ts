@@ -8,13 +8,13 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 import { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
 import { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeCheckoutConfirmResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
-import { ExpressCheckoutElementOptions } from "./services/interfaces";
+import { CheckoutSessionOptions, ExpressCheckoutElementOptions } from "./services/interfaces";
 import { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
 import { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
 export { AddressSubmitEvent, AddressSubmitHandler } from "./components/stripe-address-element/stripe-address-element";
 export { CurrencySelectorChangeEvent, CurrencySelectorChangeHandler, DefaultFormSubmitResult, FormSubmitEvent, FormSubmitHandler, InitStripeOptions, IntentType, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler, PaymentRequestButtonOption, PaymentRequestPaymentMethodEventHandler, PaymentRequestShippingAddressEventHandler, PaymentRequestShippingOptionEventHandler, ProgressStatus, StripeDidLoadedHandler, StripeLoadedEvent } from "./interfaces";
 export { PaymentIntentResult, PaymentRequestOptions, PaymentRequestWallet, SetupIntentResult, StripeCheckoutConfirmResult, StripeExpressCheckoutElementClickEvent, StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
-export { ExpressCheckoutElementOptions } from "./services/interfaces";
+export { CheckoutSessionOptions, ExpressCheckoutElementOptions } from "./services/interfaces";
 export { CheckoutSessionFormSubmitResult, InitCheckoutSessionOptions, PaymentElementSubmitEvent, PaymentElementSubmitHandler } from "./components/stripe-payment-element/stripe-payment-element";
 export { PaymentSheetOptions, PaymentSheetPresentResult } from "./components/stripe-payment-sheet/stripe-payment-sheet.helpers";
 export namespace Components {
@@ -510,6 +510,21 @@ export namespace Components {
           * @example ``` const stripeElement = document.createElement('stripe-payment-element'); customElements  .whenDefined('stripe-payment-element')  .then(() => {     stripeElement.initStripeWithCheckoutSession('pk_test_xxx', 'cs_xxx_secret_xxx')   }) ```
          */
         "checkoutSessionClientSecret"?: string;
+        /**
+          * Prefilled values of the Checkout Elements (Checkout Session mode only): `email`, `phoneNumber`, `billingAddress` and `shippingAddress` as supported by `initCheckoutElementsSdk`. JavaScript property only: it cannot be set through an HTML attribute.
+          * @example ``` const stripeElement = document.createElement('stripe-payment-element'); customElements.whenDefined('stripe-payment-element').then(() => {   stripeElement.checkoutSessionDefaultValues = { email: 'customer@example.com' }; }); ```
+         */
+        "checkoutSessionDefaultValues"?: CheckoutSessionOptions['defaultValues'];
+        /**
+          * Customer email passed to `confirm()` (Checkout Session mode only). Required when the Checkout Session was created without `customer_email` or `customer`, because confirming such a session fails with "An email address is required".
+          * @example ``` <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-email="customer@example.com" /> ```
+         */
+        "checkoutSessionEmail"?: string;
+        /**
+          * URL Stripe redirects to after a redirect-based payment method (Checkout Session mode only). Used when the Checkout Session was created WITHOUT `return_url`. Defaults to the current page URL. A session created with `return_url` ignores this value: Stripe redirects there automatically.
+          * @example ``` <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-return-url="https://example.com/return" /> ```
+         */
+        "checkoutSessionReturnUrl"?: string;
         /**
           * Form submit event handler
          */
@@ -1377,6 +1392,21 @@ declare namespace LocalJSX {
          */
         "checkoutSessionClientSecret"?: string;
         /**
+          * Prefilled values of the Checkout Elements (Checkout Session mode only): `email`, `phoneNumber`, `billingAddress` and `shippingAddress` as supported by `initCheckoutElementsSdk`. JavaScript property only: it cannot be set through an HTML attribute.
+          * @example ``` const stripeElement = document.createElement('stripe-payment-element'); customElements.whenDefined('stripe-payment-element').then(() => {   stripeElement.checkoutSessionDefaultValues = { email: 'customer@example.com' }; }); ```
+         */
+        "checkoutSessionDefaultValues"?: CheckoutSessionOptions['defaultValues'];
+        /**
+          * Customer email passed to `confirm()` (Checkout Session mode only). Required when the Checkout Session was created without `customer_email` or `customer`, because confirming such a session fails with "An email address is required".
+          * @example ``` <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-email="customer@example.com" /> ```
+         */
+        "checkoutSessionEmail"?: string;
+        /**
+          * URL Stripe redirects to after a redirect-based payment method (Checkout Session mode only). Used when the Checkout Session was created WITHOUT `return_url`. Defaults to the current page URL. A session created with `return_url` ignores this value: Stripe redirects there automatically.
+          * @example ``` <stripe-payment-element checkout-session-client-secret="cs_xxx_secret_xxx" checkout-session-return-url="https://example.com/return" /> ```
+         */
+        "checkoutSessionReturnUrl"?: string;
+        /**
           * Form submit event handler
          */
         "handleSubmit"?: PaymentElementSubmitHandler;
@@ -1625,6 +1655,8 @@ declare namespace LocalJSX {
         "intentClientSecret": string;
         "checkoutSessionClientSecret": string;
         "shouldUseDefaultFormSubmitAction": boolean;
+        "checkoutSessionReturnUrl": string;
+        "checkoutSessionEmail": string;
     }
     interface StripePaymentRequestButtonAttributes {
         "publishableKey": string;
