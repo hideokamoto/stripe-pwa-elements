@@ -377,3 +377,15 @@ For quick local testing, generate one with the Stripe CLI:
 ```bash
 stripe payment_intents create --amount=1099 --currency=usd | jq -r .client_secret
 ```
+
+## Verification
+
+Before finishing a component change:
+
+1. Run deterministic checks: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run check:agent`, `pnpm run test:unit`, `pnpm run test:component`.
+2. Build and copy examples: `pnpm run build && pnpm run example:copy && pnpm run check:example-smoke`.
+3. Open the matching page listed in `example/FEATURE_MAP.md` (`pnpm run example:serve`). Replace `pk_test_xxxxx` placeholders with a sandbox publishable key and a server-created client secret when exercising payments.
+4. Attach a screenshot to the pull request showing the element mounted or the expected result.
+5. Optional (network required, not CI): `pnpm run test:e2e:stripe`.
+
+Do not add new examples that use deprecated `<stripe-payment-request-button>`; use `<stripe-express-checkout-element>` instead.

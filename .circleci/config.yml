@@ -59,6 +59,9 @@ jobs:
           name: ESLint
           command: pnpm run lint
       - run:
+          name: Agent guardrails (deprecated tags, secrets, StripeService DI)
+          command: pnpm run check:agent
+      - run:
           name: Security audit (moderate+, prod deps only)
           command: pnpm audit --audit-level=moderate --prod
 
@@ -156,6 +159,9 @@ jobs:
       - run:
           name: Production build
           command: pnpm run build && pnpm -F hono-stripe-elements run build
+      - run:
+          name: Example smoke (bundles + FEATURE_MAP)
+          command: pnpm run example:copy && pnpm run check:example-smoke
       - store_artifacts:
           path: dist
           destination: dist-node<< parameters.node-version >>
