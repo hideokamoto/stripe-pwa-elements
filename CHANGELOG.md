@@ -1,5 +1,11 @@
 # stripe-pwa-elements
 
+## 4.1.2
+
+### Patch Changes
+
+- 7d5e05b: Add agent guardrail scripts, example feature map, AGENTS.md, and CI smoke checks (no public component API changes).
+
 ## 4.1.1
 
 ### Patch Changes
