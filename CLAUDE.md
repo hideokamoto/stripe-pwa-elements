@@ -231,26 +231,7 @@ pnpm run generate     # Generate new Stencil component
   }
   ```
 
-- **Decorator Style** (enforced by ESLint):
-  - `@Prop`, `@State`, `@Element`, `@Event`: inline style
-  - `@Method`, `@Watch`, `@Listen`: multiline style
-
-- **Method Visibility**:
-  - Public methods (exposed API): Use `@Method()` decorator, must be async
-  - Private methods: Prefix with private keyword
-  - Component props must be public and readonly
-
-### ESLint Rules
-Configuration: `eslint.config.js` (ESLint flat config)
-- Extends: `eslint:recommended`, `@typescript-eslint/recommended`, `@stencil-community/recommended`
-- Key rules:
-  - `@stencil-community/async-methods`: error - All @Method() must be async
-  - `@stencil-community/ban-prefix`: Bans "stencil" and "stnl" prefixes
-  - `@stencil-community/required-jsdoc`: error - JSDoc required
-  - `padding-line-between-statements`: Enforces blank lines between blocks
-  - `curly`: error - Always use curly braces
-  - Explicit module boundary types: off
-  - Non-null assertions: allowed
+- **Stencil style & lint**: Run `pnpm run lint`; rules live in `eslint.config.js` (`@stencil-community/*`, TypeScript recommended). Architecture invariants are also covered by `pnpm run check:agent` and unit tests such as `component-init-lifecycle.unit.spec.ts` and `src/architecture/component-shadow-dom.unit.spec.ts`.
 
 ### Prettier Configuration
 Configuration: `.prettierrc.json`
@@ -413,6 +394,8 @@ pnpm run example:copy
 pnpm run example:serve
 ```
 
+See `example/FEATURE_MAP.md` for which demo page exercises each component. Agents: start from root `AGENTS.md`.
+
 ### Debugging
 - Development server runs at default Stencil port (typically 3333)
 - Use browser DevTools to debug web components
@@ -427,9 +410,9 @@ pnpm run example:serve
    pnpm test
    ```
 
-2. **Lint before committing**:
+2. **Verify before committing** (includes lint and `check:agent`):
    ```bash
-   pnpm run lint
+   pnpm run verify:agent
    ```
 
 3. **Format code**:

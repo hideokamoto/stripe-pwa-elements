@@ -14,8 +14,8 @@ for arg in "$@"; do
     --stripe-e2e) STRIPE_E2E=1 ;;
     -h|--help)
       echo "Usage: $0 [--quick] [--stripe-e2e]"
-      echo "  default: lint, tsc, test:unit, test:component, build"
-      echo "  --quick: lint + test:unit only (cannot combine with --stripe-e2e)"
+      echo "  default: lint, check:agent, tsc, test:unit, test:component, build"
+      echo "  --quick: lint, check:agent, test:unit (cannot combine with --stripe-e2e)"
       echo "  --stripe-e2e: after default steps, run Playwright Stripe tests (network + test mode)"
       echo ""
       echo "pnpm passes extra args after '--', e.g. pnpm run verify:agent -- --quick"
@@ -39,6 +39,7 @@ run() {
 }
 
 run pnpm run lint
+run pnpm run check:agent
 run pnpm exec tsc --noEmit
 
 if [[ "$QUICK" -eq 1 ]]; then

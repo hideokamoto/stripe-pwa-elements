@@ -19,8 +19,11 @@ Japanese docs: [AI コーディングエージェント](https://stripe-pwa-elem
 
 | Capability | Demo | Commands |
 | --- | --- | --- |
-| Default PR gate | — | `pnpm run verify:agent` (`lint`, `tsc`, `test:unit`, `test:component`, `build`) |
-| Quick check | — | `pnpm run verify:agent -- --quick` (lint + unit tests only; cannot combine with `--stripe-e2e`) |
+| Default PR gate | — | `pnpm run verify:agent` (lint, guardrail scripts, `tsc`, `test:unit`, `test:component`, `build`) |
+| Quick check | — | `pnpm run verify:agent -- --quick` (lint + `check:agent` + unit tests; cannot combine with `--stripe-e2e`) |
+| Agent guardrail scripts | — | `pnpm run check:agent` (deprecated demo usage, secret patterns, `StripeServiceClass` DI) |
+| Example bundle smoke | [`example/`](example/) | `pnpm run build && pnpm run example:copy && pnpm run check:example-smoke` (also in CI build job) |
+| Per-component demo index | [`example/FEATURE_MAP.md`](example/FEATURE_MAP.md) | `pnpm run example:serve` after `example:copy` |
 | Canonical interactive demos | [`examples/codesandbox`](examples/codesandbox/) | `pnpm -C examples/codesandbox dev` |
 | Static HTML copies | [`example/`](example/) via `example:copy` | Not the source of truth — see [`example/README.md`](example/README.md) |
 | Real browser + Stripe.js | [`e2e/stripe/`](e2e/stripe/) | `pnpm run verify:agent -- --stripe-e2e` after default steps (optional, not in default CI) |
@@ -30,10 +33,10 @@ Full tables: [docs guide (EN)](https://stripe-pwa-elements-docs.wp-kyoto.workers
 
 ## Architecture rules (enforced in code)
 
-- Components that talk to Stripe use `serviceFactory.createStripeService()` in `connectedCallback` — not the deprecated `StripeService` singleton (`eslint` + `src/agent-skill.unit.spec.ts` → `architecture guards for agent-friendly patterns`).
-- `shadow: true` only on `stripe-modal`.
+- Components that talk to Stripe use `serviceFactory.createStripeService()` in `connectedCallback` — not ad-hoc `new StripeServiceClass()` (`scripts/check-stripe-service-instantiation.mjs` + ESLint).
+- `shadow: true` only on `stripe-modal` (`src/architecture/component-shadow-dom.unit.spec.ts`).
 - Prop-dependent Stripe init runs in `componentWillLoad`, not the constructor (`src/components/component-init-lifecycle.unit.spec.ts`).
-- Do not add `stripe-payment-request-button` to new demos; it is deprecated — use `stripe-express-checkout-element`.
+- Do not add `stripe-payment-request-button` to new demos; it is deprecated — use `stripe-express-checkout-element` (`scripts/check-deprecated-usage.mjs`).
 
 ## Lint ladder
 
@@ -51,5 +54,5 @@ Playwright tests under `e2e/stripe/` require network access and use the public d
 
 ## Do not commit
 
-- Live API keys (`pk_live_`, `sk_live_`, `rk_live_`) — blocked by ESLint.
+- Live API keys (`pk_live_`, `sk_live_`, `rk_live_`) — blocked by ESLint and `pnpm run check:agent`.
 - Private issue tracker URLs or internal ticket IDs in commits, PRs, or branch names.

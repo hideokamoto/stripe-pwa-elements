@@ -389,3 +389,7 @@ For quick local testing, generate one with the Stripe CLI:
 ```bash
 stripe payment_intents create --amount=1099 --currency=usd | jq -r .client_secret
 ```
+
+## Verification (library changes)
+
+Follow golden-path rule 4 (`pnpm run verify:agent`). After a successful build, you may also run `pnpm run example:copy && pnpm run check:example-smoke`, then open the page named in `example/FEATURE_MAP.md` via `pnpm run example:serve` and attach a screenshot to the pull request. Do not add new demos using deprecated `<stripe-payment-request-button>`.
