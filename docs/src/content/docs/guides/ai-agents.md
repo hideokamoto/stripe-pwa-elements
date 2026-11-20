@@ -46,7 +46,7 @@ Claude Code ではプラグインとして入れることもできます。
 pnpm run verify:agent
 ```
 
-機能ごとのデモとテストの対応表は [エージェント向け検証マップ](./agent-verification-map) を参照してください。人間向けの索引は [`AGENTS.md`](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md) です。
+機能ごとのデモとテストの対応表は [エージェント向け検証マップ](../agent-verification-map) を参照してください。人間向けの索引は [`AGENTS.md`](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md) です。
 
 ## コンポーネントを変えたら
 

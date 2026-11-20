@@ -46,7 +46,7 @@ From the repository root:
 pnpm run verify:agent
 ```
 
-See the [agent verification map](./agent-verification-map) for demos and tests per feature. Maintainer index: [`AGENTS.md`](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md).
+See the [agent verification map](../agent-verification-map) for demos and tests per feature. Maintainer index: [`AGENTS.md`](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md).
 
 ## When you change a component
 

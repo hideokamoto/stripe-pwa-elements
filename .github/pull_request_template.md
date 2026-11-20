@@ -14,4 +14,4 @@
 
 ## Agent verification (optional)
 
-If you used a coding agent, note what you ran (e.g. `pnpm run verify:agent`). See [AGENTS.md](../AGENTS.md).
+If you used a coding agent, note what you ran (e.g. `pnpm run verify:agent`). See [AGENTS.md](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md).

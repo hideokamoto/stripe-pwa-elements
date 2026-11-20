@@ -4,12 +4,16 @@ Thank you for your interest in contributing. This is a public open-source projec
 
 ## Environment
 
-- **Node.js** 18.x or newer (CI tests on **20** and **22**)
-- **[pnpm](https://pnpm.io/)** — version pinned in `package.json` (`packageManager` field); enable via [Corepack](https://nodejs.org/api/corepack.html):
+- **Node.js** 18.x through 22.x recommended (CI tests on **20** and **22**)
+- **[pnpm](https://pnpm.io/)** — version pinned in `package.json` (`packageManager` field)
+
+On Node.js 18–24, enable [Corepack](https://nodejs.org/api/corepack.html) before the first `pnpm install`:
 
 ```bash
 corepack enable
 ```
+
+Node.js 25+ does not ship Corepack. Install it explicitly (`npm install -g corepack`) or follow [pnpm installation](https://pnpm.io/installation) without Corepack.
 
 ## Setup
 
@@ -30,9 +34,11 @@ pnpm install
 | Component tests | `pnpm run test:component` |
 | All Jest specs | `pnpm test` |
 | Production build | `pnpm run build` |
-| Agent / CI parity check | `pnpm run verify:agent` |
+| Default agent gate (not full CI) | `pnpm run verify:agent` |
 
-**Canonical interactive demo:** [`examples/codesandbox`](examples/codesandbox) (also linked from the root README). The [`example/`](example/) folder is updated via `pnpm run example:copy` for static previews.
+`verify:agent` runs lint, type-check, unit tests, component tests, and build. It does **not** run CircleCI’s Quint `model-check` job. After changing [`spec/payment-sheet/`](../spec/payment-sheet/), run the simulation from [`spec/payment-sheet/README.md`](../spec/payment-sheet/README.md) (for example `npx -y @informalsystems/quint@0.33.0 run spec/payment-sheet/sheet_v3.qnt --invariant=allProps --max-steps=15 --max-samples=10000 --seed=1`).
+
+**Canonical interactive demo:** [`examples/codesandbox`](../examples/codesandbox) (also linked from the root README). The [`example/`](../example/) folder is updated via `pnpm run example:copy` for static previews.
 
 ## Pull request workflow
 

@@ -3,7 +3,7 @@ title: エージェント向け検証マップ
 description: 機能ごとの正典デモと、エージェント・コントリビュータが実行すべき検証コマンド。
 ---
 
-この表は [AI コーディングエージェント](./ai-agents) 向けです。英語版: [Agent verification map](/en/guides/agent-verification-map/).
+この表は [AI コーディングエージェント](../ai-agents) 向けです。英語版: [Agent verification map](/en/guides/agent-verification-map/).
 
 一括実行:
 

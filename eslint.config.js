@@ -4,6 +4,14 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import stencilPlugin from '@stencil-community/eslint-plugin';
 
+const liveKeyRestrictedSyntax = [
+  'error',
+  {
+    selector: 'Literal[value=/^pk_live_|^sk_live_|^rk_live_/]',
+    message: 'Do not commit live Stripe keys. Use pk_test_ / sk_test_ in tests and examples.',
+  },
+];
+
 export default [
   {
     ignores: ['dist/**', 'www/**', 'loader/**', 'node_modules/**', '*.d.ts'],
@@ -100,13 +108,7 @@ export default [
           ],
         },
       ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'Literal[value=/^pk_live_|^sk_live_|^rk_live_/]',
-          message: 'Do not commit live Stripe keys. Use pk_test_ / sk_test_ in tests and examples.',
-        },
-      ],
+      'no-restricted-syntax': liveKeyRestrictedSyntax,
     },
   },
   {
@@ -119,10 +121,7 @@ export default [
           selector: 'Property[key.name="shadow"][value.value=true]',
           message: 'shadow: true is only allowed on stripe-modal. Use shadow: false for all other components.',
         },
-        {
-          selector: 'Literal[value=/^pk_live_|^sk_live_|^rk_live_/]',
-          message: 'Do not commit live Stripe keys. Use pk_test_ / sk_test_ in tests and examples.',
-        },
+        ...liveKeyRestrictedSyntax.slice(1),
       ],
     },
   },
@@ -166,7 +165,7 @@ export default [
       'padding-line-between-statements': 'off',
       // Relax stencil rules for test files
       '@stencil-community/required-jsdoc': 'off',
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': liveKeyRestrictedSyntax,
     },
   },
 ];

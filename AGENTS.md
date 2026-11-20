@@ -20,16 +20,17 @@ Japanese docs: [AI コーディングエージェント](https://stripe-pwa-elem
 | Capability | Demo | Commands |
 | --- | --- | --- |
 | Default PR gate | — | `pnpm run verify:agent` (`lint`, `tsc`, `test:unit`, `test:component`, `build`) |
-| Quick check | — | `pnpm run verify:agent -- --quick` |
+| Quick check | — | `pnpm run verify:agent -- --quick` (lint + unit tests only; cannot combine with `--stripe-e2e`) |
 | Canonical interactive demos | [`examples/codesandbox`](examples/codesandbox/) | `pnpm -C examples/codesandbox dev` |
 | Static HTML copies | [`example/`](example/) via `example:copy` | Not the source of truth — see [`example/README.md`](example/README.md) |
-| Real browser + Stripe.js | [`e2e/stripe/`](e2e/stripe/) | `pnpm run verify:agent -- --stripe-e2e` (optional, not in default CI) |
+| Real browser + Stripe.js | [`e2e/stripe/`](e2e/stripe/) | `pnpm run verify:agent -- --stripe-e2e` after default steps (optional, not in default CI) |
+| Quint payment sheet model | [`spec/payment-sheet/`](spec/payment-sheet/) | See README; CI runs `model-check` — not part of `verify:agent` |
 
 Full tables: [docs guide (EN)](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/agent-verification-map/) · [docs guide (JA)](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/guides/agent-verification-map/).
 
 ## Architecture rules (enforced in code)
 
-- Components that talk to Stripe use `serviceFactory.createStripeService()` in `connectedCallback` — not the deprecated `StripeService` singleton (`eslint` + `src/architecture.unit.spec.ts`).
+- Components that talk to Stripe use `serviceFactory.createStripeService()` in `connectedCallback` — not the deprecated `StripeService` singleton (`eslint` + `src/agent-skill.unit.spec.ts` → `architecture guards for agent-friendly patterns`).
 - `shadow: true` only on `stripe-modal`.
 - Prop-dependent Stripe init runs in `componentWillLoad`, not the constructor (`src/components/component-init-lifecycle.unit.spec.ts`).
 - Do not add `stripe-payment-request-button` to new demos; it is deprecated — use `stripe-express-checkout-element`.

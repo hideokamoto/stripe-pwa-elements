@@ -126,8 +126,10 @@ Migration guide: https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides
    `stripeLoaded` event before calling any method.
 
 4. **Verify before opening a PR.** In this repository run `pnpm run verify:agent`
-   (lint, types, unit + component tests, build). Optional real-browser check:
-   `pnpm run verify:agent -- --stripe-e2e`. Maps: repo root `AGENTS.md` and the docs
+   (lint, types, unit + component tests, build). Use `pnpm run verify:agent -- --quick`
+   for a shorter loop; `--quick` cannot be combined with `--stripe-e2e`. Optional
+   real-browser check: `pnpm run verify:agent -- --stripe-e2e`. Maps: repo root
+   `AGENTS.md` and the docs
    [verification map](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/agent-verification-map/).
 
 5. **Attributes are kebab-case; events are camelCase `CustomEvent`s.** A prop like

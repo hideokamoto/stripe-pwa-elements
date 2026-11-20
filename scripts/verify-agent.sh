@@ -9,13 +9,16 @@ STRIPE_E2E=0
 
 for arg in "$@"; do
   case "$arg" in
+    --) ;;
     --quick) QUICK=1 ;;
     --stripe-e2e) STRIPE_E2E=1 ;;
     -h|--help)
       echo "Usage: $0 [--quick] [--stripe-e2e]"
       echo "  default: lint, tsc, test:unit, test:component, build"
-      echo "  --quick: lint + test:unit"
-      echo "  --stripe-e2e: also run Playwright Stripe tests (network + test mode)"
+      echo "  --quick: lint + test:unit only (cannot combine with --stripe-e2e)"
+      echo "  --stripe-e2e: after default steps, run Playwright Stripe tests (network + test mode)"
+      echo ""
+      echo "pnpm passes extra args after '--', e.g. pnpm run verify:agent -- --quick"
       exit 0
       ;;
     *)
@@ -24,6 +27,11 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+if [[ "$QUICK" -eq 1 && "$STRIPE_E2E" -eq 1 ]]; then
+  echo "error: --quick and --stripe-e2e cannot be used together (use default verify:agent, then --stripe-e2e)." >&2
+  exit 1
+fi
 
 run() {
   echo ">> $*" >&2

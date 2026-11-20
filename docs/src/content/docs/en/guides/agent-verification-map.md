@@ -3,7 +3,7 @@ title: Agent verification map
 description: Canonical demos and verification commands for coding agents and contributors.
 ---
 
-This page complements the [AI coding agents](./ai-agents) guide.
+This page complements the [AI coding agents](../ai-agents) guide.
 
 Run the default maintainer loop in one command:
 

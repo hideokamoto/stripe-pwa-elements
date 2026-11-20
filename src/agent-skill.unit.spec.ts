@@ -5,7 +5,7 @@ declare const require: (id: string) => any;
 declare const __dirname: string;
 
 const { readFileSync, readdirSync, existsSync } = require('fs');
-const { join } = require('path');
+const { basename, dirname, join } = require('path');
 
 const repoRoot = join(__dirname, '..');
 const skillName = 'stripe-pwa-elements';
@@ -122,7 +122,7 @@ describe('architecture guards for agent-friendly patterns', () => {
   it('only stripe-modal enables shadow DOM among components', () => {
     componentMainFiles().forEach(path => {
       const source = read(path);
-      const tag = path.match(/components\/([^/]+)\//)?.[1] ?? '';
+      const tag = basename(dirname(path));
 
       if (tag === 'stripe-modal') {
         expect(source).toMatch(/shadow:\s*true/);
