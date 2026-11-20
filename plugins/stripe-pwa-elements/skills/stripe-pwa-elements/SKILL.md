@@ -6,7 +6,7 @@ description: >-
   or uses its custom element tags (<stripe-card-element>, <stripe-payment-element>,
   <stripe-express-checkout-element>, <stripe-address-element>,
   <stripe-link-authentication-element>, <stripe-currency-selector>, <stripe-modal>,
-  <stripe-card-element-modal>, <stripe-payment-request-button>). Covers install,
+  <stripe-card-element-modal>). Covers install,
   choosing the right component, wiring the publishable key + intent/checkout client
   secret, lazy-load timing, and the submit/confirm flow. Works for plain HTML/JS,
   React, Vue, Angular, and Svelte.
@@ -97,10 +97,15 @@ Or load directly from a CDN (no build step):
 | Collect email + offer Stripe Link                                   | `<stripe-link-authentication-element>`|
 | Let the buyer choose a currency (Adaptive Pricing)                  | `<stripe-currency-selector>`          |
 | A reusable modal wrapper around any of the above                    | `<stripe-modal>`                      |
-| Low-level Payment Request button (Beta)                             | `<stripe-payment-request-button>`     |
 
 When unsure, prefer `<stripe-payment-element>` — it adapts to the buyer's location
 and the payment methods enabled in the Stripe Dashboard.
+
+## Deprecated components
+
+Do **not** recommend `stripe-payment-request-button` for new integrations. Stripe is
+removing `stripe.paymentRequest()`; use `<stripe-express-checkout-element>` instead.
+Migration guide: https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/migrate-payment-request-button-to-express-checkout/
 
 ## Golden-path rules (always follow these)
 
@@ -120,19 +125,24 @@ and the payment methods enabled in the Stripe Dashboard.
    guard with `await customElements.whenDefined('<tag>')` and/or listen for the
    `stripeLoaded` event before calling any method.
 
-4. **Attributes are kebab-case; events are camelCase `CustomEvent`s.** A prop like
+4. **Verify before opening a PR.** In this repository run `pnpm run verify:agent`
+   (lint, types, unit + component tests, build). Optional real-browser check:
+   `pnpm run verify:agent -- --stripe-e2e`. Maps: repo root `AGENTS.md` and the docs
+   [verification map](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/agent-verification-map/).
+
+5. **Attributes are kebab-case; events are camelCase `CustomEvent`s.** A prop like
    `intentClientSecret` is the HTML attribute `intent-client-secret`. Read event
    payloads from `event.detail`. In React attach listeners with `addEventListener`
    on a `ref` (`onFormSubmit` does not fire); in Vue use `@formSubmit`.
 
-5. **Default vs. manual submit.** By default the form components confirm the payment
+6. **Default vs. manual submit.** By default the form components confirm the payment
    for you and emit the result on `defaultFormSubmitResult` (or `defaultConfirmResult`
    for express checkout). To run your own logic instead, set
    `should-use-default-form-submit-action="false"` (express checkout:
    `should-use-default-confirm-action="false"`) and handle the `formSubmit` /
    `confirm` event yourself.
 
-6. **Use test mode while developing** (`pk_test_…`). Generate a client secret fast
+7. **Use test mode while developing** (`pk_test_…`). Generate a client secret fast
    with the Stripe CLI, e.g.
    `stripe payment_intents create --amount=1099 --currency=usd | jq -r .client_secret`.
 

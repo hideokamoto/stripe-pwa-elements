@@ -38,6 +38,16 @@ The whole documentation is available as [`/llms.txt`](/llms.txt), [`/llms-full.t
 `/llms.txt` also lists the skill URLs and the install commands.
 Every page's `<head>` has `<link rel="describedby" href="/llms.txt">`, so `/llms.txt` can be found from any page.
 
+## After you change code
+
+From the repository root:
+
+```bash
+pnpm run verify:agent
+```
+
+See the [agent verification map](./agent-verification-map) for demos and tests per feature. Maintainer index: [`AGENTS.md`](https://github.com/hideokamoto/stripe-pwa-elements/blob/main/AGENTS.md).
+
 ## When you change a component
 
 When you add, rename or remove a component, or change its props, events, methods or how it is loaded,

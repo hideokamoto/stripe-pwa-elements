@@ -21,6 +21,7 @@ const frontmatter = skillMd.split(/^---$/m)[1];
  */
 const tagsNotInSkill: Record<string, string> = {
   'stripe-payment-sheet': 'not in a published npm release yet',
+  'stripe-payment-request-button': 'deprecated; migrate to stripe-express-checkout-element',
 };
 
 /** Language names the skill uses for each i18n resource key */
@@ -76,5 +77,60 @@ describe('Agent Skill stays in step with the library', () => {
 
     expect(keys).toEqual(Object.keys(languageNames).sort());
     expect(skillMd).toContain(`i18n (${keys.map(key => languageNames[key]).join(', ')})`);
+  });
+});
+
+describe('architecture guards for agent-friendly patterns', () => {
+  const componentsDir = join(repoRoot, 'src', 'components');
+
+  const componentMainFiles = (): string[] =>
+    readdirSync(componentsDir)
+      .map((dir: string) => join(componentsDir, dir, `${dir}.tsx`))
+      .filter((path: string) => existsSync(path));
+
+  it('Stripe-facing components use serviceFactory.createStripeService()', () => {
+    const usesFactory = [
+      'stripe-address-element',
+      'stripe-card-element',
+      'stripe-currency-selector',
+      'stripe-express-checkout-element',
+      'stripe-link-authentication-element',
+      'stripe-payment-element',
+      'stripe-payment-sheet',
+    ];
+
+    usesFactory.forEach(tag => {
+      const path = join(componentsDir, tag, `${tag}.tsx`);
+      const source = read(path);
+
+      expect(source).toMatch(/serviceFactory\.createStripeService\(\)/);
+      expect(source).not.toMatch(/new StripeServiceClass\(/);
+    });
+  });
+
+  it('canonical codesandbox demos do not use deprecated stripe-payment-request-button', () => {
+    const codesandbox = join(repoRoot, 'examples', 'codesandbox');
+    const files = readdirSync(codesandbox).filter((name: string) => /\.(html|js)$/.test(name));
+
+    files.forEach(file => {
+      const source = read(join(codesandbox, file));
+
+      expect(source).not.toMatch(/stripe-payment-request-button/);
+    });
+  });
+
+  it('only stripe-modal enables shadow DOM among components', () => {
+    componentMainFiles().forEach(path => {
+      const source = read(path);
+      const tag = path.match(/components\/([^/]+)\//)?.[1] ?? '';
+
+      if (tag === 'stripe-modal') {
+        expect(source).toMatch(/shadow:\s*true/);
+
+        return;
+      }
+
+      expect(source).not.toMatch(/shadow:\s*true/);
+    });
   });
 });
