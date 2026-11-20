@@ -1,5 +1,11 @@
 # stripe-pwa-elements
 
+## 4.1.1
+
+### Patch Changes
+
+- ecb8a38: Document agent verification (`AGENTS.md`, verification map, `pnpm run verify:agent`), refresh contributing guidance, and narrow the Agent Skill away from deprecated payment-request-button patterns.
+
 ## 4.1.0
 
 ### Minor Changes

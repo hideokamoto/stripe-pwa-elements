@@ -4,6 +4,14 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import stencilPlugin from '@stencil-community/eslint-plugin';
 
+const liveKeyRestrictedSyntax = [
+  'error',
+  {
+    selector: 'Literal[value=/^pk_live_|^sk_live_|^rk_live_/]',
+    message: 'Do not commit live Stripe keys. Use pk_test_ / sk_test_ in tests and examples.',
+  },
+];
+
 export default [
   {
     ignores: ['dist/**', 'www/**', 'loader/**', 'node_modules/**', '*.d.ts'],
@@ -87,6 +95,34 @@ export default [
         { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
       ],
       curly: 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/services/stripe-service'],
+              importNames: ['StripeService'],
+              message:
+                'Use serviceFactory.createStripeService() in components; the StripeService singleton is deprecated.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': liveKeyRestrictedSyntax,
+    },
+  },
+  {
+    files: ['src/components/**/*.tsx'],
+    ignores: ['src/components/stripe-modal/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Property[key.name="shadow"][value.value=true]',
+          message: 'shadow: true is only allowed on stripe-modal. Use shadow: false for all other components.',
+        },
+        ...liveKeyRestrictedSyntax.slice(1),
+      ],
     },
   },
   // Test files configuration
@@ -129,6 +165,7 @@ export default [
       'padding-line-between-statements': 'off',
       // Relax stencil rules for test files
       '@stencil-community/required-jsdoc': 'off',
+      'no-restricted-syntax': liveKeyRestrictedSyntax,
     },
   },
 ];

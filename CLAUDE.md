@@ -410,10 +410,9 @@ See `example/FEATURE_MAP.md` for which demo page exercises each component. Agent
    pnpm test
    ```
 
-2. **Lint and agent guardrails before committing**:
+2. **Verify before committing** (includes lint and `check:agent`):
    ```bash
-   pnpm run lint
-   pnpm run check:agent
+   pnpm run verify:agent
    ```
 
 3. **Format code**:
@@ -470,15 +469,9 @@ See `example/FEATURE_MAP.md` for which demo page exercises each component. Agent
 4. **Error handling** - Use StripeAPIError utility from `src/utils/error.ts`
 5. **Test mode** - All examples and tests should use Stripe test mode
 
-### Agent Skill
+### Agent Skill and AGENTS.md
 
-The Agent Skill in `plugins/stripe-pwa-elements/skills/stripe-pwa-elements/` is the single source for:
-- `npx skills add hideokamoto/stripe-pwa-elements` and the Claude Code plugin (`/plugin marketplace add hideokamoto/stripe-pwa-elements`)
-- the docs site's `/skill.md`, `/.well-known/agent-skills/<name>/SKILL.md` and `/.well-known/agent-skills/index.json`, generated at build time from it (`docs/src/lib/agent-skills.ts`); never commit a copy under `docs/`
-
-Keep the skill a single `SKILL.md`. Some of those routes deliver only that file, so anything in a separate file would be missing there.
-Do not copy the component API (props, events, methods) into the skill: the skill points agents at the generated `dist/types/components.d.ts` and the docs component pages.
-If the generated API is wrong, fix the JSDoc in the component.
+See [`AGENTS.md`](AGENTS.md) for the index of SKILL.md, verification commands, and architecture rules enforced by ESLint/tests.
 
 **When you change a component (add, rename or remove it, or change its props, events, methods or how it is loaded), update the skill in the same PR.**
 `src/agent-skill.unit.spec.ts` fails when the skill's component tags, CDN bundle path or i18n languages drift from the code.

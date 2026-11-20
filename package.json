@@ -1,6 +1,6 @@
 {
   "name": "stripe-pwa-elements",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "Framework-agnostic Stripe Payment Elements as Web Components",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
@@ -41,7 +41,8 @@
     "changeset:publish": "pnpm run build && pnpm -F hono-stripe-elements run build && changeset publish",
     "test:e2e:stripe": "playwright test -c e2e/stripe/playwright.config.ts",
     "check:agent": "node scripts/check-deprecated-usage.mjs && node scripts/check-no-secrets.mjs && node scripts/check-stripe-service-instantiation.mjs",
-    "check:example-smoke": "node scripts/check-example-smoke.mjs"
+    "check:example-smoke": "node scripts/check-example-smoke.mjs",
+    "verify:agent": "bash scripts/verify-agent.sh"
   },
   "dependencies": {
     "@stencil/core": "^4.38.3",
