@@ -52,3 +52,13 @@ The model is coarser than `src/components/stripe-payment-sheet/payment-sheet-sta
 - The model decides the attribute precedence itself. In the implementation the component picks the attribute and passes it as the `source` of `secretChanged`, and dispatches it only when the secret in use, the publishable key or the connected account changed; this is covered by the component tests.
 
 The unit test `payment sheet properties over every event order` checks the same properties directly against the implementation, enumerating every event order up to seven steps with PaymentIntent, SetupIntent, unknown and Checkout Session secrets.
+
+## When to add a Quint model for a new component
+
+Consider a model when the component is a **state machine** (async open/close, secrets that change mid-flight, or multiple confirmation paths):
+
+1. Write invariants that must hold in every state (orphan promises, illegal cancel-after-success, method/secret mismatch).
+2. Run random simulation in CI (like `model-check` for `sheet_v3.qnt`).
+3. Add unit tests that replay failed counterexamples from older model versions (see `sheet_v1.qnt`).
+4. Document differences between model and implementation when the model is intentionally coarser.
+5. Link the feature from the [agent verification map](../../docs/src/content/docs/en/guides/agent-verification-map.md) and [`AGENTS.md`](../../AGENTS.md).

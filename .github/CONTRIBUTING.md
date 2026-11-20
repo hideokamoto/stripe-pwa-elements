@@ -1,108 +1,108 @@
-# Contributing Guide
+# Contributing to stripe-pwa-elements
 
-The project uses Yarn for running development scripts.
-If you haven't already done so, please [install yarn](https://yarnpkg.com/en/docs/install).
+Thank you for your interest in contributing. This is a public open-source project; please use English in PR descriptions and commit messages so maintainers and automated agents can review consistently.
 
 ## Environment
 
-- Node.js >= 12.0.0
-- [Yarn](https://yarnpkg.com/en/docs/install)
+- **Node.js** 18.x through 22.x recommended (CI tests on **20** and **22**)
+- **[pnpm](https://pnpm.io/)** — version pinned in `package.json` (`packageManager` field)
+
+On Node.js 18–24, enable [Corepack](https://nodejs.org/api/corepack.html) before the first `pnpm install`:
+
+```bash
+corepack enable
+```
+
+Node.js 25+ does not ship Corepack. Install it explicitly (`npm install -g corepack`) or follow [pnpm installation](https://pnpm.io/installation) without Corepack.
 
 ## Setup
 
-You can fork the project onto your GitHub account.
-After forking this, you can clone the project on your PC.
+```bash
+git clone https://github.com/hideokamoto/stripe-pwa-elements.git
+cd stripe-pwa-elements
+pnpm install
+```
+
+### Common commands
+
+| Task | Command |
+|------|---------|
+| Dev server (watch) | `pnpm start` |
+| Lint | `pnpm run lint` |
+| Type check | `pnpm exec tsc --noEmit` |
+| Unit tests | `pnpm run test:unit` |
+| Component tests | `pnpm run test:component` |
+| All Jest specs | `pnpm test` |
+| Production build | `pnpm run build` |
+| Default agent gate (not full CI) | `pnpm run verify:agent` |
+
+`verify:agent` runs lint, type-check, unit tests, component tests, and build. It does **not** run CircleCI’s Quint `model-check` job. After changing [`spec/payment-sheet/`](../spec/payment-sheet/), run the simulation from [`spec/payment-sheet/README.md`](../spec/payment-sheet/README.md) (for example `npx -y @informalsystems/quint@0.33.0 run spec/payment-sheet/sheet_v3.qnt --invariant=allProps --max-steps=15 --max-samples=10000 --seed=1`).
+
+**Canonical interactive demo:** [`examples/codesandbox`](../examples/codesandbox) (also linked from the root README). The [`example/`](../example/) folder is updated via `pnpm run example:copy` for static previews.
+
+## Pull request workflow
+
+1. Fork the repository and create a feature branch from `main`.
+2. Make your changes; follow existing patterns in `src/`.
+3. Run `pnpm run verify:agent` (or at minimum lint + relevant tests + build).
+4. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages (see examples at the end of this file).
+5. Open a PR against `main` and fill out the PR template checklist.
+
+### Lint ladder (repeat review → automate)
+
+If reviewers correct the **same class of mistake twice**, add a **deterministic guard** in the same or a follow-up PR:
+
+- An ESLint rule in [`eslint.config.js`](../eslint.config.js), or
+- A unit/architecture test under `src/`.
+
+Prefer fixing the root cause (API or structure) over comments or long prose rules.
+
+### User-facing changes
+
+- Add a **changeset** when the change should appear in release notes: `pnpm changeset` (see [`RELEASE.md`](../RELEASE.md)).
+
+### Component or Agent Skill changes
+
+When you add, rename, or remove a component, or change props, events, methods, or loading:
+
+- Update [`plugins/stripe-pwa-elements/skills/stripe-pwa-elements/SKILL.md`](../plugins/stripe-pwa-elements/skills/stripe-pwa-elements/SKILL.md) in the **same PR**.
+- `src/agent-skill.unit.spec.ts` enforces tag lists, CDN path, and i18n languages.
+
+See [`AGENTS.md`](../AGENTS.md) for where agents and humans should look for authoritative guidance.
+
+## Contributing with AI coding agents
+
+Agents should read [`AGENTS.md`](../AGENTS.md) first (index of SKILL, verification map, and repo conventions). Integration instructions for end users also live in the docs site:
+
+- English: [AI coding agents guide](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/ai-agents/)
+- Japanese: [AI コーディングエージェントで使う](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/guides/ai-agents/)
+
+Do **not** include private issue tracker URLs or internal ticket IDs in PRs, commits, or branch names.
+
+## Commit message format
+
+The project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, or `BREAKING CHANGE` in the footer/body for major releases.
+
+**Examples:**
 
 ```bash
-git clone git@github.com:YOUR_USERNAME/stripe-elements.git
-cd stripe-elements
-```
-## Bootstrap
+feat(payment-element): support checkout session client secret
 
-First, you should install all dependencies by following:
+fix(services): call tryUpdateState before resolve
 
-```bash
-# In project root
-yarn install
+docs: refresh CONTRIBUTING for pnpm and CircleCI
 ```
 
-And you can start the demo app by running the `yarn start ` command.
+## Questions
 
-## How to contribute?
-
-Basic Pull Request steps:
-
-- 1. Fork it!
-- 2. Create your feature branch: `git checkout -b my-new-feature`
-- 3. Commit your changes: `git commit -am 'Add some feature'`
-- 4. Push to the branch: `git push origin my-new-feature`
-- 5. Submit a pull request :D
-
-### Unit testing
-
-You can run unit test by `yarn test` command.
-
-
-## How to write git commit message?
-
-The project has adopted [Conventional Commits](https://conventionalcommits.org/ "Conventional Commits")
-
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
-
-```
-                       component        commit title
-        commit type       /                /      
-                \        |                |
-                 feat(rule-context): add template url parameter to events
-
-        body ->  The 'src` (i.e. the url of the template to load) is now provided to the
-                 `$includeContentRequested`, `$includeContentLoaded` and `$includeContentError`
-                 events.
-
- referenced  ->  Closes #8453
- issues          Closes #8454
-```
-
-- `commit type`:
-    - `BREAKING CHANGE`: breaking change(major update)
-    - `feat`: add new feature(minor update)
-    - `fix`: fix a bug(patch update)
-    - `style`: format style(patch update)
-    - `refactor`: refactoring(patch update)
-    - `perf`: it is related performance(patch update)
-    - `test`: update tests(patch update)
-    - `docs`: update documents(patch update)
-    - `chore`: the other(patch update)
-
-
-### Example: commit message
-
-#### Example: Add new feature – This is minor update
-
-```bash
-feat: add new feature
-
-Describe in details.
-
-fix #42
-```
-
-#### Example: Fix a bug
-
-```bash
-fix: `tryUpdateState` should be called before finished 
-
-Describe in details.
-
-fix #42
-```
-
-#### Example: BREAKING CHANGE
-
-```bash
-feat: Change default StoreGroup
-
-BREAKING CHANGE: make `StoreGroup` as default store
-
-fix #42
-```
+Open a [GitHub issue](https://github.com/hideokamoto/stripe-pwa-elements/issues) for bugs or feature discussions.

@@ -39,7 +39,8 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm run build && pnpm -F hono-stripe-elements run build && changeset publish",
-    "test:e2e:stripe": "playwright test -c e2e/stripe/playwright.config.ts"
+    "test:e2e:stripe": "playwright test -c e2e/stripe/playwright.config.ts",
+    "verify:agent": "bash scripts/verify-agent.sh"
   },
   "dependencies": {
     "@stencil/core": "^4.38.3",
