@@ -2,7 +2,7 @@
 
 ## CI
 
-- **CircleCI** workflow `ci`: lint, type-check, Quint `model-check`, unit tests (Node 20/22), component tests, build.
+- **CircleCI** workflow `ci`: lint, type-check, Quint `model-check`, unit tests (Node 22), component tests, build.
 - Badge: https://circleci.com/gh/hideokamoto/stripe-pwa-elements/tree/main
 
 ## Agent trust metrics (informal)

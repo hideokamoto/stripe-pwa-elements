@@ -17,7 +17,7 @@ const executablePath = process.env.STRIPE_E2E_CHROMIUM_PATH;
 
 export default defineConfig({
   testDir: '.',
-  // `*.pw.ts` keeps these files out of the Jest regexes used by `stencil test`
+  // `*.pw.ts` keeps these files out of Vitest `*.spec.ts(x)` / `*.unit.spec.ts` globs
   testMatch: '**/*.pw.ts',
   // Real network round trips to Stripe; keep it generous but bounded
   timeout: 120_000,

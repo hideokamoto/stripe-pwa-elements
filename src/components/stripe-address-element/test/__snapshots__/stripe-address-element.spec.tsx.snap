@@ -1,16 +1,16 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`stripe-address-element component tests Rendering api key and mode props 1`] = `
-<stripe-address-element class="undefined" mode="shipping" publishable-key="pk_test_xxx">
+exports[`stripe-address-element component tests > Rendering > api key and mode props 1`] = `
+<stripe-address-element mode="shipping" publishable-key="pk_test_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-address-element-form">
       <div class="stripe-heading">
         Billing address
       </div>
-      <div class="address payment-info visible">
+      <div class="payment-info address visible">
         <div id="address-element"></div>
       </div>
-      <div class="stripe-element-errors" id="address-errors"></div>
+      <div id="address-errors" class="stripe-element-errors"></div>
       <div class="submit-button-wrapper">
         <button type="submit">
           Save
@@ -21,17 +21,17 @@ exports[`stripe-address-element component tests Rendering api key and mode props
 </stripe-address-element>
 `;
 
-exports[`stripe-address-element component tests Rendering should load stripe after setting the publishable-key (snapshot) 1`] = `
-<stripe-address-element class="undefined" publishable-key="yyyy">
+exports[`stripe-address-element component tests > Rendering > should load stripe after setting the publishable-key (snapshot) 1`] = `
+<stripe-address-element class="hydrated undefined" publishable-key="yyyy">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-address-element-form">
       <div class="stripe-heading">
         Billing address
       </div>
-      <div class="address payment-info visible">
+      <div class="payment-info address visible">
         <div id="address-element"></div>
       </div>
-      <div class="stripe-element-errors" id="address-errors"></div>
+      <div id="address-errors" class="stripe-element-errors"></div>
       <div class="submit-button-wrapper">
         <button type="submit">
           Save
@@ -42,17 +42,17 @@ exports[`stripe-address-element component tests Rendering should load stripe aft
 </stripe-address-element>
 `;
 
-exports[`stripe-address-element component tests Rendering with the api key 1`] = `
-<stripe-address-element class="undefined" publishable-key="pk_test_xxx">
+exports[`stripe-address-element component tests > Rendering > with the api key 1`] = `
+<stripe-address-element publishable-key="pk_test_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-address-element-form">
       <div class="stripe-heading">
         Billing address
       </div>
-      <div class="address payment-info visible">
+      <div class="payment-info address visible">
         <div id="address-element"></div>
       </div>
-      <div class="stripe-element-errors" id="address-errors"></div>
+      <div id="address-errors" class="stripe-element-errors"></div>
       <div class="submit-button-wrapper">
         <button type="submit">
           Save

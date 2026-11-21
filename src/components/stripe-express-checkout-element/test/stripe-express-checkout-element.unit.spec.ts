@@ -12,11 +12,11 @@ import * as factoryModule from '../../../services/factory';
  */
 
 // Mock all external dependencies
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() => Promise.resolve(null)),
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() => Promise.resolve(null)),
 }));
 
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: { t: (key: string) => key },
 }));
 
@@ -35,32 +35,32 @@ describe('StripeExpressCheckoutElement', () => {
         elements: undefined,
         isCheckoutSession: false,
       },
-      initialize: jest.fn().mockResolvedValue(undefined),
-      initializeWithCheckoutSession: jest.fn().mockResolvedValue(undefined),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn().mockReturnValue(undefined),
-      getElements: jest.fn().mockReturnValue(undefined),
-      getCheckout: jest.fn().mockReturnValue(undefined),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      initializeWithCheckoutSession: vi.fn().mockResolvedValue(undefined),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn().mockReturnValue(undefined),
+      getElements: vi.fn().mockReturnValue(undefined),
+      getCheckout: vi.fn().mockReturnValue(undefined),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     mockExpressCheckoutManager = {
-      getState: jest.fn().mockReturnValue({ errorMessage: '', isReady: false }),
-      initialize: jest.fn().mockResolvedValue({} as any),
-      getElement: jest.fn().mockReturnValue(undefined),
-      update: jest.fn(),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      getState: vi.fn().mockReturnValue({ errorMessage: '', isReady: false }),
+      initialize: vi.fn().mockResolvedValue({} as any),
+      getElement: vi.fn().mockReturnValue(undefined),
+      update: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createExpressCheckoutElementManager').mockReturnValue(mockExpressCheckoutManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createExpressCheckoutElementManager').mockReturnValue(mockExpressCheckoutManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('default property values', () => {
@@ -83,7 +83,7 @@ describe('StripeExpressCheckoutElement', () => {
   describe('componentWillUpdate', () => {
     it('does not call initStripe when publishableKey is undefined', () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = undefined;
 
       element.componentWillUpdate();
@@ -93,7 +93,7 @@ describe('StripeExpressCheckoutElement', () => {
 
     it('does not call initStripe when status is success', () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxx';
       mockStripeService.state.loadStripeStatus = 'success';
 
@@ -104,7 +104,7 @@ describe('StripeExpressCheckoutElement', () => {
 
     it('does not call initStripe when status is loading', () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxx';
       mockStripeService.state.loadStripeStatus = 'loading';
 
@@ -115,7 +115,7 @@ describe('StripeExpressCheckoutElement', () => {
 
     it('calls initStripe when status is empty', () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxx';
       mockStripeService.state.loadStripeStatus = '';
 
@@ -126,7 +126,7 @@ describe('StripeExpressCheckoutElement', () => {
 
     it('calls initStripe when status is failure', () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxx';
       mockStripeService.state.loadStripeStatus = 'failure';
 
@@ -273,7 +273,7 @@ describe('StripeExpressCheckoutElement', () => {
   describe('updatePublishableKey', () => {
     it('calls initStripe with new key', async () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
 
       await element.updatePublishableKey('pk_test_new');
 
@@ -282,7 +282,7 @@ describe('StripeExpressCheckoutElement', () => {
 
     it('preserves existing stripeAccount', async () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.stripeAccount = 'acct_existing';
 
       await element.updatePublishableKey('pk_test_new');
@@ -294,7 +294,7 @@ describe('StripeExpressCheckoutElement', () => {
   describe('updateStripeAccountId', () => {
     it('calls initStripe with new account', async () => {
       const element = new StripeExpressCheckoutElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxx';
 
       await element.updateStripeAccountId('acct_new');

@@ -1,28 +1,8 @@
 import { Config } from '@stencil/core';
 import { sass } from '@stencil/sass';
 
-// When running inside CircleCI (CI=true) register the jest-junit reporter so
-// store_test_results can ingest JUnit XML for Smarter Testing (timing data,
-// impact analysis, failed-test reruns).
-//
-// The output path is NOT set here; .circleci/test-suites.yml passes the full
-// path as JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" in the `run` command,
-// and jest-junit reads that env var automatically.
-const ciReporters: Config['testing'] = process.env.CI
-  ? {
-      reporters: [
-        'default',
-        ['jest-junit', { addFileAttribute: true }],
-      ],
-    }
-  : {};
-
 export const config: Config = {
   namespace: 'stripe-elements',
-  // CircleCI medium = 2 vCPUs / 4 GB RAM; 2 concurrent Jest workers (main +
-  // 2 child processes) exhausts memory when heavy JSDOM tests run in parallel.
-  // Use 1 worker so tests run sequentially and stay within the container limit.
-  maxConcurrentWorkers: process.env.CI ? 1 : undefined,
   outputTargets: [
     {
       type: 'dist',
@@ -46,9 +26,4 @@ export const config: Config = {
     },
   ],
   plugins: [sass()],
-  testing: {
-    testPathIgnorePatterns: ['node_modules'],
-    setupFilesAfterEnv: ['<rootDir>/src/utils/test-setup.ts'],
-    ...ciReporters,
-  },
 };

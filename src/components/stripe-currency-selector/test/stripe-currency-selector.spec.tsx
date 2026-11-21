@@ -4,17 +4,17 @@ import type { IStripeService, ICurrencySelectorElementManager } from '../../../s
 import * as factoryModule from '../../../services/factory';
 
 // Mock loadStripe to avoid actual network calls
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() =>
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() =>
     Promise.resolve({
-      registerAppInfo: jest.fn(),
-      elements: jest.fn(() => ({})),
+      registerAppInfo: vi.fn(),
+      elements: vi.fn(() => ({})),
     }),
   ),
 }));
 
 // Mock i18n
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: {
     t: (key: string) => key,
   },
@@ -45,33 +45,33 @@ describe('stripe-currency-selector component tests', () => {
         stripe: undefined,
         elements: undefined,
       },
-      initialize: jest.fn().mockResolvedValue(undefined),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn().mockReturnValue(undefined),
-      getElements: jest.fn().mockReturnValue(undefined),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn().mockReturnValue(undefined),
+      getElements: vi.fn().mockReturnValue(undefined),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     mockCurrencySelectorElementManager = {
-      getState: jest.fn().mockReturnValue({
+      getState: vi.fn().mockReturnValue({
         errorMessage: '',
         selectedCurrency: undefined,
       }),
-      initialize: jest.fn().mockResolvedValue({} as any),
-      getElement: jest.fn().mockReturnValue(undefined),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      initialize: vi.fn().mockResolvedValue({} as any),
+      getElement: vi.fn().mockReturnValue(undefined),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
     // Spy on factory methods to return our mocks
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createCurrencySelectorElementManager').mockReturnValue(mockCurrencySelectorElementManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createCurrencySelectorElementManager').mockReturnValue(mockCurrencySelectorElementManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Rendering', () => {

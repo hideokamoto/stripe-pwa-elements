@@ -1,6 +1,6 @@
 import { findElement } from './element-finder';
 
-// Mock MutationObserver for Jest environment
+// Mock MutationObserver for the Vitest / mock-doc environment
 let mutationObserverCallback: MutationCallback | null = null;
 let mutationObserverInstance: any = null;
 
@@ -50,8 +50,8 @@ describe('element-finder', () => {
       if (containerElement.parentNode != null) {
         document.body.removeChild(containerElement);
       }
-      jest.clearAllTimers();
-      jest.useRealTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
     });
 
     it('should resolve immediately if element already exists', async () => {
@@ -63,7 +63,7 @@ describe('element-finder', () => {
     });
 
     it('should resolve when element appears after initial check', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       const promise = findElement(containerElement, '#target-element');
 
@@ -93,24 +93,24 @@ describe('element-finder', () => {
     });
 
     it('should reject with timeout error if element not found within timeout', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       const promise = findElement(containerElement, '#target-element', 1000);
 
       // Advance time to trigger timeout
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
       await Promise.resolve(); // Allow promise to settle
 
       await expect(promise).rejects.toThrow('Element "#target-element" not found within 1000ms');
     });
 
     it('should use default timeout of 5000ms if not specified', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       const promise = findElement(containerElement, '#target-element');
 
       // Advance time to trigger timeout
-      jest.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(5000);
       await Promise.resolve(); // Allow promise to settle
 
       await expect(promise).rejects.toThrow('Element "#target-element" not found within 5000ms');

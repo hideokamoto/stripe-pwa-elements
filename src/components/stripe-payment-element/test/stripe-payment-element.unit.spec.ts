@@ -3,17 +3,17 @@ import type { IStripeService, IPaymentElementManager } from '../../../services/i
 import * as factoryModule from '../../../services/factory';
 
 // Mock loadStripe to avoid actual network calls
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() =>
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() =>
     Promise.resolve({
-      registerAppInfo: jest.fn(),
-      elements: jest.fn(() => ({})),
+      registerAppInfo: vi.fn(),
+      elements: vi.fn(() => ({})),
     }),
   ),
 }));
 
 // Mock i18n
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: {
     t: (key: string) => key,
   },
@@ -44,32 +44,32 @@ describe('stripe-payment-element unit tests', () => {
         stripe: undefined,
         elements: undefined,
       },
-      initialize: jest.fn().mockResolvedValue(undefined),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn().mockReturnValue(undefined),
-      getElements: jest.fn().mockReturnValue(undefined),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn().mockReturnValue(undefined),
+      getElements: vi.fn().mockReturnValue(undefined),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     mockPaymentElementManager = {
-      getState: jest.fn().mockReturnValue({
+      getState: vi.fn().mockReturnValue({
         errorMessage: '',
       }),
-      initialize: jest.fn().mockResolvedValue({} as any),
-      getElement: jest.fn().mockReturnValue(undefined),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      initialize: vi.fn().mockResolvedValue({} as any),
+      getElement: vi.fn().mockReturnValue(undefined),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
     // Spy on factory methods to return our mocks
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('#componentWillRender', () => {
@@ -77,7 +77,7 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
     });
 
     it.each([['' as const], ['failure' as const]])('If the publishableKey is not provided, should not call initStripe method(status: %s)', async loadingStatus => {
@@ -129,9 +129,9 @@ describe('stripe-payment-element unit tests', () => {
 
       // Mock element.el.querySelector for form submission listener
       const mockFormElement = {
-        addEventListener: jest.fn(),
+        addEventListener: vi.fn(),
       };
-      jest.spyOn(element.el, 'querySelector').mockReturnValue(mockFormElement as any);
+      vi.spyOn(element.el, 'querySelector').mockReturnValue(mockFormElement as any);
 
       // Mock successful initialization
       mockStripeService.state.loadStripeStatus = 'success';
@@ -165,7 +165,7 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      vi.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: vi.fn() } as any);
       mockStripeService.state.loadStripeStatus = 'success';
     });
 
@@ -218,8 +218,8 @@ describe('stripe-payment-element unit tests', () => {
     it('retries in Checkout Session mode after a failure when checkout-session-client-secret is set', () => {
       const element = new StripePaymentElement();
 
-      element.initStripe = jest.fn();
-      element.initStripeWithCheckoutSession = jest.fn();
+      element.initStripe = vi.fn();
+      element.initStripeWithCheckoutSession = vi.fn();
       (element as any).checkoutSessionClientSecret = 'cs_test_secret';
       mockStripeService.state.publishableKey = 'pk_test_xxx';
       mockStripeService.state.loadStripeStatus = 'failure';
@@ -235,8 +235,8 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      element.initStripe = jest.fn();
-      element.initStripeWithCheckoutSession = jest.fn();
+      element.initStripe = vi.fn();
+      element.initStripeWithCheckoutSession = vi.fn();
       (element as any).publishableKey = 'pk_test_xxx';
     });
 
@@ -261,8 +261,8 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      element.initStripe = jest.fn();
-      element.initStripeWithCheckoutSession = jest.fn();
+      element.initStripe = vi.fn();
+      element.initStripeWithCheckoutSession = vi.fn();
       (element as any).checkoutSessionClientSecret = 'cs_test_secret';
     });
 
@@ -297,7 +297,7 @@ describe('stripe-payment-element unit tests', () => {
     it('only the latest call mounts the element and emits stripeLoaded', async () => {
       const element = new StripePaymentElement();
 
-      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      vi.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: vi.fn() } as any);
       mockStripeService.state.loadStripeStatus = 'success';
 
       let releaseFirst: () => void = () => undefined;
@@ -321,9 +321,9 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      jest.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: jest.fn() } as any);
+      vi.spyOn(element.el, 'querySelector').mockReturnValue({ addEventListener: vi.fn() } as any);
       mockStripeService.state.loadStripeStatus = 'success';
-      (mockStripeService as any).initializeWithCheckoutSession = jest.fn().mockResolvedValue(undefined);
+      (mockStripeService as any).initializeWithCheckoutSession = vi.fn().mockResolvedValue(undefined);
       releaseFirst = () => undefined;
     });
 
@@ -359,7 +359,7 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxxx';
     });
 
@@ -381,7 +381,7 @@ describe('stripe-payment-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripePaymentElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
     });
 
     it('When call this, should call the #initStripe method only one time', async () => {

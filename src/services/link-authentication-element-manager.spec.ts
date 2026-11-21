@@ -11,16 +11,16 @@ describe('LinkAuthenticationElementManager', () => {
   beforeEach(() => {
     // Create mock link authentication element
     mockLinkAuthenticationElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockLinkAuthenticationElement),
+      create: vi.fn().mockReturnValue(mockLinkAuthenticationElement),
     };
 
     // Create mock stripe service
@@ -34,13 +34,13 @@ describe('LinkAuthenticationElementManager', () => {
         elements: mockElements,
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new LinkAuthenticationElementManager(mockStripeService);
@@ -76,7 +76,7 @@ describe('LinkAuthenticationElementManager', () => {
 
   describe('onChange', () => {
     it('should register callback for state changes', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       manager.onChange('email', callback);
 
@@ -104,7 +104,7 @@ describe('LinkAuthenticationElementManager', () => {
     });
 
     it('should return unsubscribe function', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       const unsubscribe = manager.onChange('email', callback);
 
       expect(typeof unsubscribe).toBe('function');

@@ -46,7 +46,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -68,7 +68,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -92,7 +92,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -114,7 +114,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -137,7 +137,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -158,7 +158,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -184,7 +184,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -205,7 +205,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -229,7 +229,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -250,7 +250,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -271,7 +271,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -295,7 +295,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -314,7 +314,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },
@@ -333,7 +333,7 @@ describe('platform utilities', () => {
         document: {
           documentElement: {
             classList: {
-              add: jest.fn(),
+              add: vi.fn(),
             },
           },
         },

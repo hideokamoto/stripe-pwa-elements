@@ -3,17 +3,17 @@ import type { IStripeService, ILinkAuthenticationElementManager } from '../../..
 import * as factoryModule from '../../../services/factory';
 
 // Mock loadStripe to avoid actual network calls
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() =>
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() =>
     Promise.resolve({
-      registerAppInfo: jest.fn(),
-      elements: jest.fn(() => ({})),
+      registerAppInfo: vi.fn(),
+      elements: vi.fn(() => ({})),
     }),
   ),
 }));
 
 // Mock i18n
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: {
     t: (key: string) => key,
   },
@@ -44,34 +44,34 @@ describe('stripe-link-authentication-element unit tests', () => {
         stripe: undefined,
         elements: undefined,
       },
-      initialize: jest.fn().mockResolvedValue(undefined),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn().mockReturnValue(undefined),
-      getElements: jest.fn().mockReturnValue(undefined),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn().mockReturnValue(undefined),
+      getElements: vi.fn().mockReturnValue(undefined),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     mockLinkAuthenticationElementManager = {
-      getState: jest.fn().mockReturnValue({
+      getState: vi.fn().mockReturnValue({
         errorMessage: '',
         email: undefined,
       }),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      initialize: jest.fn().mockResolvedValue({} as any),
-      getElement: jest.fn().mockReturnValue(undefined),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      initialize: vi.fn().mockResolvedValue({} as any),
+      getElement: vi.fn().mockReturnValue(undefined),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
     // Spy on factory methods to return our mocks
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationElementManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationElementManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('#componentWillRender', () => {
@@ -79,7 +79,7 @@ describe('stripe-link-authentication-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripeLinkAuthenticationElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
     });
 
     it.each([['' as const], ['failure' as const]])('If the publishableKey is not provided, should not call initStripe method(status: %s)', async loadingStatus => {
@@ -192,7 +192,7 @@ describe('stripe-link-authentication-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripeLinkAuthenticationElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
       mockStripeService.state.publishableKey = 'pk_test_xxxx';
     });
 
@@ -231,7 +231,7 @@ describe('stripe-link-authentication-element unit tests', () => {
 
     beforeEach(() => {
       element = new StripeLinkAuthenticationElement();
-      element.initStripe = jest.fn();
+      element.initStripe = vi.fn();
     });
 
     it('When call this, should call the #initStripe method only one time', async () => {

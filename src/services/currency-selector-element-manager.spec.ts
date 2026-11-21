@@ -11,17 +11,17 @@ describe('CurrencySelectorElementManager', () => {
   beforeEach(() => {
     // Create mock currency selector element
     mockCurrencySelectorElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
-      getValue: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
+      getValue: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockCurrencySelectorElement),
+      create: vi.fn().mockReturnValue(mockCurrencySelectorElement),
     };
 
     // Create mock stripe service
@@ -34,12 +34,12 @@ describe('CurrencySelectorElementManager', () => {
         stripe: {} as any,
         elements: mockElements,
       },
-      initialize: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new CurrencySelectorElementManager(mockStripeService);

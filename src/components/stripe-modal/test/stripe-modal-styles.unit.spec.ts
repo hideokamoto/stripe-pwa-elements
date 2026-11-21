@@ -1,12 +1,8 @@
-// Make this file a module so the declarations below stay local to it
-export {};
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// The repo has no @types/node; Jest runs specs as CommonJS, so `require` and `__dirname` exist at runtime.
-declare const require: (id: string) => any;
-declare const __dirname: string;
-
-const { readFileSync } = require('fs');
-const { join } = require('path');
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Style contract for stripe-modal.

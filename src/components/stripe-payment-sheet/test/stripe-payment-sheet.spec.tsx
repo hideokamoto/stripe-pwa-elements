@@ -5,11 +5,11 @@ import type { IStripeService, IPaymentElementManager, IAddressElementManager, IL
 import * as factoryModule from '../../../services/factory';
 import { i18n } from '../../../utils/i18n';
 
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(),
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(),
 }));
 
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: {
     t: (key: string) => key,
   },
@@ -38,7 +38,7 @@ describe('stripe-payment-sheet', () => {
   const addressManager = (mode: 'billing' | 'shipping') => addressManagers.find(m => m.initialize.mock.calls.some(([, options]) => options?.mode === mode));
 
   beforeEach(() => {
-    jest.spyOn(i18n, 't');
+    vi.spyOn(i18n, 't');
     addressValue = {
       complete: true,
       isNewAddress: true,
@@ -49,14 +49,14 @@ describe('stripe-payment-sheet', () => {
       },
     };
     addressManagers = [];
-    jest.spyOn(factoryModule.serviceFactory, 'createAddressElementManager').mockImplementation(() => {
+    vi.spyOn(factoryModule.serviceFactory, 'createAddressElementManager').mockImplementation(() => {
       const manager = {
-        getState: jest.fn().mockReturnValue({ errorMessage: '', isComplete: false }),
-        initialize: jest.fn().mockResolvedValue({}),
-        getElement: jest.fn(() => ({ getValue: jest.fn().mockResolvedValue(addressValue) })),
-        setError: jest.fn(),
-        clearError: jest.fn(),
-        unmount: jest.fn(),
+        getState: vi.fn().mockReturnValue({ errorMessage: '', isComplete: false }),
+        initialize: vi.fn().mockResolvedValue({}),
+        getElement: vi.fn(() => ({ getValue: vi.fn().mockResolvedValue(addressValue) })),
+        setError: vi.fn(),
+        clearError: vi.fn(),
+        unmount: vi.fn(),
       } as any;
 
       addressManagers.push(manager);
@@ -64,49 +64,49 @@ describe('stripe-payment-sheet', () => {
       return manager;
     });
     mockLinkAuthenticationManager = {
-      getState: jest.fn().mockReturnValue({ errorMessage: '', email: 'jenny@example.com' }),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      initialize: jest.fn().mockResolvedValue({}),
-      getElement: jest.fn(),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      getState: vi.fn().mockReturnValue({ errorMessage: '', email: 'jenny@example.com' }),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      initialize: vi.fn().mockResolvedValue({}),
+      getElement: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
-    jest.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationManager);
 
     stripe = {
-      confirmPayment: jest.fn().mockResolvedValue({ paymentIntent: { id: 'pi_3Mtw', status: 'succeeded' } }),
-      confirmSetup: jest.fn().mockResolvedValue({ setupIntent: { id: 'seti_1Mm8', status: 'succeeded' } }),
+      confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: 'pi_3Mtw', status: 'succeeded' } }),
+      confirmSetup: vi.fn().mockResolvedValue({ setupIntent: { id: 'seti_1Mm8', status: 'succeeded' } }),
     };
-    elements = { update: jest.fn().mockResolvedValue(undefined), submit: jest.fn().mockResolvedValue({ selectedPaymentMethod: 'card' }) };
+    elements = { update: vi.fn().mockResolvedValue(undefined), submit: vi.fn().mockResolvedValue({ selectedPaymentMethod: 'card' }) };
     mockStripeService = {
       state: { loadStripeStatus: '', applicationName: 'stripe-pwa-elements' },
-      initialize: jest.fn().mockImplementation(async () => {
+      initialize: vi.fn().mockImplementation(async () => {
         mockStripeService.state.loadStripeStatus = 'success';
       }),
-      initializeWithCheckoutSession: jest.fn(),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn(() => stripe),
-      getElements: jest.fn(() => elements),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initializeWithCheckoutSession: vi.fn(),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn(() => stripe),
+      getElements: vi.fn(() => elements),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
     mockPaymentElementManager = {
-      getState: jest.fn().mockReturnValue({ errorMessage: '' }),
-      initialize: jest.fn().mockResolvedValue({}),
-      getElement: jest.fn(),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      getState: vi.fn().mockReturnValue({ errorMessage: '' }),
+      initialize: vi.fn().mockResolvedValue({}),
+      getElement: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   /**
@@ -197,7 +197,7 @@ describe('stripe-payment-sheet', () => {
     });
 
     it('warns once about options that have no effect on the web', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
       await setup({}, { merchantDisplayName: 'Example', enableApplePay: true, customerId: 'cus_123', withZipCode: true });
 
@@ -339,7 +339,7 @@ describe('stripe-payment-sheet', () => {
       context.sheet.present();
       await flush(context.page);
 
-      const getValue = jest.fn().mockResolvedValue(addressValue);
+      const getValue = vi.fn().mockResolvedValue(addressValue);
 
       addressManager('billing').getElement.mockReturnValue({ getValue } as any);
 
@@ -553,8 +553,8 @@ describe('stripe-payment-sheet', () => {
     let checkout: { loadActions: jest.Mock };
 
     beforeEach(() => {
-      checkoutConfirm = jest.fn().mockResolvedValue(SESSION_RESULT);
-      checkout = { loadActions: jest.fn().mockResolvedValue({ type: 'success', actions: { confirm: checkoutConfirm } }) };
+      checkoutConfirm = vi.fn().mockResolvedValue(SESSION_RESULT);
+      checkout = { loadActions: vi.fn().mockResolvedValue({ type: 'success', actions: { confirm: checkoutConfirm } }) };
       mockStripeService.initializeWithCheckoutSession.mockImplementation(async () => {
         mockStripeService.state.loadStripeStatus = 'success';
       });
@@ -591,7 +591,7 @@ describe('stripe-payment-sheet', () => {
     };
 
     it('loads the Checkout Session and mounts the Payment Element with the options it supports', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const { sheet, eventTypes } = await setupCheckout({ merchantDisplayName: 'Example Inc.', paymentMethodLayout: 'vertical', style: 'alwaysDark' });
 
       expect(warn).toHaveBeenCalledTimes(1);
@@ -608,7 +608,7 @@ describe('stripe-payment-sheet', () => {
     });
 
     it('does not mount the extra billing elements, warns about the intent-only options, and does not call elements.submit()', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const { page, sheet, submit, eventTypes } = await setupCheckout({
         billingDetailsCollectionConfiguration: { email: 'always', address: 'full' },
         shippingDetails: { name: 'Jenny', address: { country: 'JP' } },

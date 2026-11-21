@@ -12,24 +12,24 @@ describe('PaymentElementManager', () => {
   beforeEach(() => {
     // Create mock payment element
     mockPaymentElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
-      collapse: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
+      collapse: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockPaymentElement),
+      create: vi.fn().mockReturnValue(mockPaymentElement),
     };
 
     // Create mock checkout
     mockCheckout = {
-      createPaymentElement: jest.fn().mockReturnValue(mockPaymentElement),
-      confirm: jest.fn(),
-      session: jest.fn(),
+      createPaymentElement: vi.fn().mockReturnValue(mockPaymentElement),
+      confirm: vi.fn(),
+      session: vi.fn(),
     } as any;
 
     // Create mock stripe service for Payment Intent mode
@@ -43,14 +43,14 @@ describe('PaymentElementManager', () => {
         elements: mockElements,
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      initializeWithCheckoutSession: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      getCheckout: jest.fn().mockReturnValue(undefined),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      initializeWithCheckoutSession: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      getCheckout: vi.fn().mockReturnValue(undefined),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new PaymentElementManager(mockStripeService);

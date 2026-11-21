@@ -1,22 +1,22 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`stripe-link-authentication-element component tests Rendering with default email 1`] = `
-<stripe-link-authentication-element default-email="test@example.com" publishable-key="pk_test_xxx">
+exports[`stripe-link-authentication-element component tests > Rendering > with default email 1`] = `
+<stripe-link-authentication-element publishable-key="pk_test_xxx" default-email="test@example.com" class="hydrated">
   <div class="stripe-link-authentication-wrap">
     <div class="stripe-link-authentication-container">
       <div id="link-authentication-element"></div>
-      <div class="stripe-element-errors" id="link-authentication-errors"></div>
+      <div id="link-authentication-errors" class="stripe-element-errors"></div>
     </div>
   </div>
 </stripe-link-authentication-element>
 `;
 
-exports[`stripe-link-authentication-element component tests Rendering with the api key 1`] = `
-<stripe-link-authentication-element publishable-key="pk_test_xxx">
+exports[`stripe-link-authentication-element component tests > Rendering > with the api key 1`] = `
+<stripe-link-authentication-element publishable-key="pk_test_xxx" class="hydrated">
   <div class="stripe-link-authentication-wrap">
     <div class="stripe-link-authentication-container">
       <div id="link-authentication-element"></div>
-      <div class="stripe-element-errors" id="link-authentication-errors"></div>
+      <div id="link-authentication-errors" class="stripe-element-errors"></div>
     </div>
   </div>
 </stripe-link-authentication-element>

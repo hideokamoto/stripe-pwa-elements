@@ -25,14 +25,14 @@ describe('ServiceFactory', () => {
         elements: {} as any,
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      initializeWithCheckoutSession: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn(),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      initializeWithCheckoutSession: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn(),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
   });
 
@@ -189,11 +189,12 @@ describe('serviceFactory singleton', () => {
     expect(serviceFactory).toBeInstanceOf(ServiceFactory);
   });
 
-  it('should be a singleton (same instance)', () => {
-    const { serviceFactory: factory1 } = require('./factory');
-    const { serviceFactory: factory2 } = require('./factory');
+  it('should be a singleton (same instance)', async () => {
+    const { serviceFactory: factory1 } = await import('./factory');
+    const { serviceFactory: factory2 } = await import('./factory');
 
     expect(factory1).toBe(factory2);
+    expect(factory1).toBe(serviceFactory);
   });
 
   it('should be able to create all manager types', () => {
@@ -207,14 +208,14 @@ describe('serviceFactory singleton', () => {
         applicationName: 'test',
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      initializeWithCheckoutSession: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn(),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      initializeWithCheckoutSession: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn(),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     };
 
     expect(serviceFactory.createCardElementManager(mockService)).toBeDefined();

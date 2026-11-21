@@ -10,36 +10,39 @@
  * that can cause test timeouts.
  */
 
-// Mock @stencil/store before importing anything
-const mockStoreState: Record<string, any> = {
-  loadStripeStatus: '',
-  applicationName: 'stripe-pwa-elements',
-  isCheckoutSession: false,
-};
+const { mockStore, mockStoreState } = vi.hoisted(() => {
+  const mockStoreState: Record<string, any> = {
+    loadStripeStatus: '',
+    applicationName: 'stripe-pwa-elements',
+    isCheckoutSession: false,
+  };
 
-const mockStore = {
-  state: mockStoreState,
-  onChange: jest.fn().mockReturnValue(jest.fn()),
-  reset: jest.fn(() => {
-    mockStoreState.loadStripeStatus = '';
-    mockStoreState.applicationName = 'stripe-pwa-elements';
-    mockStoreState.isCheckoutSession = false;
-    mockStoreState.publishableKey = undefined;
-    mockStoreState.stripeAccount = undefined;
-    mockStoreState.stripe = undefined;
-    mockStoreState.elements = undefined;
-    mockStoreState.checkout = undefined;
-  }),
-  dispose: jest.fn(),
-};
+  const mockStore = {
+    state: mockStoreState,
+    onChange: vi.fn().mockReturnValue(vi.fn()),
+    reset: vi.fn(() => {
+      mockStoreState.loadStripeStatus = '';
+      mockStoreState.applicationName = 'stripe-pwa-elements';
+      mockStoreState.isCheckoutSession = false;
+      mockStoreState.publishableKey = undefined;
+      mockStoreState.stripeAccount = undefined;
+      mockStoreState.stripe = undefined;
+      mockStoreState.elements = undefined;
+      mockStoreState.checkout = undefined;
+    }),
+    dispose: vi.fn(),
+  };
 
-jest.mock('@stencil/store', () => ({
-  createStore: jest.fn(() => mockStore),
+  return { mockStore, mockStoreState };
+});
+
+vi.mock('@stencil/store', () => ({
+  createStore: vi.fn(() => mockStore),
 }));
 
 // Mock loadStripe from @stripe/stripe-js
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(),
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(),
 }));
 
 import { loadStripe } from '@stripe/stripe-js';
@@ -62,20 +65,20 @@ describe('StripeServiceClass', () => {
     mockStoreState.elements = undefined;
     mockStoreState.checkout = undefined;
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    mockElements = { create: jest.fn() };
+    mockElements = { create: vi.fn() };
 
     mockCheckout = {
-      createPaymentElement: jest.fn(),
-      confirm: jest.fn(),
-      session: jest.fn(),
+      createPaymentElement: vi.fn(),
+      confirm: vi.fn(),
+      session: vi.fn(),
     };
 
     mockStripe = {
-      elements: jest.fn().mockReturnValue(mockElements),
-      initCheckoutElementsSdk: jest.fn().mockReturnValue(mockCheckout),
-      registerAppInfo: jest.fn(),
+      elements: vi.fn().mockReturnValue(mockElements),
+      initCheckoutElementsSdk: vi.fn().mockReturnValue(mockCheckout),
+      registerAppInfo: vi.fn(),
     };
 
     (loadStripe as jest.Mock).mockResolvedValue(mockStripe);
@@ -180,7 +183,7 @@ describe('StripeServiceClass', () => {
     });
 
     it('handles errors gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       (loadStripe as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       await service.initialize('pk_test_xxx');
@@ -268,8 +271,8 @@ describe('StripeServiceClass', () => {
       const staleElements = { stale: true };
       const freshElements = { fresh: true };
       let resolveStale: (v: any) => void = () => undefined;
-      const staleStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => staleElements) };
-      const freshStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => freshElements) };
+      const staleStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => staleElements) };
+      const freshStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => freshElements) };
 
       (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve))).mockResolvedValueOnce(freshStripe);
 
@@ -289,7 +292,7 @@ describe('StripeServiceClass', () => {
 
       const newElements = { next: true };
       let resolveLoad: (v: any) => void = () => undefined;
-      const nextStripe = { registerAppInfo: jest.fn(), elements: jest.fn(() => newElements) };
+      const nextStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => newElements) };
 
       (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveLoad = resolve)));
 
@@ -379,7 +382,7 @@ describe('StripeServiceClass', () => {
     });
 
     it('handles errors gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       (loadStripe as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
@@ -391,14 +394,14 @@ describe('StripeServiceClass', () => {
 
   describe('onChange', () => {
     it('returns unsubscribe function', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       const unsubscribe = service.onChange('loadStripeStatus', callback);
 
       expect(typeof unsubscribe).toBe('function');
     });
 
     it('delegates to store.onChange', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       service.onChange('loadStripeStatus', callback);
 
       expect(mockStore.onChange).toHaveBeenCalledWith('loadStripeStatus', callback);

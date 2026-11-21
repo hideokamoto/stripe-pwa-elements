@@ -1,7 +1,7 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`stripe-payment-element component tests Rendering should load stripe after setting the publishable-key (snapshot) 1`] = `
-<stripe-payment-element class="undefined" publishable-key="pk_test_yyyy">
+exports[`stripe-payment-element component tests > Rendering > should load stripe after setting the publishable-key (snapshot) 1`] = `
+<stripe-payment-element class="hydrated undefined" publishable-key="pk_test_yyyy">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-payment-element">
       <div class="stripe-heading">
@@ -15,9 +15,9 @@ exports[`stripe-payment-element component tests Rendering should load stripe aft
       <div class="payment-info visible">
         <div id="payment-element"></div>
       </div>
-      <div class="stripe-element-errors" id="payment-errors"></div>
-      <div style="margin-top: 32px;">
-        <button disabled="" type="submit">
+      <div id="payment-errors" class="stripe-element-errors"></div>
+      <div>
+        <button type="submit" disabled>
           Pay
         </button>
       </div>
@@ -26,8 +26,8 @@ exports[`stripe-payment-element component tests Rendering should load stripe aft
 </stripe-payment-element>
 `;
 
-exports[`stripe-payment-element component tests Rendering with only api key (button should be disabled) 1`] = `
-<stripe-payment-element class="undefined" publishable-key="pk_test_xxx">
+exports[`stripe-payment-element component tests > Rendering > with only api key (button should be disabled) 1`] = `
+<stripe-payment-element publishable-key="pk_test_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-payment-element">
       <div class="stripe-heading">
@@ -41,9 +41,9 @@ exports[`stripe-payment-element component tests Rendering with only api key (but
       <div class="payment-info visible">
         <div id="payment-element"></div>
       </div>
-      <div class="stripe-element-errors" id="payment-errors"></div>
-      <div style="margin-top: 32px;">
-        <button disabled="" type="submit">
+      <div id="payment-errors" class="stripe-element-errors"></div>
+      <div>
+        <button type="submit" disabled>
           Pay
         </button>
       </div>
@@ -52,8 +52,8 @@ exports[`stripe-payment-element component tests Rendering with only api key (but
 </stripe-payment-element>
 `;
 
-exports[`stripe-payment-element component tests Rendering with the api key and client secret 1`] = `
-<stripe-payment-element class="undefined" intent-client-secret="pi_xxx_secret_xxx" publishable-key="pk_test_xxx">
+exports[`stripe-payment-element component tests > Rendering > with the api key and client secret 1`] = `
+<stripe-payment-element publishable-key="pk_test_xxx" intent-client-secret="pi_xxx_secret_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-payment-element">
       <div class="stripe-heading">
@@ -67,8 +67,8 @@ exports[`stripe-payment-element component tests Rendering with the api key and c
       <div class="payment-info visible">
         <div id="payment-element"></div>
       </div>
-      <div class="stripe-element-errors" id="payment-errors"></div>
-      <div style="margin-top: 32px;">
+      <div id="payment-errors" class="stripe-element-errors"></div>
+      <div>
         <button type="submit">
           Pay
         </button>
