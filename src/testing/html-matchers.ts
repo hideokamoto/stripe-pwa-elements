@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 import { serializeNodeToHtml } from '@stencil/core/mock-doc';
 
-const TAG_RE = /<\/?([A-Za-z][\w:-]*)([^>]*?)(\/?)>/g;
+const TAG_RE = /<\/?([A-Za-z][\w:-]*)((?:\s+[^\s=/>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)\s*>/g;
 const ATTR_RE = /\s+([^\s=]+)(?:=("([^"]*)"|'([^']*)'|[^\s>]+))?/g;
 
 const parseAndSortAttrs = (raw: string): string => {

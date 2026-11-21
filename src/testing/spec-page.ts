@@ -30,11 +30,15 @@ const findComponent = (from: ParentNode | null | undefined): HTMLElement | undef
  * Spec tests keep the previous import path via a Vite alias.
  */
 export async function newSpecPage(opts: NewSpecPageOptions): Promise<SpecPage> {
-  if (opts.html == null && opts.template == null) {
-    throw new Error('newSpecPage requires `html` or `template`');
+  if (opts.template != null) {
+    throw new Error('newSpecPage: `template` is not supported by the Vitest shim; pass `html`');
   }
 
-  const result = await render(opts.html ?? '');
+  if (opts.html == null) {
+    throw new Error('newSpecPage requires `html`');
+  }
+
+  const result = await render(opts.html);
   const root = findComponent(result.root.parentElement) ?? result.root;
   const waitForChanges = () => result.waitForChanges();
 
