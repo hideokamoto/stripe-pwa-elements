@@ -54,6 +54,15 @@ describe('focus utilities', () => {
 
       expect(getTabbableElements(document.getElementById('root')).map(el => el.id)).toEqual(['before', 'slotted', 'after']);
     });
+
+    it('uses default slot children when assignedElements is unavailable', () => {
+      document.body.innerHTML = '<div id="root"><slot id="s"><button id="def">d</button></slot></div>';
+      const slot = document.getElementById('s') as HTMLSlotElement;
+
+      Object.defineProperty(slot, 'assignedElements', { value: undefined, configurable: true });
+
+      expect(getTabbableElements(document.getElementById('root')!).map(el => el.id)).toEqual(['def']);
+    });
   });
 
   describe('getDeepActiveElement', () => {
