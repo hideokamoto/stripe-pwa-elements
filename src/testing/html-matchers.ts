@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { serializeNodeToHtml } from '@stencil/core/mock-doc';
+import { parseHtmlToFragment, serializeNodeToHtml } from '@stencil/core/mock-doc';
 
 const TAG_RE = /<\/?([A-Za-z][\w:-]*)((?:\s+[^\s=/>]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)\s*>/g;
 const ATTR_RE = /\s+([^\s=]+)(?:=("([^"]*)"|'([^']*)'|[^\s>]+))?/g;
@@ -44,7 +44,6 @@ export const normalizeComparableHtml = (html: string): string => {
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<template([^>]*shadowrootmode="open"[^>]*)>/gi, '<mock:shadow-root>')
     .replace(/<\/template>/gi, '</mock:shadow-root>')
-    .replace(/\s+/g, ' ')
     .replace(/>\s+</g, '><')
     .trim();
 
@@ -59,18 +58,28 @@ export const normalizeComparableHtml = (html: string): string => {
   });
 };
 
+const serializeOptions: {
+  prettyHtml: boolean;
+  serializeShadowRoot: boolean;
+  excludeTags: string[];
+} = {
+  prettyHtml: false,
+  serializeShadowRoot: true,
+  excludeTags: ['body'],
+};
+
 const serializeReceived = (received: unknown): string => {
   if (typeof received !== 'object' || received == null) {
     return String(received);
   }
 
   return serializeNodeToHtml(received as Node, {
-    prettyHtml: false,
+    ...serializeOptions,
     outerHtml: true,
-    serializeShadowRoot: true,
-    excludeTags: ['body'],
   });
 };
+
+const serializeExpected = (expected: string): string => serializeNodeToHtml(parseHtmlToFragment(expected), serializeOptions);
 
 function toEqualHtml(received: unknown, expected: string) {
   if (received == null) {
@@ -78,7 +87,7 @@ function toEqualHtml(received: unknown, expected: string) {
   }
 
   const receivedHtml = normalizeComparableHtml(serializeReceived(received));
-  const expectedHtml = normalizeComparableHtml(expected);
+  const expectedHtml = normalizeComparableHtml(serializeExpected(expected));
   const pass = receivedHtml === expectedHtml;
 
   return {

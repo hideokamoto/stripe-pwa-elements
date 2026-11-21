@@ -38,27 +38,40 @@ export async function newSpecPage(opts: NewSpecPageOptions): Promise<SpecPage> {
     throw new Error('newSpecPage requires `html`');
   }
 
-  const result = await render(opts.html);
-  const root = findComponent(result.root.parentElement) ?? result.root;
-  const waitForChanges = () => result.waitForChanges();
+  const bind = (result: Awaited<ReturnType<typeof render>>) => {
+    const root = findComponent(result.root.parentElement) ?? result.root;
 
-  return {
-    root,
+    return {
+      root,
+      waitForChanges: () => result.waitForChanges(),
+    };
+  };
+
+  let current = bind(await render(opts.html));
+
+  const page: SpecPage = {
+    get root() {
+      return current.root;
+    },
     // Custom-element compile puts @Method() on the host; $lazyInstance$ is not the class instance.
-    rootInstance: root,
+    get rootInstance() {
+      return current.root;
+    },
     body: document.body as HTMLBodyElement,
     doc: document,
     win: window,
-    waitForChanges,
+    waitForChanges: () => current.waitForChanges(),
     setContent: async (html: string) => {
-      document.body.innerHTML = html;
-      await waitForChanges();
+      current = bind(await render(html));
+      await current.waitForChanges();
     },
     build: {} as SpecPage['build'],
     flushLoadModule: async () => undefined,
-    flushQueue: waitForChanges,
+    flushQueue: () => current.waitForChanges(),
     styles: new Map(),
   };
+
+  return page;
 }
 
 export type { SpecPage };
