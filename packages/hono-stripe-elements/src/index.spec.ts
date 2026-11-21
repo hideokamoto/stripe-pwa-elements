@@ -5,10 +5,10 @@ vi.mock('hono/jsx', () => ({
   },
 }));
 
-import { createStripeElementComponent } from './index';
+import { createStripeElementComponent, type StripeCardElementProps } from './index';
 
 describe('createStripeElementComponent', () => {
-  const Comp = createStripeElementComponent('stripe-card-element', async () => ({}));
+  const Comp = createStripeElementComponent<StripeCardElementProps>('stripe-card-element', async () => ({}));
 
   it('maps camelCase props to kebab-case attributes and skips function props', () => {
     const handleSubmit = vi.fn();
