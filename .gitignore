@@ -33,6 +33,7 @@ RELEASE_NOTES_*.md
 # Test output artifacts
 junit.xml
 test-reports/
+.mutator/
 
 # Per-container V8 coverage files produced by CIRCLECI_COVERAGE during CI runs
 coverage/

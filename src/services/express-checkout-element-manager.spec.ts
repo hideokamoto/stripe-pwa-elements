@@ -296,6 +296,29 @@ describe('ExpressCheckoutElementManager', () => {
       expect(mockExpressCheckoutElement.update).not.toHaveBeenCalled();
     });
 
+    it('should pass mode and currency to the Elements group when they are updated', async () => {
+      const containerElement = document.createElement('div');
+
+      containerElement.innerHTML = '<div id="express-checkout-element"></div>';
+
+      await manager.initialize(containerElement, { mode: 'payment', amount: 1000, currency: 'usd' });
+
+      manager.update({ mode: 'setup', currency: 'eur' });
+
+      expect(mockElements.update).toHaveBeenCalledWith({ mode: 'setup', currency: 'eur' });
+      expect(mockExpressCheckoutElement.update).not.toHaveBeenCalled();
+    });
+
+    it('should keep an invalid string buttonHeight as-is', async () => {
+      const containerElement = document.createElement('div');
+
+      containerElement.innerHTML = '<div id="express-checkout-element"></div>';
+
+      await manager.initialize(containerElement, { mode: 'payment', buttonHeight: 'tall' });
+
+      expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', { buttonHeight: 'tall' });
+    });
+
     it('should convert string buttonHeight to number when updating', async () => {
       const containerElement = document.createElement('div');
 

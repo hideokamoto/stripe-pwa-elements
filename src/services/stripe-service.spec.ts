@@ -318,6 +318,24 @@ describe('StripeServiceClass', () => {
 
       expect(loadStripe).toHaveBeenCalledTimes(1);
     });
+
+    it('does not store an empty stripeAccount', async () => {
+      await service.initialize('pk_test_xxx', { stripeAccount: '' });
+
+      expect(service.state.stripeAccount).toBeUndefined();
+    });
+
+    it('does not replace the default application name with an empty string', async () => {
+      await service.initialize('pk_test_xxx', { applicationName: '' });
+
+      expect(service.state.applicationName).toBe('stripe-pwa-elements');
+    });
+
+    it('does not pass an empty clientSecret to stripe.elements()', async () => {
+      await service.initialize('pk_test_xxx', { clientSecret: '' });
+
+      expect(mockStripe.elements).toHaveBeenCalledWith();
+    });
   });
 
   describe('initializeWithCheckoutSession', () => {
@@ -391,6 +409,18 @@ describe('StripeServiceClass', () => {
 
       expect(service.state.loadStripeStatus).toBe('failure');
       consoleSpy.mockRestore();
+    });
+
+    it('does not store an empty stripeAccount', async () => {
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { stripeAccount: '' });
+
+      expect(service.state.stripeAccount).toBeUndefined();
+    });
+
+    it('does not replace the default application name with an empty string', async () => {
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { applicationName: '' });
+
+      expect(service.state.applicationName).toBe('stripe-pwa-elements');
     });
   });
 

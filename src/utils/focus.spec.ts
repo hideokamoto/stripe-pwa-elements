@@ -27,6 +27,15 @@ describe('focus utilities', () => {
       document.body.innerHTML = '<div inert><button>x</button></div>';
       expect(isTabbable(document.querySelector('button'))).toBe(false);
     });
+
+    it('excludes elements that checkVisibility reports as hidden', () => {
+      document.body.innerHTML = '<button>ok</button>';
+      const button = document.body.firstElementChild as HTMLElement & { checkVisibility: () => boolean };
+
+      button.checkVisibility = () => false;
+
+      expect(isTabbable(button)).toBe(false);
+    });
   });
 
   describe('getTabbableElements', () => {

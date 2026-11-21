@@ -74,7 +74,7 @@ export default defineVitestConfig({
         test: {
           ...stencilTest,
           name: 'unit',
-          include: ['src/utils/**/*.spec.ts', 'src/services/**/*.spec.ts', 'src/**/*.unit.spec.ts'],
+          include: ['src/utils/**/*.spec.ts', 'src/services/**/*.spec.ts', 'src/**/*.unit.spec.ts', 'packages/hono-stripe-elements/src/**/*.spec.ts'],
         },
       },
       {
