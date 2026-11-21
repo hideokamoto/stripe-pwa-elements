@@ -36,7 +36,7 @@ stripe-pwa-elements/
 │   └── stripe-pwa-elements/   # Claude Code plugin (listed in .claude-plugin/marketplace.json)
 │       └── skills/stripe-pwa-elements/  # Agent Skill: a single SKILL.md
 ├── scripts/
-│   └── run-stencil-tests.sh   # Test runner invoked by .circleci/test-suites.yml
+│   └── run-vitest.sh          # Vitest runner invoked by .circleci/test-suites.yml
 ├── src/                        # Source code
 │   ├── components/            # Web components (9 components)
 │   │   ├── stripe-address-element/        # Address collection form
@@ -65,7 +65,7 @@ stripe-pwa-elements/
 │   │   ├── error.ts           # StripeAPIError and error handling utilities
 │   │   ├── i18n.ts            # Internationalization setup (i18next)
 │   │   ├── platform.ts        # Platform detection utilities
-│   │   ├── test-setup.ts      # Jest test environment setup
+│   │   ├── test-setup.ts      # Vitest test environment setup
 │   │   └── utils.ts           # General utilities (checkPlatform, etc.)
 │   ├── style/                 # Global styles
 │   │   ├── rest.scss          # CSS reset styles
@@ -75,8 +75,7 @@ stripe-pwa-elements/
 │   ├── index.html             # Development/demo page
 │   └── interfaces.ts          # TypeScript interfaces and types
 ├── stencil.config.ts          # Stencil build configuration
-├── stencil.config.unit.ts     # Stencil config for unit tests
-├── stencil.config.component.ts # Stencil config for component tests
+├── vitest.config.mts          # Vitest projects (unit + component)
 ├── tsconfig.json              # TypeScript configuration
 ├── eslint.config.js           # ESLint flat config (replaces .eslintrc.json)
 ├── .prettierrc.json           # Prettier configuration
@@ -140,7 +139,7 @@ Payment Request API button component (Apple Pay / Google Pay).
 ## Development Workflows
 
 ### Environment Requirements
-- Node.js >= 18.x (CI tests against Node.js 20 and 22 on CircleCI)
+- Node.js >= 22.12 (CI tests against Node.js 22 on CircleCI)
 - pnpm
 - Package manager: pnpm (package.json `packageManager`: pnpm@10.33.0)
 
@@ -165,16 +164,16 @@ pnpm run generate     # Generate new Stencil component
 - Build command generates documentation automatically
 
 ### Testing
-- Test framework: Jest + Puppeteer
+- Test framework: Vitest 5 + `@stencil/vitest` (mock-doc)
 - Test location: `src/components/*/test/` and `src/services/*.spec.ts` and `src/utils/*.spec.ts`
 - Test commands:
-  - `pnpm test` - Run all spec tests
-  - `pnpm run test:unit` - Run unit tests (services/utils) via `stencil.config.unit.ts`
-  - `pnpm run test:component` - Run component tests via `stencil.config.component.ts`
-  - `pnpm run test:e2e` - Run E2E tests
-  - `pnpm run test.watch` - Watch mode for all tests
+  - `pnpm test` - Run all Vitest projects
+  - `pnpm run test:unit` - Unit tests (services/utils/`*.unit.spec.ts`)
+  - `pnpm run test:component` - Component rendering tests (`*.spec.tsx`)
+  - `pnpm run test:e2e` / `pnpm run test:e2e:stripe` - Playwright Stripe e2e
+  - `pnpm run test.watch` - Watch mode
 - Tests include snapshots (stored in `__snapshots__/` directories)
-- Test environment configured in `src/utils/test-setup.ts`
+- Test environment configured in `src/utils/test-setup.ts` and `vitest.config.mts`
 
 ### CI/CD Pipeline
 - Platform: CircleCI
@@ -183,9 +182,9 @@ pnpm run generate     # Generate new Stencil component
 - Jobs:
   1. **lint** — Node 22: `pnpm run lint` + `pnpm audit --audit-level=moderate --prod`
   2. **type-check** — Node 22: `pnpm exec tsc --noEmit`
-  3. **test-unit** (matrix: Node 20, 22; parallelism 4; needs lint+type-check): `circleci testsuite run "unit tests"` → `scripts/run-stencil-tests.sh stencil.config.unit.ts`
-  4. **test-component** (matrix: Node 20, 22; parallelism 2; needs lint+type-check): `circleci testsuite run "component tests"` → `scripts/run-stencil-tests.sh stencil.config.component.ts`
-  5. **build** (matrix: Node 20, 22; needs lint+type-check): `pnpm run build`
+  3. **test-unit** (Node 22; parallelism 4; needs lint+type-check): `circleci testsuite run "unit tests"` → `scripts/run-vitest.sh unit`
+  4. **test-component** (Node 22; parallelism 2; needs lint+type-check): `circleci testsuite run "component tests"` → `scripts/run-vitest.sh component`
+  5. **build** (Node 22; needs lint+type-check): `pnpm run build`
 - Local equivalent: `pnpm run lint`, `pnpm exec tsc --noEmit`, `pnpm run test:unit`, `pnpm run test:component`, `pnpm run build`
 
 ### Publishing
@@ -510,6 +509,6 @@ Be aware of Stencil 4 breaking changes when making updates.
 
 ---
 
-**Last Updated**: 2026-10-12
+**Last Updated**: 2026-11-20
 **Stencil Version**: ^4.38.3 (pnpm-lock.yaml resolves 4.43.5)
-**Node Version (CI)**: 20 / 22 (CircleCI)
+**Node Version (CI)**: 22 (CircleCI)

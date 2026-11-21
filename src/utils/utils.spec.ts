@@ -28,7 +28,7 @@ describe('utils', () => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should resolve immediately if element already exists', async () => {

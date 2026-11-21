@@ -2,15 +2,15 @@ import { newSpecPage } from '@stencil/core/testing';
 import { StripePaymentRequestButton } from '../stripe-payment-request-button';
 
 // Mock loadStripe to avoid actual network calls
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() =>
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() =>
     Promise.resolve({
-      registerAppInfo: jest.fn(),
-      elements: jest.fn(() => ({})),
-      paymentRequest: jest.fn(() => ({
-        canMakePayment: jest.fn(() => Promise.resolve(null)),
-        on: jest.fn(),
-        show: jest.fn(),
+      registerAppInfo: vi.fn(),
+      elements: vi.fn(() => ({})),
+      paymentRequest: vi.fn(() => ({
+        canMakePayment: vi.fn(() => Promise.resolve(null)),
+        on: vi.fn(),
+        show: vi.fn(),
       })),
     }),
   ),
@@ -127,7 +127,7 @@ describe('stripe-payment-request-button', () => {
       });
 
       // Simulate having a mounted element
-      const mockUnmount = jest.fn();
+      const mockUnmount = vi.fn();
       (page.rootInstance as any).paymentRequestElement = { unmount: mockUnmount };
       (page.rootInstance as any).stripe = {};
 
@@ -174,7 +174,7 @@ describe('stripe-payment-request-button', () => {
         html: `<stripe-payment-request-button></stripe-payment-request-button>`,
       });
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       await page.rootInstance.setPaymentMethodEventHandler(handler);
 
       expect(page.rootInstance.paymentMethodEventHandler).toBe(handler);
@@ -186,7 +186,7 @@ describe('stripe-payment-request-button', () => {
         html: `<stripe-payment-request-button></stripe-payment-request-button>`,
       });
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       await page.rootInstance.setPaymentRequestShippingOptionEventHandler(handler);
 
       expect(page.rootInstance.shippingOptionEventHandler).toBe(handler);
@@ -198,7 +198,7 @@ describe('stripe-payment-request-button', () => {
         html: `<stripe-payment-request-button></stripe-payment-request-button>`,
       });
 
-      const handler = jest.fn();
+      const handler = vi.fn();
       await page.rootInstance.setPaymentRequestShippingAddressEventHandler(handler);
 
       expect(page.rootInstance.shippingAddressEventHandler).toBe(handler);

@@ -4,10 +4,10 @@ Thank you for your interest in contributing. This is a public open-source projec
 
 ## Environment
 
-- **Node.js** 18.x through 22.x recommended (CI tests on **20** and **22**)
+- **Node.js** 22.12+ required (`@stencil/vitest` / Vitest 5; CI tests on **22**)
 - **[pnpm](https://pnpm.io/)** — version pinned in `package.json` (`packageManager` field)
 
-On Node.js 18–24, enable [Corepack](https://nodejs.org/api/corepack.html) before the first `pnpm install`:
+On Node.js 22–24, enable [Corepack](https://nodejs.org/api/corepack.html) before the first `pnpm install`:
 
 ```bash
 corepack enable
@@ -32,7 +32,7 @@ pnpm install
 | Type check | `pnpm exec tsc --noEmit` |
 | Unit tests | `pnpm run test:unit` |
 | Component tests | `pnpm run test:component` |
-| All Jest specs | `pnpm test` |
+| All Vitest specs | `pnpm test` |
 | Production build | `pnpm run build` |
 | Default agent gate (not full CI) | `pnpm run verify:agent` |
 

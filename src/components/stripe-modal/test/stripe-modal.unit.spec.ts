@@ -25,7 +25,7 @@ describe('stripe-modal unit tests', () => {
         const component = new StripeModal();
 
         component.close = {
-          emit: jest.fn(),
+          emit: vi.fn(),
         };
         await component.closeModal();
         expect(component.open).toEqual(false);
@@ -35,7 +35,7 @@ describe('stripe-modal unit tests', () => {
         const component = new StripeModal();
 
         component.open = true;
-        const mockEmitter = jest.fn();
+        const mockEmitter = vi.fn();
 
         component.close = {
           emit: mockEmitter,
@@ -48,7 +48,7 @@ describe('stripe-modal unit tests', () => {
     describe('#onOpenChange', () => {
       it('should emit close event once and hide the modal when open becomes false', () => {
         const component = new StripeModal();
-        const mockEmitter = jest.fn();
+        const mockEmitter = vi.fn();
 
         component.close = {
           emit: mockEmitter,
@@ -65,11 +65,11 @@ describe('stripe-modal unit tests', () => {
     describe('#toggleModal', () => {
       describe('Props open=true', () => {
         let component = new StripeModal();
-        let mockEmitter = jest.fn();
+        let mockEmitter = vi.fn();
 
         beforeEach(() => {
           component = new StripeModal();
-          mockEmitter = jest.fn();
+          mockEmitter = vi.fn();
           component.open = true;
           component.close = {
             emit: mockEmitter,
@@ -89,11 +89,11 @@ describe('stripe-modal unit tests', () => {
 
       describe('Props open=false', () => {
         let component = new StripeModal();
-        let mockEmitter = jest.fn();
+        let mockEmitter = vi.fn();
 
         beforeEach(() => {
           component = new StripeModal();
-          mockEmitter = jest.fn();
+          mockEmitter = vi.fn();
           component.open = false;
           component.close = {
             emit: mockEmitter,
@@ -117,7 +117,7 @@ describe('stripe-modal unit tests', () => {
     it('should handle rapid open/close toggles', async () => {
       const component = new StripeModal();
       component.close = {
-        emit: jest.fn(),
+        emit: vi.fn(),
       };
 
       component.open = false;
@@ -136,7 +136,7 @@ describe('stripe-modal unit tests', () => {
 
     it('should handle multiple closeModal calls without emitting close directly', async () => {
       const component = new StripeModal();
-      const mockEmitter = jest.fn();
+      const mockEmitter = vi.fn();
       component.close = {
         emit: mockEmitter,
       };

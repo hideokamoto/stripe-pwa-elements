@@ -1,27 +1,28 @@
 import { AddressElementManager } from './address-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripeAddressElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('AddressElementManager', () => {
   let manager: AddressElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockAddressElement: jest.Mocked<StripeAddressElement>;
+  let mockAddressElement: Mocked<StripeAddressElement>;
 
   beforeEach(() => {
     // Create mock address element
     mockAddressElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
-      getValue: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
+      getValue: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockAddressElement),
+      create: vi.fn().mockReturnValue(mockAddressElement),
     };
 
     // Create mock stripe service
@@ -35,13 +36,13 @@ describe('AddressElementManager', () => {
         elements: mockElements,
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new AddressElementManager(mockStripeService);

@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const componentsRoot = join(__dirname, '..', 'components');
+const componentsRoot = join(dirname(fileURLToPath(import.meta.url)), '..', 'components');
 
 const SHADOW_TRUE = /shadow:\s*true/;
 const COMPONENT_FILE = /^\s*tag:\s*'([^']+)'/;

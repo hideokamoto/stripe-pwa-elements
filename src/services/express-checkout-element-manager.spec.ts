@@ -1,27 +1,28 @@
 import { ExpressCheckoutElementManager } from './express-checkout-element-manager';
 import type { IStripeService, ExpressCheckoutElementEventHandlers } from './interfaces';
 import type { StripeExpressCheckoutElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('ExpressCheckoutElementManager', () => {
   let manager: ExpressCheckoutElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockExpressCheckoutElement: jest.Mocked<StripeExpressCheckoutElement>;
+  let mockExpressCheckoutElement: Mocked<StripeExpressCheckoutElement>;
 
   beforeEach(() => {
     // Create mock express checkout element
     mockExpressCheckoutElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockExpressCheckoutElement),
-      update: jest.fn(),
+      create: vi.fn().mockReturnValue(mockExpressCheckoutElement),
+      update: vi.fn(),
     };
 
     // Create mock stripe service
@@ -35,13 +36,13 @@ describe('ExpressCheckoutElementManager', () => {
         elements: mockElements,
         isCheckoutSession: false,
       },
-      initialize: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new ExpressCheckoutElementManager(mockStripeService);
@@ -174,7 +175,7 @@ describe('ExpressCheckoutElementManager', () => {
     });
 
     it('should set up onConfirm event handler when provided', async () => {
-      const onConfirm = jest.fn();
+      const onConfirm = vi.fn();
       const eventHandlers: ExpressCheckoutElementEventHandlers = { onConfirm };
 
       await manager.initialize(containerElement, { mode: 'payment' }, eventHandlers);
@@ -183,7 +184,7 @@ describe('ExpressCheckoutElementManager', () => {
     });
 
     it('should set up onClick event handler when provided', async () => {
-      const onClick = jest.fn();
+      const onClick = vi.fn();
       const eventHandlers: ExpressCheckoutElementEventHandlers = { onClick };
 
       await manager.initialize(containerElement, { mode: 'payment' }, eventHandlers);
@@ -192,7 +193,7 @@ describe('ExpressCheckoutElementManager', () => {
     });
 
     it('should set up onCancel event handler when provided', async () => {
-      const onCancel = jest.fn();
+      const onCancel = vi.fn();
       const eventHandlers: ExpressCheckoutElementEventHandlers = { onCancel };
 
       await manager.initialize(containerElement, { mode: 'payment' }, eventHandlers);
@@ -201,7 +202,7 @@ describe('ExpressCheckoutElementManager', () => {
     });
 
     it('should set up onShippingAddressChange event handler when provided', async () => {
-      const onShippingAddressChange = jest.fn();
+      const onShippingAddressChange = vi.fn();
       const eventHandlers: ExpressCheckoutElementEventHandlers = { onShippingAddressChange };
 
       await manager.initialize(containerElement, { mode: 'payment' }, eventHandlers);
@@ -210,7 +211,7 @@ describe('ExpressCheckoutElementManager', () => {
     });
 
     it('should set up onShippingRateChange event handler when provided', async () => {
-      const onShippingRateChange = jest.fn();
+      const onShippingRateChange = vi.fn();
       const eventHandlers: ExpressCheckoutElementEventHandlers = { onShippingRateChange };
 
       await manager.initialize(containerElement, { mode: 'payment' }, eventHandlers);
@@ -248,7 +249,7 @@ describe('ExpressCheckoutElementManager', () => {
 
   describe('update', () => {
     it('should warn when element not initialized', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
       manager.update({ amount: 2000 });
 

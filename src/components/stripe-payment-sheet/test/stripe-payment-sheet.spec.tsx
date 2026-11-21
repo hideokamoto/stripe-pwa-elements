@@ -4,12 +4,13 @@ import { StripeModal } from '../../stripe-modal/stripe-modal';
 import type { IStripeService, IPaymentElementManager, IAddressElementManager, ILinkAuthenticationElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
 import { i18n } from '../../../utils/i18n';
+import type { Mock, Mocked } from 'vitest';
 
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(),
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(),
 }));
 
-jest.mock('../../../utils/i18n', () => ({
+vi.mock('../../../utils/i18n', () => ({
   i18n: {
     t: (key: string) => key,
   },
@@ -17,6 +18,11 @@ jest.mock('../../../utils/i18n', () => ({
 
 const PI_SECRET = 'pi_3Mtw_secret_abc';
 const SETI_SECRET = 'seti_1Mm8_secret_xyz';
+
+/** mock-doc hosts are not instances of the wrapped HTMLElement constructor. */
+const anyHostElement = expect.toSatisfy(
+  (value: unknown) => value != null && typeof value === 'object' && (value as Node).nodeType === 1 && typeof (value as Element).tagName === 'string',
+);
 
 const flush = async (page: SpecPage) => {
   for (let i = 0; i < 5; i++) {
@@ -26,19 +32,19 @@ const flush = async (page: SpecPage) => {
 };
 
 describe('stripe-payment-sheet', () => {
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockPaymentElementManager: jest.Mocked<IPaymentElementManager>;
-  let stripe: { confirmPayment: jest.Mock; confirmSetup: jest.Mock };
-  let elements: { update: jest.Mock; submit: jest.Mock };
-  let addressManagers: jest.Mocked<IAddressElementManager>[];
+  let mockStripeService: Mocked<IStripeService>;
+  let mockPaymentElementManager: Mocked<IPaymentElementManager>;
+  let stripe: { confirmPayment: Mock; confirmSetup: Mock };
+  let elements: { update: Mock; submit: Mock };
+  let addressManagers: Mocked<IAddressElementManager>[];
   let addressValue: { complete: boolean; isNewAddress: boolean; value: object };
-  let mockLinkAuthenticationManager: jest.Mocked<ILinkAuthenticationElementManager>;
+  let mockLinkAuthenticationManager: Mocked<ILinkAuthenticationElementManager>;
 
   /** The Address Element manager that was initialized with the given mode */
   const addressManager = (mode: 'billing' | 'shipping') => addressManagers.find(m => m.initialize.mock.calls.some(([, options]) => options?.mode === mode));
 
   beforeEach(() => {
-    jest.spyOn(i18n, 't');
+    vi.spyOn(i18n, 't');
     addressValue = {
       complete: true,
       isNewAddress: true,
@@ -49,14 +55,14 @@ describe('stripe-payment-sheet', () => {
       },
     };
     addressManagers = [];
-    jest.spyOn(factoryModule.serviceFactory, 'createAddressElementManager').mockImplementation(() => {
+    vi.spyOn(factoryModule.serviceFactory, 'createAddressElementManager').mockImplementation(() => {
       const manager = {
-        getState: jest.fn().mockReturnValue({ errorMessage: '', isComplete: false }),
-        initialize: jest.fn().mockResolvedValue({}),
-        getElement: jest.fn(() => ({ getValue: jest.fn().mockResolvedValue(addressValue) })),
-        setError: jest.fn(),
-        clearError: jest.fn(),
-        unmount: jest.fn(),
+        getState: vi.fn().mockReturnValue({ errorMessage: '', isComplete: false }),
+        initialize: vi.fn().mockResolvedValue({}),
+        getElement: vi.fn(() => ({ getValue: vi.fn().mockResolvedValue(addressValue) })),
+        setError: vi.fn(),
+        clearError: vi.fn(),
+        unmount: vi.fn(),
       } as any;
 
       addressManagers.push(manager);
@@ -64,49 +70,49 @@ describe('stripe-payment-sheet', () => {
       return manager;
     });
     mockLinkAuthenticationManager = {
-      getState: jest.fn().mockReturnValue({ errorMessage: '', email: 'jenny@example.com' }),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      initialize: jest.fn().mockResolvedValue({}),
-      getElement: jest.fn(),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      getState: vi.fn().mockReturnValue({ errorMessage: '', email: 'jenny@example.com' }),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      initialize: vi.fn().mockResolvedValue({}),
+      getElement: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
-    jest.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createLinkAuthenticationElementManager').mockReturnValue(mockLinkAuthenticationManager);
 
     stripe = {
-      confirmPayment: jest.fn().mockResolvedValue({ paymentIntent: { id: 'pi_3Mtw', status: 'succeeded' } }),
-      confirmSetup: jest.fn().mockResolvedValue({ setupIntent: { id: 'seti_1Mm8', status: 'succeeded' } }),
+      confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: 'pi_3Mtw', status: 'succeeded' } }),
+      confirmSetup: vi.fn().mockResolvedValue({ setupIntent: { id: 'seti_1Mm8', status: 'succeeded' } }),
     };
-    elements = { update: jest.fn().mockResolvedValue(undefined), submit: jest.fn().mockResolvedValue({ selectedPaymentMethod: 'card' }) };
+    elements = { update: vi.fn().mockResolvedValue(undefined), submit: vi.fn().mockResolvedValue({ selectedPaymentMethod: 'card' }) };
     mockStripeService = {
       state: { loadStripeStatus: '', applicationName: 'stripe-pwa-elements' },
-      initialize: jest.fn().mockImplementation(async () => {
+      initialize: vi.fn().mockImplementation(async () => {
         mockStripeService.state.loadStripeStatus = 'success';
       }),
-      initializeWithCheckoutSession: jest.fn(),
-      onChange: jest.fn().mockReturnValue(jest.fn()),
-      getStripe: jest.fn(() => stripe),
-      getElements: jest.fn(() => elements),
-      getCheckout: jest.fn(),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initializeWithCheckoutSession: vi.fn(),
+      onChange: vi.fn().mockReturnValue(vi.fn()),
+      getStripe: vi.fn(() => stripe),
+      getElements: vi.fn(() => elements),
+      getCheckout: vi.fn(),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
     mockPaymentElementManager = {
-      getState: jest.fn().mockReturnValue({ errorMessage: '' }),
-      initialize: jest.fn().mockResolvedValue({}),
-      getElement: jest.fn(),
-      setError: jest.fn(),
-      clearError: jest.fn(),
-      unmount: jest.fn(),
+      getState: vi.fn().mockReturnValue({ errorMessage: '' }),
+      initialize: vi.fn().mockResolvedValue({}),
+      getElement: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
+      unmount: vi.fn(),
     } as any;
 
-    jest.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
-    jest.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
+    vi.spyOn(factoryModule.serviceFactory, 'createStripeService').mockReturnValue(mockStripeService);
+    vi.spyOn(factoryModule.serviceFactory, 'createPaymentElementManager').mockReturnValue(mockPaymentElementManager);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   /**
@@ -197,7 +203,7 @@ describe('stripe-payment-sheet', () => {
     });
 
     it('warns once about options that have no effect on the web', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
       await setup({}, { merchantDisplayName: 'Example', enableApplePay: true, customerId: 'cus_123', withZipCode: true });
 
@@ -263,7 +269,7 @@ describe('stripe-payment-sheet', () => {
       const billing = addressManager('billing');
 
       expect(billing).toBeDefined();
-      expect(billing.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { mode: 'billing', defaultValues: {} });
+      expect(billing.initialize).toHaveBeenCalledWith(anyHostElement, { mode: 'billing', defaultValues: {} });
       expect(billing.initialize.mock.calls[0][0].querySelector('#address-element')).not.toBeNull();
       expect(mockPaymentElementManager.initialize).toHaveBeenCalledWith(sheet, expect.objectContaining({ fields: { billingDetails: { address: 'never' } } }));
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
@@ -304,7 +310,7 @@ describe('stripe-payment-sheet', () => {
     it('shows the email element for email always and passes the collected email at confirm', async () => {
       const { sheet } = await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' } });
 
-      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), {});
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(anyHostElement, {});
       expect(mockLinkAuthenticationManager.initialize.mock.calls[0][0].querySelector('#link-authentication-element')).not.toBeNull();
       expect(mockPaymentElementManager.initialize).toHaveBeenCalledWith(sheet, expect.objectContaining({ fields: { billingDetails: { email: 'never' } } }));
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
@@ -327,7 +333,7 @@ describe('stripe-payment-sheet', () => {
       mockLinkAuthenticationManager.getState.mockReturnValue({ errorMessage: '', email: undefined });
       await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' }, defaultBillingDetails: { email: 'jenny@example.com' } });
 
-      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { defaultValues: { email: 'jenny@example.com' } });
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(anyHostElement, { defaultValues: { email: 'jenny@example.com' } });
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
         expect.objectContaining({ confirmParams: expect.objectContaining({ payment_method_data: { billing_details: { email: 'jenny@example.com' } } }) }),
       );
@@ -339,7 +345,7 @@ describe('stripe-payment-sheet', () => {
       context.sheet.present();
       await flush(context.page);
 
-      const getValue = jest.fn().mockResolvedValue(addressValue);
+      const getValue = vi.fn().mockResolvedValue(addressValue);
 
       addressManager('billing').getElement.mockReturnValue({ getValue } as any);
 
@@ -372,7 +378,7 @@ describe('stripe-payment-sheet', () => {
       const billing = addressManager('billing');
       const shipping = addressManager('shipping');
 
-      expect(shipping.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { mode: 'shipping', defaultValues: { name: 'Jenny Rosen', address: { country: 'JP' } } });
+      expect(shipping.initialize).toHaveBeenCalledWith(anyHostElement, { mode: 'shipping', defaultValues: { name: 'Jenny Rosen', address: { country: 'JP' } } });
       expect(shipping.initialize.mock.calls[0][0].querySelector('#address-element')).not.toBeNull();
       expect(shipping.initialize.mock.calls[0][0]).not.toBe(billing.initialize.mock.calls[0][0]);
     });
@@ -549,12 +555,12 @@ describe('stripe-payment-sheet', () => {
     // Stripe does not document the format of a Checkout Session client secret; the sheet must not depend on it
     const CHECKOUT_SECRET = 'cs_test_a1_secret_zzz';
     const SESSION_RESULT = { type: 'success', session: { id: 'cs_test_a1' } };
-    let checkoutConfirm: jest.Mock;
-    let checkout: { loadActions: jest.Mock };
+    let checkoutConfirm: Mock;
+    let checkout: { loadActions: Mock };
 
     beforeEach(() => {
-      checkoutConfirm = jest.fn().mockResolvedValue(SESSION_RESULT);
-      checkout = { loadActions: jest.fn().mockResolvedValue({ type: 'success', actions: { confirm: checkoutConfirm } }) };
+      checkoutConfirm = vi.fn().mockResolvedValue(SESSION_RESULT);
+      checkout = { loadActions: vi.fn().mockResolvedValue({ type: 'success', actions: { confirm: checkoutConfirm } }) };
       mockStripeService.initializeWithCheckoutSession.mockImplementation(async () => {
         mockStripeService.state.loadStripeStatus = 'success';
       });
@@ -591,7 +597,7 @@ describe('stripe-payment-sheet', () => {
     };
 
     it('loads the Checkout Session and mounts the Payment Element with the options it supports', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const { sheet, eventTypes } = await setupCheckout({ merchantDisplayName: 'Example Inc.', paymentMethodLayout: 'vertical', style: 'alwaysDark' });
 
       expect(warn).toHaveBeenCalledTimes(1);
@@ -608,7 +614,7 @@ describe('stripe-payment-sheet', () => {
     });
 
     it('does not mount the extra billing elements, warns about the intent-only options, and does not call elements.submit()', async () => {
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const { page, sheet, submit, eventTypes } = await setupCheckout({
         billingDetailsCollectionConfiguration: { email: 'always', address: 'full' },
         shippingDetails: { name: 'Jenny', address: { country: 'JP' } },

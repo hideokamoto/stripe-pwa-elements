@@ -1,7 +1,7 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`stripe-card-element component tests Rendering api key and zip code props 1`] = `
-<stripe-card-element class="undefined" publishable-key="pk_test_xxx" zip="false">
+exports[`stripe-card-element component tests > Rendering > api key and zip code props 1`] = `
+<stripe-card-element zip="false" publishable-key="pk_test_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-card-element">
       <div class="stripe-heading">
@@ -13,25 +13,25 @@ exports[`stripe-card-element component tests Rendering api key and zip code prop
           Card information
         </div>
       </div>
-      <div class="card payment-info visible">
+      <div class="payment-info card visible">
         <fieldset class="stripe-input-box">
           <div>
             <label>
               <div id="card-number"></div>
             </label>
           </div>
-          <div class="stripe-input-column" style="display: flex;">
-            <label style="width: 50%;">
+          <div class="stripe-input-column">
+            <label>
               <div id="card-expiry"></div>
             </label>
-            <label style="width: 50%;">
+            <label>
               <div id="card-cvc"></div>
             </label>
           </div>
         </fieldset>
       </div>
-      <div class="stripe-element-errors" id="card-errors"></div>
-      <div style="margin-top: 32px;">
+      <div id="card-errors" class="stripe-element-errors"></div>
+      <div>
         <button type="submit">
           Pay
         </button>
@@ -41,8 +41,8 @@ exports[`stripe-card-element component tests Rendering api key and zip code prop
 </stripe-card-element>
 `;
 
-exports[`stripe-card-element component tests Rendering should load stripe after setting the publishable-key (snapshot) 1`] = `
-<stripe-card-element '="" class="undefined" publishable-key="yyyy" zip="false">
+exports[`stripe-card-element component tests > Rendering > should load stripe after setting the publishable-key (snapshot) 1`] = `
+<stripe-card-element zip="false" ' class="hydrated undefined" publishable-key="yyyy">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-card-element">
       <div class="stripe-heading">
@@ -54,25 +54,25 @@ exports[`stripe-card-element component tests Rendering should load stripe after 
           Card information
         </div>
       </div>
-      <div class="card payment-info visible">
+      <div class="payment-info card visible">
         <fieldset class="stripe-input-box">
           <div>
             <label>
               <div id="card-number"></div>
             </label>
           </div>
-          <div class="stripe-input-column" style="display: flex;">
-            <label style="width: 50%;">
+          <div class="stripe-input-column">
+            <label>
               <div id="card-expiry"></div>
             </label>
-            <label style="width: 50%;">
+            <label>
               <div id="card-cvc"></div>
             </label>
           </div>
         </fieldset>
       </div>
-      <div class="stripe-element-errors" id="card-errors"></div>
-      <div style="margin-top: 32px;">
+      <div id="card-errors" class="stripe-element-errors"></div>
+      <div>
         <button type="submit">
           Pay
         </button>
@@ -82,8 +82,8 @@ exports[`stripe-card-element component tests Rendering should load stripe after 
 </stripe-card-element>
 `;
 
-exports[`stripe-card-element component tests Rendering with the api key 1`] = `
-<stripe-card-element class="undefined" publishable-key="pk_test_xxx">
+exports[`stripe-card-element component tests > Rendering > with the api key 1`] = `
+<stripe-card-element publishable-key="pk_test_xxx" class="hydrated undefined">
   <div class="stripe-payment-sheet-wrap">
     <form id="stripe-card-element">
       <div class="stripe-heading">
@@ -95,39 +95,39 @@ exports[`stripe-card-element component tests Rendering with the api key 1`] = `
           Card information
         </div>
       </div>
-      <div class="card payment-info visible">
+      <div class="payment-info card visible">
         <fieldset class="stripe-input-box">
           <div>
             <label>
               <div id="card-number"></div>
             </label>
           </div>
-          <div class="stripe-input-column" style="display: flex;">
-            <label style="width: 50%;">
+          <div class="stripe-input-column">
+            <label>
               <div id="card-expiry"></div>
             </label>
-            <label style="width: 50%;">
+            <label>
               <div id="card-cvc"></div>
             </label>
           </div>
         </fieldset>
       </div>
-      <div class="stripe-element-errors" id="card-errors"></div>
-      <div style="margin-top: 1.5rem;">
+      <div id="card-errors" class="stripe-element-errors"></div>
+      <div>
         <div class="stripe-section-title">
           Postal Code
         </div>
       </div>
-      <div class="card payment-info visible">
+      <div class="payment-info card visible">
         <fieldset class="stripe-input-box">
           <div>
             <label>
-              <input class="StripeElement" id="zip" inputmode="numeric" name="zip" placeholder="Postal Code" type="text" value="" style="width: 100%;">
+              <input id="zip" name="zip" type="text" inputmode="numeric" class="StripeElement" placeholder="Postal Code" value>
             </label>
           </div>
         </fieldset>
       </div>
-      <div style="margin-top: 32px;">
+      <div>
         <button type="submit">
           Pay
         </button>

@@ -1,9 +1,9 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`stripe-card-element-modal rendering test should render with all props 1`] = `
-<stripe-card-element-modal application-name="test-app" button-label="Test Button" intent-client-secret="pi_xxx" intent-type="setup" open="true" publishable-key="pk_test_xxx" sheet-title="Test Title" should-use-default-form-submit-action="false" show-close-button="false" show-label="true" stripe-account="acct_xxx" zip="false">
-  <stripe-modal open="">
-    <stripe-card-element applicationname="test-app" buttonlabel="Test Button" intentclientsecret="pi_xxx" intenttype="setup" publishablekey="pk_test_xxx" sheettitle="Test Title" showlabel=""></stripe-card-element>
+exports[`stripe-card-element-modal > rendering test > should render with all props 1`] = `
+<stripe-card-element-modal publishable-key="pk_test_xxx" stripe-account="acct_xxx" application-name="test-app" show-label="true" sheet-title="Test Title" button-label="Test Button" intent-client-secret="pi_xxx" should-use-default-form-submit-action="false" intent-type="setup" show-close-button="false" zip="false" open="true" class="hydrated">
+  <stripe-modal open>
+    <stripe-card-element showlabel publishablekey="pk_test_xxx" intentclientsecret="pi_xxx" intenttype="setup" buttonlabel="Test Button" sheettitle="Test Title" applicationname="test-app"></stripe-card-element>
   </stripe-modal>
 </stripe-card-element-modal>
 `;

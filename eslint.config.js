@@ -141,7 +141,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2020,
-        ...globals.jest,
+        ...globals.vitest,
         // Stencil custom element types
         HTMLStripeAddressElementElement: 'readonly',
         HTMLStripeCardElementElement: 'readonly',

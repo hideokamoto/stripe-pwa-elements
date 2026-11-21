@@ -13,7 +13,7 @@ const RETURN_URL = 'https://example.com/return';
 const RETURN_URL_CONFLICT_MESSAGE =
   'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
 
-const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: jest.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
+const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: vi.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
 
 describe('toCheckoutPaymentElementOptions', () => {
   it('returns no options without payment sheet options', () => {
@@ -116,7 +116,7 @@ describe('toCheckoutElementsOptions', () => {
 
 describe('confirmCheckoutSessionSheet', () => {
   it('confirms through the Checkout actions without redirecting when not required', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'success', session: { id: 'cs_test_a1' } });
+    const confirm = vi.fn().mockResolvedValue({ type: 'success', session: { id: 'cs_test_a1' } });
     const checkout = mockCheckout({ type: 'success', actions: { confirm } });
 
     await expect(confirmCheckoutSessionSheet(checkout, RETURN_URL)).resolves.toEqual({ type: 'success', session: { id: 'cs_test_a1' } });
@@ -124,7 +124,7 @@ describe('confirmCheckoutSessionSheet', () => {
   });
 
   it('passes the email when given', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'success', session: {} });
+    const confirm = vi.fn().mockResolvedValue({ type: 'success', session: {} });
 
     await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL, 'jenny@example.com');
 
@@ -132,7 +132,7 @@ describe('confirmCheckoutSessionSheet', () => {
   });
 
   it('retries without returnUrl when a session created with return_url rejects it with a thrown error', async () => {
-    const confirm = jest.fn().mockRejectedValueOnce(new Error(RETURN_URL_CONFLICT_MESSAGE)).mockResolvedValueOnce({ type: 'success', session: {} });
+    const confirm = vi.fn().mockRejectedValueOnce(new Error(RETURN_URL_CONFLICT_MESSAGE)).mockResolvedValueOnce({ type: 'success', session: {} });
 
     await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL, 'jenny@example.com');
 
@@ -142,8 +142,7 @@ describe('confirmCheckoutSessionSheet', () => {
   });
 
   it('retries without returnUrl when the conflict is returned as an error result', async () => {
-    const confirm = jest
-      .fn()
+    const confirm = vi.fn()
       .mockResolvedValueOnce({ type: 'error', error: { code: null, message: RETURN_URL_CONFLICT_MESSAGE } })
       .mockResolvedValueOnce({ type: 'success', session: {} });
 
@@ -154,15 +153,14 @@ describe('confirmCheckoutSessionSheet', () => {
 
   it('does not retry a thrown error that is not the return_url conflict', async () => {
     const networkError = new Error('Network error');
-    const confirm = jest.fn().mockRejectedValue(networkError);
+    const confirm = vi.fn().mockRejectedValue(networkError);
 
     await expect(confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL)).rejects.toBe(networkError);
     expect(confirm).toHaveBeenCalledTimes(1);
   });
 
   it('throws a recoverable card_error when the payment failed', async () => {
-    const confirm = jest
-      .fn()
+    const confirm = vi.fn()
       .mockResolvedValue({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'insufficient_funds' } } });
     const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL).catch(e => e);
 
@@ -171,7 +169,7 @@ describe('confirmCheckoutSessionSheet', () => {
   });
 
   it('throws a recoverable error for other confirm errors', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'error', error: { code: null, message: 'Your payment details are incomplete.' } });
+    const confirm = vi.fn().mockResolvedValue({ type: 'error', error: { code: null, message: 'Your payment details are incomplete.' } });
     const error = await confirmCheckoutSessionSheet(mockCheckout({ type: 'success', actions: { confirm } }), RETURN_URL).catch(e => e);
 
     expect(error).toMatchObject({ type: 'api_error', message: 'Your payment details are incomplete.' });
@@ -194,13 +192,13 @@ describe('confirmCheckoutSessionSheet', () => {
      */
     const actionsWithStatus = (result: unknown, before: object, after: object = before) => {
       let status = before;
-      const confirm = jest.fn().mockImplementation(async () => {
+      const confirm = vi.fn().mockImplementation(async () => {
         status = after;
 
         return result;
       });
 
-      return { confirm, actions: { confirm, getSession: jest.fn(() => ({ id: 'cs_test_a1', status })) } };
+      return { confirm, actions: { confirm, getSession: vi.fn(() => ({ id: 'cs_test_a1', status })) } };
     };
 
     it.each([

@@ -1,13 +1,9 @@
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { i18n } from './utils/i18n';
 
-// The repo has no @types/node; Jest runs specs as CommonJS, so `require` and `__dirname` exist at runtime.
-declare const require: (id: string) => any;
-declare const __dirname: string;
-
-const { readFileSync, readdirSync, existsSync } = require('fs');
-const { basename, dirname, join } = require('path');
-
-const repoRoot = join(__dirname, '..');
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const skillName = 'stripe-pwa-elements';
 const skillDir = join(repoRoot, 'plugins', 'stripe-pwa-elements', 'skills', skillName);
 const read = (path: string): string => readFileSync(path, 'utf8');

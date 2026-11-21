@@ -99,7 +99,7 @@ jobs:
   # data for future runs.
   #
   # test-suites.yml suite: "unit tests"
-  # Files: src/(utils|services)/**.spec.ts and **.unit.spec.ts  (19 today)
+  # Files: src/(utils|services)/**.spec.ts and **.unit.spec.ts
   test-unit:
     parameters:
       node-version:
@@ -114,13 +114,10 @@ jobs:
       - run:
           name: Unit tests — CircleCI Smarter Testing
           command: |
-            mkdir -p test-reports/unit coverage
+            mkdir -p test-reports/unit
             circleci testsuite run "unit tests"
       - store_test_results:
           path: test-reports
-      - store_artifacts:
-          path: coverage
-          destination: coverage-node<< parameters.node-version >>
 
   # ── Component (rendering) tests ────────────────────────────────────────────
   #
@@ -191,15 +188,14 @@ workflows:
       - type-check
       - model-check
 
-      # Tests and build run on both active LTS lines (Node 20 & 22).
-      # Each job fans out once per node-version via the matrix.
+      # Tests and build run on Node 22 (required by @stencil/vitest / Vitest 5).
       # Test jobs additionally fan out across parallel containers; within
       # each container `circleci testsuite run` narrows work via Smarter
       # Testing (selective execution + dynamic splitting + failed-only reruns).
       - test-unit:
           matrix:
             parameters:
-              node-version: ["20", "22"]
+              node-version: ["22"]
           requires:
             - lint
             - type-check
@@ -207,7 +203,7 @@ workflows:
       - test-component:
           matrix:
             parameters:
-              node-version: ["20", "22"]
+              node-version: ["22"]
           requires:
             - lint
             - type-check
@@ -215,7 +211,7 @@ workflows:
       - build:
           matrix:
             parameters:
-              node-version: ["20", "22"]
+              node-version: ["22"]
           requires:
             - lint
             - type-check

@@ -1,27 +1,28 @@
 import { CurrencySelectorElementManager } from './currency-selector-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripeCurrencySelectorElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('CurrencySelectorElementManager', () => {
   let manager: CurrencySelectorElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockCurrencySelectorElement: jest.Mocked<StripeCurrencySelectorElement>;
+  let mockCurrencySelectorElement: Mocked<StripeCurrencySelectorElement>;
 
   beforeEach(() => {
     // Create mock currency selector element
     mockCurrencySelectorElement = {
-      mount: jest.fn(),
-      unmount: jest.fn(),
-      on: jest.fn(),
-      update: jest.fn(),
-      destroy: jest.fn(),
-      getValue: jest.fn(),
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      on: vi.fn(),
+      update: vi.fn(),
+      destroy: vi.fn(),
+      getValue: vi.fn(),
     } as any;
 
     // Create mock elements
     mockElements = {
-      create: jest.fn().mockReturnValue(mockCurrencySelectorElement),
+      create: vi.fn().mockReturnValue(mockCurrencySelectorElement),
     };
 
     // Create mock stripe service
@@ -34,12 +35,12 @@ describe('CurrencySelectorElementManager', () => {
         stripe: {} as any,
         elements: mockElements,
       },
-      initialize: jest.fn(),
-      onChange: jest.fn(),
-      getStripe: jest.fn(),
-      getElements: jest.fn().mockReturnValue(mockElements),
-      reset: jest.fn(),
-      dispose: jest.fn(),
+      initialize: vi.fn(),
+      onChange: vi.fn(),
+      getStripe: vi.fn(),
+      getElements: vi.fn().mockReturnValue(mockElements),
+      reset: vi.fn(),
+      dispose: vi.fn(),
     } as any;
 
     manager = new CurrencySelectorElementManager(mockStripeService);

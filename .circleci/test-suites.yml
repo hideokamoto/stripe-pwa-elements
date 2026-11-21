@@ -1,17 +1,17 @@
 ---
-# Unit tests – files matched by stencil.config.unit.ts testRegex:
+# Unit tests – Vitest project `unit`:
 #   src/(utils|services)/**.spec.ts  and  **.unit.spec.ts
 name: unit tests
 discover: find src -type f \( -name "*.unit.spec.ts" -o \( -path "*/utils/*" -name "*.spec.ts" \) -o \( -path "*/services/*" -name "*.spec.ts" \) \)
-run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" CIRCLECI_COVERAGE="coverage/cov-$CIRCLE_NODE_INDEX.json" ./scripts/run-stencil-tests.sh stencil.config.unit.ts << test.atoms >>
+run: VITEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-vitest.sh unit << test.atoms >>
 outputs:
   junit: test-reports/unit/results.xml
 
 ---
-# Component rendering tests – files matched by stencil.config.component.ts testRegex:
+# Component rendering tests – Vitest project `component`:
 #   **.spec.tsx
 name: component tests
 discover: find src -type f -name "*.spec.tsx"
-run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-stencil-tests.sh stencil.config.component.ts << test.atoms >>
+run: VITEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" ./scripts/run-vitest.sh component << test.atoms >>
 outputs:
   junit: test-reports/component/results.xml

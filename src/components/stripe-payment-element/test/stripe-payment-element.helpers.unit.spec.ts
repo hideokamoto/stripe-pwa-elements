@@ -1,18 +1,18 @@
 import type { StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 import { confirmCheckoutSession, isSubmitButtonDisabled } from '../stripe-payment-element.helpers';
+import type { Mock } from 'vitest';
 
 const RETURN_URL = 'https://example.com/return';
 
-const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: jest.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
+const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: vi.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
 
 /** Actions of an open session; `getSession` reports `open` unless a test replaces it */
-const openSessionActions = (confirm: jest.Mock, getSession?: jest.Mock) => ({
+const openSessionActions = (confirm: Mock, getSession?: Mock) => ({
   confirm,
-  getSession: getSession ?? jest.fn(() => ({ id: 'cs_test_a1', status: { type: 'open' } })),
+  getSession: getSession ?? vi.fn(() => ({ id: 'cs_test_a1', status: { type: 'open' } })),
 });
 
-const RETURN_URL_CONFLICT_MESSAGE =
-  'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
+const RETURN_URL_CONFLICT_MESSAGE = 'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
 
 /**
  * Unit tests for isSubmitButtonDisabled
@@ -56,7 +56,7 @@ describe('isSubmitButtonDisabled', () => {
 
 describe('confirmCheckoutSession', () => {
   it('confirms with returnUrl and email on the first attempt', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'success', session: { id: 'cs_test_a1' } });
+    const confirm = vi.fn().mockResolvedValue({ type: 'success', session: { id: 'cs_test_a1' } });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 
     const result = await confirmCheckoutSession(checkout, RETURN_URL, 'jenny@example.com');
@@ -67,7 +67,7 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('omits returnUrl and email when they are not given', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'success', session: {} });
+    const confirm = vi.fn().mockResolvedValue({ type: 'success', session: {} });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 
     await confirmCheckoutSession(checkout, '');
@@ -76,7 +76,7 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('retries without returnUrl when a session created with return_url rejects it with a thrown error', async () => {
-    const confirm = jest.fn().mockRejectedValueOnce(new Error(RETURN_URL_CONFLICT_MESSAGE)).mockResolvedValueOnce({ type: 'success', session: {} });
+    const confirm = vi.fn().mockRejectedValueOnce(new Error(RETURN_URL_CONFLICT_MESSAGE)).mockResolvedValueOnce({ type: 'success', session: {} });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 
     const result = await confirmCheckoutSession(checkout, RETURN_URL, 'jenny@example.com');
@@ -89,7 +89,7 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('retries without returnUrl when the conflict is returned as an error result', async () => {
-    const confirm = jest
+    const confirm = vi
       .fn()
       .mockResolvedValueOnce({ type: 'error', error: { code: null, message: RETURN_URL_CONFLICT_MESSAGE } })
       .mockResolvedValueOnce({ type: 'success', session: {} });
@@ -101,7 +101,7 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('throws a card_error for a declined payment on an open session', async () => {
-    const confirm = jest
+    const confirm = vi
       .fn()
       .mockResolvedValue({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } } });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
@@ -113,7 +113,7 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('throws an api_error for other confirm errors', async () => {
-    const confirm = jest.fn().mockResolvedValue({ type: 'error', error: { code: null, message: 'An email address is required to confirm this Checkout Session.' } });
+    const confirm = vi.fn().mockResolvedValue({ type: 'error', error: { code: null, message: 'An email address is required to confirm this Checkout Session.' } });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 
     const error = await confirmCheckoutSession(checkout, RETURN_URL).catch(e => e);
@@ -124,7 +124,7 @@ describe('confirmCheckoutSession', () => {
 
   it('does not retry a thrown error that is not the return_url conflict', async () => {
     const networkError = new Error('Network error');
-    const confirm = jest.fn().mockRejectedValue(networkError);
+    const confirm = vi.fn().mockRejectedValue(networkError);
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 
     await expect(confirmCheckoutSession(checkout, RETURN_URL)).rejects.toBe(networkError);
@@ -140,8 +140,8 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('throws an unrecoverable invalid_request_error without confirming when the session is already complete', async () => {
-    const confirm = jest.fn();
-    const getSession = jest.fn(() => ({ id: 'cs_test_a1', status: { type: 'complete', paymentStatus: 'paid' } }));
+    const confirm = vi.fn();
+    const getSession = vi.fn(() => ({ id: 'cs_test_a1', status: { type: 'complete', paymentStatus: 'paid' } }));
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm, getSession) });
 
     const error = await confirmCheckoutSession(checkout, RETURN_URL).catch(e => e);
@@ -152,12 +152,12 @@ describe('confirmCheckoutSession', () => {
 
   it('throws an unrecoverable invalid_request_error when the session expired with a failed confirm', async () => {
     let status = { type: 'open' };
-    const confirm = jest.fn().mockImplementation(async () => {
+    const confirm = vi.fn().mockImplementation(async () => {
       status = { type: 'expired' };
 
       return { type: 'error', error: { code: null, message: 'This Checkout Session is no longer active.' } };
     });
-    const getSession = jest.fn(() => ({ id: 'cs_test_a1', status }));
+    const getSession = vi.fn(() => ({ id: 'cs_test_a1', status }));
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm, getSession) });
 
     const error = await confirmCheckoutSession(checkout, RETURN_URL).catch(e => e);

@@ -275,8 +275,8 @@ describe('collectedBillingDetails', () => {
 
 describe('confirmPaymentOrSetup', () => {
   const createStripe = () => ({
-    confirmPayment: jest.fn().mockResolvedValue({ paymentIntent: { id: 'pi_1' } }),
-    confirmSetup: jest.fn().mockResolvedValue({ setupIntent: { id: 'seti_1' } }),
+    confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: 'pi_1' } }),
+    confirmSetup: vi.fn().mockResolvedValue({ setupIntent: { id: 'seti_1' } }),
   });
   const elements = {} as any;
 

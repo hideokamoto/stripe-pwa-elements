@@ -337,7 +337,7 @@ describe('stripe-modal component tests', () => {
       });
 
       await waitForOpen(page);
-      const onClose = jest.fn();
+      const onClose = vi.fn();
 
       page.root.addEventListener('close', onClose);
       const event = await pressKey(page, page.body.querySelector('#field'), 'Escape');
@@ -359,7 +359,7 @@ describe('stripe-modal component tests', () => {
 
       await page.rootInstance.closeModal();
       await page.waitForChanges();
-      const onClose = jest.fn();
+      const onClose = vi.fn();
 
       page.root.addEventListener('close', onClose);
       const event = await pressKey(page, page.root, 'Escape');
@@ -388,7 +388,7 @@ describe('stripe-modal component tests', () => {
         html: `<stripe-modal><button id="inner">Pay</button></stripe-modal>`,
       });
       const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
-      const focusSpy = jest.spyOn(closeButton, 'focus');
+      const focusSpy = vi.spyOn(closeButton, 'focus');
 
       page.root.open = true;
       await waitForOpen(page);
@@ -402,7 +402,7 @@ describe('stripe-modal component tests', () => {
         html: `<stripe-modal show-close-button="false"><p>Text only</p></stripe-modal>`,
       });
       const dialog = page.root.shadowRoot.querySelector('.modal-child') as HTMLElement;
-      const focusSpy = jest.spyOn(dialog, 'focus');
+      const focusSpy = vi.spyOn(dialog, 'focus');
 
       page.root.open = true;
       await waitForOpen(page);
@@ -420,8 +420,8 @@ describe('stripe-modal component tests', () => {
       const [startGuard, endGuard] = Array.from(page.root.shadowRoot.querySelectorAll('.focus-guard'));
       const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
       const lastButton = page.body.querySelector('#last') as HTMLButtonElement;
-      const closeFocus = jest.spyOn(closeButton, 'focus');
-      const lastFocus = jest.spyOn(lastButton, 'focus');
+      const closeFocus = vi.spyOn(closeButton, 'focus');
+      const lastFocus = vi.spyOn(lastButton, 'focus');
 
       const focusFrom = (from: Element) => {
         const event = new Event('focus');
@@ -448,7 +448,7 @@ describe('stripe-modal component tests', () => {
 
       await waitForOpen(page);
       const [startGuard] = Array.from(page.root.shadowRoot.querySelectorAll('.focus-guard'));
-      const okFocus = jest.spyOn(page.body.querySelector('#ok') as HTMLButtonElement, 'focus');
+      const okFocus = vi.spyOn(page.body.querySelector('#ok') as HTMLButtonElement, 'focus');
 
       startGuard.dispatchEvent(new Event('focus'));
       expect(okFocus).toHaveBeenCalledTimes(1);
@@ -463,7 +463,7 @@ describe('stripe-modal component tests', () => {
 
       // mock-doc does not track document.activeElement, so emulate the opener having focus
       Object.defineProperty(page.doc, 'activeElement', { configurable: true, get: () => opener });
-      const openerFocus = jest.spyOn(opener, 'focus');
+      const openerFocus = vi.spyOn(opener, 'focus');
 
       page.root.open = true;
       await waitForOpen(page);
@@ -521,8 +521,8 @@ describe('stripe-modal component tests', () => {
 
       it('start guard reached from the dialog container (Tab) focuses the first element, not the last', async () => {
         const { startGuard, dialog, closeButton, last } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
-        const lastFocus = jest.spyOn(last, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
+        const lastFocus = vi.spyOn(last, 'focus');
 
         startGuard.dispatchEvent(focusEvent(dialog));
 
@@ -532,8 +532,8 @@ describe('stripe-modal component tests', () => {
 
       it('start guard reached from outside the modal focuses the first element', async () => {
         const { startGuard, outside, closeButton, last } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
-        const lastFocus = jest.spyOn(last, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
+        const lastFocus = vi.spyOn(last, 'focus');
 
         startGuard.dispatchEvent(focusEvent(outside));
 
@@ -543,7 +543,7 @@ describe('stripe-modal component tests', () => {
 
       it('start guard reached from an element inside the modal (Shift+Tab from the first) focuses the last element', async () => {
         const { startGuard, closeButton, last } = await setup();
-        const lastFocus = jest.spyOn(last, 'focus');
+        const lastFocus = vi.spyOn(last, 'focus');
 
         startGuard.dispatchEvent(focusEvent(closeButton));
 
@@ -552,7 +552,7 @@ describe('stripe-modal component tests', () => {
 
       it('end guard reached from an element inside the modal (Tab from the last) focuses the first element', async () => {
         const { endGuard, last, closeButton } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
 
         endGuard.dispatchEvent(focusEvent(last));
 
@@ -561,8 +561,8 @@ describe('stripe-modal component tests', () => {
 
       it('end guard reached from outside the modal (Shift+Tab from the page) focuses the last element', async () => {
         const { endGuard, outside, last, closeButton } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
-        const lastFocus = jest.spyOn(last, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
+        const lastFocus = vi.spyOn(last, 'focus');
 
         endGuard.dispatchEvent(focusEvent(outside));
 
@@ -590,8 +590,8 @@ describe('stripe-modal component tests', () => {
 
       it('end guard wraps to the first element when focus was last inside the modal', async () => {
         const { endGuard, closeButton, frame } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
-        const frameFocus = jest.spyOn(frame, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
+        const frameFocus = vi.spyOn(frame, 'focus');
 
         focusIn(frame);
         endGuard.dispatchEvent(focusEvent(null));
@@ -602,7 +602,7 @@ describe('stripe-modal component tests', () => {
 
       it('start guard wraps to the last element when focus was last inside the modal', async () => {
         const { page, startGuard, frame } = await setup();
-        const frameFocus = jest.spyOn(frame, 'focus');
+        const frameFocus = vi.spyOn(frame, 'focus');
 
         focusIn(page.body.querySelector('#first'));
         startGuard.dispatchEvent(focusEvent(null));
@@ -612,8 +612,8 @@ describe('stripe-modal component tests', () => {
 
       it('does not treat a focus-guard as the last focused element inside', async () => {
         const { startGuard, endGuard, closeButton, frame } = await setup();
-        const closeFocus = jest.spyOn(closeButton, 'focus');
-        const frameFocus = jest.spyOn(frame, 'focus');
+        const closeFocus = vi.spyOn(closeButton, 'focus');
+        const frameFocus = vi.spyOn(frame, 'focus');
 
         focusIn(startGuard);
         endGuard.dispatchEvent(focusEvent(null));
@@ -632,7 +632,7 @@ describe('stripe-modal component tests', () => {
         page.root.open = true;
         await waitForOpen(page);
 
-        const frameFocus = jest.spyOn(frame, 'focus');
+        const frameFocus = vi.spyOn(frame, 'focus');
 
         endGuard.dispatchEvent(focusEvent(null));
         expect(frameFocus).toHaveBeenCalledTimes(1);
@@ -655,7 +655,7 @@ describe('stripe-modal component tests', () => {
 
       it('moves focus into the content once loading ends when the dialog container held focus', async () => {
         const { page, modalChild, content } = await setup(`<stripe-modal show-close-button="false"><input id="field" /></stripe-modal>`);
-        const contentFocus = jest.spyOn(content, 'focus');
+        const contentFocus = vi.spyOn(content, 'focus');
 
         setActiveElement(page, modalChild);
         modalChild.dispatchEvent(new Event('transitionend'));
@@ -668,7 +668,7 @@ describe('stripe-modal component tests', () => {
       it('moves focus from the close button into the content once loading ends', async () => {
         const { page, modalChild, content } = await setup(`<stripe-modal><input id="field" /></stripe-modal>`);
         const closeButton = page.root.shadowRoot.querySelector('button.modal-close-button') as HTMLButtonElement;
-        const contentFocus = jest.spyOn(content, 'focus');
+        const contentFocus = vi.spyOn(content, 'focus');
 
         setActiveElement(page, closeButton);
         modalChild.dispatchEvent(new Event('transitionend'));
@@ -679,7 +679,7 @@ describe('stripe-modal component tests', () => {
 
       it('does not steal focus when the user has already moved it elsewhere', async () => {
         const { page, modalChild, content } = await setup(`<stripe-modal><input id="field" /><input id="other" /></stripe-modal>`);
-        const contentFocus = jest.spyOn(content, 'focus');
+        const contentFocus = vi.spyOn(content, 'focus');
 
         setActiveElement(page, page.body.querySelector('#other'));
         modalChild.dispatchEvent(new Event('transitionend'));

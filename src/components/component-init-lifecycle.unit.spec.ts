@@ -7,11 +7,11 @@ import { StripePaymentElement } from './stripe-payment-element/stripe-payment-el
 import { StripePaymentRequestButton } from './stripe-payment-request-button/stripe-payment-request-button';
 import { serviceFactory } from '../services/factory';
 
-jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() => Promise.resolve({ registerAppInfo: jest.fn(), elements: jest.fn(() => ({})) })),
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn(() => Promise.resolve({ registerAppInfo: vi.fn(), elements: vi.fn(() => ({})) })),
 }));
 
-jest.mock('../utils/i18n', () => ({
+vi.mock('../utils/i18n', () => ({
   i18n: { t: (key: string) => key },
 }));
 
@@ -37,18 +37,18 @@ describe('prop-dependent initialization lifecycle', () => {
   beforeEach(() => {
     (Object.keys(Object.getPrototypeOf(serviceFactory)) as string[]).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(serviceFactory))).forEach(name => {
       if (name.startsWith('create')) {
-        jest.spyOn(serviceFactory as any, name).mockReturnValue({ state: {}, onChange: jest.fn(), getState: jest.fn().mockReturnValue({}), unmount: jest.fn() });
+        vi.spyOn(serviceFactory as any, name).mockReturnValue({ state: {}, onChange: vi.fn(), getState: vi.fn().mockReturnValue({}), unmount: vi.fn() });
       }
     });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe.each(cases)('%s', (_tag, Klass, extraProps) => {
     it('does not call initStripe in the constructor (props are not populated yet)', () => {
-      const spy = jest.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
+      const spy = vi.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
       // Make the prop visible during construction so that a constructor which reads it would trigger initStripe.
       Object.defineProperty(Klass.prototype, 'publishableKey', { value: 'pk_test_xxxx', configurable: true, writable: true });
       Object.defineProperty(Klass.prototype, 'paymentRequestOption', { value: { country: 'US', currency: 'usd' }, configurable: true, writable: true });
@@ -64,7 +64,7 @@ describe('prop-dependent initialization lifecycle', () => {
     });
 
     it('calls initStripe from componentWillLoad with the publishable key and stripeAccount', () => {
-      const spy = jest.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
+      const spy = vi.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
       const el = new Klass();
       Object.assign(el, { publishableKey: 'pk_test_xxxx', stripeAccount: 'acct_123', ...extraProps });
 
@@ -75,7 +75,7 @@ describe('prop-dependent initialization lifecycle', () => {
     });
 
     it('does not call initStripe from componentWillLoad when publishableKey is not provided', () => {
-      const spy = jest.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
+      const spy = vi.spyOn(Klass.prototype, 'initStripe').mockResolvedValue(undefined);
       const el = new Klass();
 
       el.componentWillLoad();

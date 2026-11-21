@@ -157,7 +157,7 @@ describe('stripe-card-element-modal', () => {
         });
 
         const innerPayment = page.root.querySelector('stripe-card-element') as any;
-        innerPayment.updateProgress = jest.fn().mockResolvedValue(undefined);
+        innerPayment.updateProgress = vi.fn().mockResolvedValue(undefined);
 
         await page.rootInstance.updateProgress('loading');
 
@@ -171,7 +171,7 @@ describe('stripe-card-element-modal', () => {
         });
 
         const innerPayment = page.root.querySelector('stripe-card-element') as any;
-        innerPayment.updateProgress = jest.fn().mockResolvedValue(undefined);
+        innerPayment.updateProgress = vi.fn().mockResolvedValue(undefined);
 
         await page.rootInstance.updateProgress('loading');
         await page.rootInstance.updateProgress('success');
@@ -190,8 +190,8 @@ describe('stripe-card-element-modal', () => {
         });
 
         const innerPayment = page.root.querySelector('stripe-card-element') as any;
-        innerPayment.remove = jest.fn();
-        page.root.remove = jest.fn();
+        innerPayment.remove = vi.fn();
+        page.root.remove = vi.fn();
 
         await page.rootInstance.destroy();
 
@@ -217,7 +217,7 @@ describe('stripe-card-element-modal', () => {
         };
 
         const innerPayment = page.root.querySelector('stripe-card-element') as any;
-        innerPayment.setPaymentRequestOption = jest.fn();
+        innerPayment.setPaymentRequestOption = vi.fn();
 
         await page.rootInstance.setPaymentRequestButton(options);
 
@@ -241,7 +241,7 @@ describe('stripe-card-element-modal', () => {
         };
 
         const innerPayment = page.root.querySelector('stripe-card-element') as any;
-        innerPayment.setPaymentRequestOption = jest.fn();
+        innerPayment.setPaymentRequestOption = vi.fn();
 
         await page.rootInstance.setPaymentRequestButton(options);
 
