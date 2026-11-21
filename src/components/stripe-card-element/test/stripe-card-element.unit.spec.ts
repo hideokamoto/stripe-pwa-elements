@@ -1,6 +1,7 @@
 import { StripeCardElement } from '../stripe-card-element';
 import type { IStripeService, ICardElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 // Mock loadStripe to avoid actual network calls
 vi.mock('@stripe/stripe-js', () => ({
@@ -29,8 +30,8 @@ vi.mock('../../../utils/i18n', () => ({
  */
 describe('stripe-card-element unit tests', () => {
   // Mock service implementations
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockCardElementManager: jest.Mocked<ICardElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockCardElementManager: Mocked<ICardElementManager>;
 
   // Set up mocks before each test
   beforeEach(() => {

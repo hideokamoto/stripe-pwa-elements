@@ -1,18 +1,18 @@
 import type { StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 import { confirmCheckoutSession, isSubmitButtonDisabled } from '../stripe-payment-element.helpers';
+import type { Mock } from 'vitest';
 
 const RETURN_URL = 'https://example.com/return';
 
 const mockCheckout = (loadActionsResult: unknown) => ({ loadActions: vi.fn().mockResolvedValue(loadActionsResult) }) as unknown as StripeCheckoutElementsSdk;
 
 /** Actions of an open session; `getSession` reports `open` unless a test replaces it */
-const openSessionActions = (confirm: jest.Mock, getSession?: jest.Mock) => ({
+const openSessionActions = (confirm: Mock, getSession?: Mock) => ({
   confirm,
   getSession: getSession ?? vi.fn(() => ({ id: 'cs_test_a1', status: { type: 'open' } })),
 });
 
-const RETURN_URL_CONFLICT_MESSAGE =
-  'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
+const RETURN_URL_CONFLICT_MESSAGE = 'You cannot provide `returnUrl` to confirm() when `return_url` was already provided when creating the Checkout Session.';
 
 /**
  * Unit tests for isSubmitButtonDisabled
@@ -89,7 +89,8 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('retries without returnUrl when the conflict is returned as an error result', async () => {
-    const confirm = vi.fn()
+    const confirm = vi
+      .fn()
       .mockResolvedValueOnce({ type: 'error', error: { code: null, message: RETURN_URL_CONFLICT_MESSAGE } })
       .mockResolvedValueOnce({ type: 'success', session: {} });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
@@ -100,7 +101,8 @@ describe('confirmCheckoutSession', () => {
   });
 
   it('throws a card_error for a declined payment on an open session', async () => {
-    const confirm = vi.fn()
+    const confirm = vi
+      .fn()
       .mockResolvedValue({ type: 'error', error: { code: 'paymentFailed', message: 'Your card was declined.', paymentFailed: { declineCode: 'generic_decline' } } });
     const checkout = mockCheckout({ type: 'success', actions: openSessionActions(confirm) });
 

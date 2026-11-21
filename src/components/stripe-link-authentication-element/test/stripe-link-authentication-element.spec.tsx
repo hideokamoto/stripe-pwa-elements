@@ -2,6 +2,7 @@ import { newSpecPage } from '@stencil/core/testing';
 import { StripeLinkAuthenticationElement } from '../stripe-link-authentication-element';
 import type { IStripeService, ILinkAuthenticationElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 // Mock loadStripe to avoid actual network calls
 vi.mock('@stripe/stripe-js', () => ({
@@ -30,8 +31,8 @@ vi.mock('../../../utils/i18n', () => ({
  */
 describe('stripe-link-authentication-element component tests', () => {
   // Mock service implementations
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockLinkAuthenticationElementManager: jest.Mocked<ILinkAuthenticationElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockLinkAuthenticationElementManager: Mocked<ILinkAuthenticationElementManager>;
 
   // Set up mocks before each test
   beforeEach(() => {

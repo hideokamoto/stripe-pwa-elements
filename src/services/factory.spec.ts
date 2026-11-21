@@ -7,10 +7,11 @@ import { LinkAuthenticationElementManager } from './link-authentication-element-
 import { CurrencySelectorElementManager } from './currency-selector-element-manager';
 import { ExpressCheckoutElementManager } from './express-checkout-element-manager';
 import type { IStripeService } from './interfaces';
+import type { Mocked } from 'vitest';
 
 describe('ServiceFactory', () => {
   let factory: ServiceFactory;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
 
   beforeEach(() => {
     factory = new ServiceFactory();

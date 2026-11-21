@@ -1,6 +1,7 @@
 import { StripeExpressCheckoutElement } from '../stripe-express-checkout-element';
 import type { IStripeService, IExpressCheckoutElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 /**
  * Unit tests for StripeExpressCheckoutElement
@@ -21,8 +22,8 @@ vi.mock('../../../utils/i18n', () => ({
 }));
 
 describe('StripeExpressCheckoutElement', () => {
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockExpressCheckoutManager: jest.Mocked<IExpressCheckoutElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockExpressCheckoutManager: Mocked<IExpressCheckoutElementManager>;
 
   beforeEach(() => {
     mockStripeService = {
@@ -235,7 +236,7 @@ describe('StripeExpressCheckoutElement', () => {
       (element as any).amount = 1099;
       await element.initStripe('pk_test_xxx');
 
-      const options = (mockStripeService.initialize as jest.Mock).mock.calls[0][1];
+      const options = mockStripeService.initialize.mock.calls[0][1];
 
       expect(options.elementsOptions).toBeUndefined();
     });

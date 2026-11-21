@@ -9,4 +9,8 @@ describe('newSpecPage', () => {
       }),
     ).rejects.toThrow('`template` is not supported');
   });
+
+  it('does not treat arbitrary nodeType-1 objects as HTMLElement', () => {
+    expect({ nodeType: 1, tagName: 'svg' }).not.toBeInstanceOf(HTMLElement);
+  });
 });

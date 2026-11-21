@@ -2,6 +2,7 @@ import { newSpecPage } from '@stencil/core/testing';
 import { StripeAddressElement } from '../stripe-address-element';
 import type { IStripeService, IAddressElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 // Mock loadStripe to avoid actual network calls
 vi.mock('@stripe/stripe-js', () => ({
@@ -30,8 +31,8 @@ vi.mock('../../../utils/i18n', () => ({
  */
 describe('stripe-address-element component tests', () => {
   // Mock service implementations
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockAddressElementManager: jest.Mocked<IAddressElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockAddressElementManager: Mocked<IAddressElementManager>;
 
   // Set up mocks before each test
   beforeEach(() => {

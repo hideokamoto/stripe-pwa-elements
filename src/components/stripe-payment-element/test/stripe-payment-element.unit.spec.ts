@@ -1,6 +1,7 @@
 import { StripePaymentElement } from '../stripe-payment-element';
 import type { IStripeService, IPaymentElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 // Mock loadStripe to avoid actual network calls
 vi.mock('@stripe/stripe-js', () => ({
@@ -29,8 +30,8 @@ vi.mock('../../../utils/i18n', () => ({
  */
 describe('stripe-payment-element unit tests', () => {
   // Mock service implementations
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockPaymentElementManager: jest.Mocked<IPaymentElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockPaymentElementManager: Mocked<IPaymentElementManager>;
 
   // Set up mocks before each test
   beforeEach(() => {

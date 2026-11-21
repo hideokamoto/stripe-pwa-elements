@@ -1,6 +1,7 @@
 import { StripeCurrencySelector } from '../stripe-currency-selector';
 import type { IStripeService, ICurrencySelectorElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
+import type { Mocked } from 'vitest';
 
 // Mock loadStripe to avoid actual network calls
 vi.mock('@stripe/stripe-js', () => ({
@@ -29,8 +30,8 @@ vi.mock('../../../utils/i18n', () => ({
  */
 describe('stripe-currency-selector unit tests', () => {
   // Mock service implementations
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockCurrencySelectorElementManager: jest.Mocked<ICurrencySelectorElementManager>;
+  let mockStripeService: Mocked<IStripeService>;
+  let mockCurrencySelectorElementManager: Mocked<ICurrencySelectorElementManager>;
 
   // Set up mocks before each test
   beforeEach(() => {

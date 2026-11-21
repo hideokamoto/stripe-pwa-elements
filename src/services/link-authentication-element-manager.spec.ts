@@ -1,12 +1,13 @@
 import { LinkAuthenticationElementManager } from './link-authentication-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripeLinkAuthenticationElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('LinkAuthenticationElementManager', () => {
   let manager: LinkAuthenticationElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockLinkAuthenticationElement: jest.Mocked<StripeLinkAuthenticationElement>;
+  let mockLinkAuthenticationElement: Mocked<StripeLinkAuthenticationElement>;
 
   beforeEach(() => {
     // Create mock link authentication element

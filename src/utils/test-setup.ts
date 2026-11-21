@@ -127,21 +127,6 @@ const installMockDocEvents = () => {
   patchEventListenerCase(win);
 };
 
-const installHtmlElementMatcher = () => {
-  const ctor = globalThis.HTMLElement;
-
-  if (typeof ctor !== 'function') {
-    return;
-  }
-
-  Object.defineProperty(ctor, Symbol.hasInstance, {
-    configurable: true,
-    value(value: unknown) {
-      return value != null && typeof value === 'object' && (value as Node).nodeType === 1;
-    },
-  });
-};
-
 const installDefaultLocation = () => {
   const loc = globalThis.window?.location;
 
@@ -153,13 +138,11 @@ const installDefaultLocation = () => {
 };
 
 installMockDocEvents();
-installHtmlElementMatcher();
 installDefaultLocation();
 installHtmlMatchers();
 
 beforeEach(() => {
   installMockDocEvents();
-  installHtmlElementMatcher();
   installDefaultLocation();
 });
 

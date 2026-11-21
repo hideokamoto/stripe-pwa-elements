@@ -1,13 +1,14 @@
 import { PaymentElementManager } from './payment-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripePaymentElement, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('PaymentElementManager', () => {
   let manager: PaymentElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockPaymentElement: jest.Mocked<StripePaymentElement>;
-  let mockCheckout: jest.Mocked<StripeCheckoutElementsSdk>;
+  let mockPaymentElement: Mocked<StripePaymentElement>;
+  let mockCheckout: Mocked<StripeCheckoutElementsSdk>;
 
   beforeEach(() => {
     // Create mock payment element
@@ -147,7 +148,9 @@ describe('PaymentElementManager', () => {
     it('should throw error when checkout not initialized', async () => {
       mockStripeService.getCheckout.mockReturnValue(undefined);
 
-      await expect(manager.initialize(containerElement)).rejects.toThrow('StripeService not initialized with Checkout Session. Call StripeService.initializeWithCheckoutSession() first.');
+      await expect(manager.initialize(containerElement)).rejects.toThrow(
+        'StripeService not initialized with Checkout Session. Call StripeService.initializeWithCheckoutSession() first.',
+      );
     });
 
     it('should create payment element using checkout.createPaymentElement', async () => {

@@ -1,12 +1,13 @@
 import { AddressElementManager } from './address-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripeAddressElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('AddressElementManager', () => {
   let manager: AddressElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockAddressElement: jest.Mocked<StripeAddressElement>;
+  let mockAddressElement: Mocked<StripeAddressElement>;
 
   beforeEach(() => {
     // Create mock address element

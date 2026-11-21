@@ -1,12 +1,13 @@
 import { ExpressCheckoutElementManager } from './express-checkout-element-manager';
 import type { IStripeService, ExpressCheckoutElementEventHandlers } from './interfaces';
 import type { StripeExpressCheckoutElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('ExpressCheckoutElementManager', () => {
   let manager: ExpressCheckoutElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockExpressCheckoutElement: jest.Mocked<StripeExpressCheckoutElement>;
+  let mockExpressCheckoutElement: Mocked<StripeExpressCheckoutElement>;
 
   beforeEach(() => {
     // Create mock express checkout element

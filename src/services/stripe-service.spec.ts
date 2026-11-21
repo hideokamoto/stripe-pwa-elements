@@ -81,7 +81,7 @@ describe('StripeServiceClass', () => {
       registerAppInfo: vi.fn(),
     };
 
-    (loadStripe as jest.Mock).mockResolvedValue(mockStripe);
+    vi.mocked(loadStripe).mockResolvedValue(mockStripe);
 
     service = new StripeServiceClass();
   });
@@ -184,7 +184,7 @@ describe('StripeServiceClass', () => {
 
     it('handles errors gracefully', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      (loadStripe as jest.Mock).mockRejectedValue(new Error('Network error'));
+      vi.mocked(loadStripe).mockRejectedValue(new Error('Network error'));
 
       await service.initialize('pk_test_xxx');
 
@@ -274,7 +274,9 @@ describe('StripeServiceClass', () => {
       const staleStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => staleElements) };
       const freshStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => freshElements) };
 
-      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve))).mockResolvedValueOnce(freshStripe);
+      vi.mocked(loadStripe)
+        .mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve)))
+        .mockResolvedValueOnce(freshStripe as any);
 
       const stale = service.initialize('pk_test_xxx', { clientSecret: 'pi_1_secret_1' });
       await service.initialize('pk_test_xxx', { clientSecret: 'pi_2_secret_2' });
@@ -294,7 +296,7 @@ describe('StripeServiceClass', () => {
       let resolveLoad: (v: any) => void = () => undefined;
       const nextStripe = { registerAppInfo: vi.fn(), elements: vi.fn(() => newElements) };
 
-      (loadStripe as jest.Mock).mockReturnValueOnce(new Promise(resolve => (resolveLoad = resolve)));
+      vi.mocked(loadStripe).mockReturnValueOnce(new Promise(resolve => (resolveLoad = resolve)));
 
       const first = service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
       await service.initialize('pk_test_xxx', { elementsOptions: { mode: 'payment', amount: 2000, currency: 'usd' } });
@@ -383,7 +385,7 @@ describe('StripeServiceClass', () => {
 
     it('handles errors gracefully', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      (loadStripe as jest.Mock).mockRejectedValue(new Error('Network error'));
+      vi.mocked(loadStripe).mockRejectedValue(new Error('Network error'));
 
       await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
 

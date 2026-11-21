@@ -1,12 +1,13 @@
 import { CurrencySelectorElementManager } from './currency-selector-element-manager';
 import type { IStripeService } from './interfaces';
 import type { StripeCurrencySelectorElement } from '@stripe/stripe-js';
+import type { Mocked } from 'vitest';
 
 describe('CurrencySelectorElementManager', () => {
   let manager: CurrencySelectorElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: any;
-  let mockCurrencySelectorElement: jest.Mocked<StripeCurrencySelectorElement>;
+  let mockCurrencySelectorElement: Mocked<StripeCurrencySelectorElement>;
 
   beforeEach(() => {
     // Create mock currency selector element

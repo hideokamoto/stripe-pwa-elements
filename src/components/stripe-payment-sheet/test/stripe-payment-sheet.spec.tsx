@@ -4,6 +4,7 @@ import { StripeModal } from '../../stripe-modal/stripe-modal';
 import type { IStripeService, IPaymentElementManager, IAddressElementManager, ILinkAuthenticationElementManager } from '../../../services/interfaces';
 import * as factoryModule from '../../../services/factory';
 import { i18n } from '../../../utils/i18n';
+import type { Mock, Mocked } from 'vitest';
 
 vi.mock('@stripe/stripe-js', () => ({
   loadStripe: vi.fn(),
@@ -18,6 +19,11 @@ vi.mock('../../../utils/i18n', () => ({
 const PI_SECRET = 'pi_3Mtw_secret_abc';
 const SETI_SECRET = 'seti_1Mm8_secret_xyz';
 
+/** mock-doc hosts are not instances of the wrapped HTMLElement constructor. */
+const anyHostElement = expect.toSatisfy(
+  (value: unknown) => value != null && typeof value === 'object' && (value as Node).nodeType === 1 && typeof (value as Element).tagName === 'string',
+);
+
 const flush = async (page: SpecPage) => {
   for (let i = 0; i < 5; i++) {
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -26,13 +32,13 @@ const flush = async (page: SpecPage) => {
 };
 
 describe('stripe-payment-sheet', () => {
-  let mockStripeService: jest.Mocked<IStripeService>;
-  let mockPaymentElementManager: jest.Mocked<IPaymentElementManager>;
-  let stripe: { confirmPayment: jest.Mock; confirmSetup: jest.Mock };
-  let elements: { update: jest.Mock; submit: jest.Mock };
-  let addressManagers: jest.Mocked<IAddressElementManager>[];
+  let mockStripeService: Mocked<IStripeService>;
+  let mockPaymentElementManager: Mocked<IPaymentElementManager>;
+  let stripe: { confirmPayment: Mock; confirmSetup: Mock };
+  let elements: { update: Mock; submit: Mock };
+  let addressManagers: Mocked<IAddressElementManager>[];
   let addressValue: { complete: boolean; isNewAddress: boolean; value: object };
-  let mockLinkAuthenticationManager: jest.Mocked<ILinkAuthenticationElementManager>;
+  let mockLinkAuthenticationManager: Mocked<ILinkAuthenticationElementManager>;
 
   /** The Address Element manager that was initialized with the given mode */
   const addressManager = (mode: 'billing' | 'shipping') => addressManagers.find(m => m.initialize.mock.calls.some(([, options]) => options?.mode === mode));
@@ -263,7 +269,7 @@ describe('stripe-payment-sheet', () => {
       const billing = addressManager('billing');
 
       expect(billing).toBeDefined();
-      expect(billing.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { mode: 'billing', defaultValues: {} });
+      expect(billing.initialize).toHaveBeenCalledWith(anyHostElement, { mode: 'billing', defaultValues: {} });
       expect(billing.initialize.mock.calls[0][0].querySelector('#address-element')).not.toBeNull();
       expect(mockPaymentElementManager.initialize).toHaveBeenCalledWith(sheet, expect.objectContaining({ fields: { billingDetails: { address: 'never' } } }));
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
@@ -304,7 +310,7 @@ describe('stripe-payment-sheet', () => {
     it('shows the email element for email always and passes the collected email at confirm', async () => {
       const { sheet } = await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' } });
 
-      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), {});
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(anyHostElement, {});
       expect(mockLinkAuthenticationManager.initialize.mock.calls[0][0].querySelector('#link-authentication-element')).not.toBeNull();
       expect(mockPaymentElementManager.initialize).toHaveBeenCalledWith(sheet, expect.objectContaining({ fields: { billingDetails: { email: 'never' } } }));
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
@@ -327,7 +333,7 @@ describe('stripe-payment-sheet', () => {
       mockLinkAuthenticationManager.getState.mockReturnValue({ errorMessage: '', email: undefined });
       await presentAndSubmit({}, { billingDetailsCollectionConfiguration: { email: 'always' }, defaultBillingDetails: { email: 'jenny@example.com' } });
 
-      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { defaultValues: { email: 'jenny@example.com' } });
+      expect(mockLinkAuthenticationManager.initialize).toHaveBeenCalledWith(anyHostElement, { defaultValues: { email: 'jenny@example.com' } });
       expect(stripe.confirmPayment).toHaveBeenCalledWith(
         expect.objectContaining({ confirmParams: expect.objectContaining({ payment_method_data: { billing_details: { email: 'jenny@example.com' } } }) }),
       );
@@ -372,7 +378,7 @@ describe('stripe-payment-sheet', () => {
       const billing = addressManager('billing');
       const shipping = addressManager('shipping');
 
-      expect(shipping.initialize).toHaveBeenCalledWith(expect.any(HTMLElement), { mode: 'shipping', defaultValues: { name: 'Jenny Rosen', address: { country: 'JP' } } });
+      expect(shipping.initialize).toHaveBeenCalledWith(anyHostElement, { mode: 'shipping', defaultValues: { name: 'Jenny Rosen', address: { country: 'JP' } } });
       expect(shipping.initialize.mock.calls[0][0].querySelector('#address-element')).not.toBeNull();
       expect(shipping.initialize.mock.calls[0][0]).not.toBe(billing.initialize.mock.calls[0][0]);
     });
@@ -549,8 +555,8 @@ describe('stripe-payment-sheet', () => {
     // Stripe does not document the format of a Checkout Session client secret; the sheet must not depend on it
     const CHECKOUT_SECRET = 'cs_test_a1_secret_zzz';
     const SESSION_RESULT = { type: 'success', session: { id: 'cs_test_a1' } };
-    let checkoutConfirm: jest.Mock;
-    let checkout: { loadActions: jest.Mock };
+    let checkoutConfirm: Mock;
+    let checkout: { loadActions: Mock };
 
     beforeEach(() => {
       checkoutConfirm = vi.fn().mockResolvedValue(SESSION_RESULT);
