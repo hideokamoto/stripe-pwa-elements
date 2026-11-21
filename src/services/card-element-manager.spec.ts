@@ -1,9 +1,10 @@
 import { CardElementManager } from './card-element-manager';
 import type { IStripeService } from './interfaces';
+import type { Mocked } from 'vitest';
 
 describe('CardElementManager', () => {
   let manager: CardElementManager;
-  let mockStripeService: jest.Mocked<IStripeService>;
+  let mockStripeService: Mocked<IStripeService>;
   let mockElements: { create: ReturnType<typeof vi.fn> };
   let cardNumber: { mount: ReturnType<typeof vi.fn>; unmount: ReturnType<typeof vi.fn>; on: ReturnType<typeof vi.fn> };
   let cardExpiry: { mount: ReturnType<typeof vi.fn>; unmount: ReturnType<typeof vi.fn>; on: ReturnType<typeof vi.fn> };
