@@ -171,6 +171,7 @@ pnpm run generate     # Generate new Stencil component
   - `pnpm run test:unit` - Unit tests (services/utils/`*.unit.spec.ts`)
   - `pnpm run test:component` - Component rendering tests (`*.spec.tsx`)
   - `pnpm run test:e2e` / `pnpm run test:e2e:stripe` - Playwright Stripe e2e
+  - `pnpm run test:mutation` - `@mizchi/mutator` on services/utils (Node 24+; not in default CI)
   - `pnpm run test.watch` - Watch mode
 - Tests include snapshots (stored in `__snapshots__/` directories)
 - Test environment configured in `src/utils/test-setup.ts` and `vitest.config.mts`

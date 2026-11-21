@@ -1,18 +1,33 @@
-import { checkPlatform, waitForElm } from './utils';
+vi.mock('./platform', () => ({
+  getPlatforms: vi.fn(() => []),
+}));
 
-// Note: We're testing checkPlatform with the real implementation
-// since mocking platform detection is complex and not very valuable
+import { getPlatforms } from './platform';
+import { checkPlatform, waitForElm } from './utils';
 
 describe('utils', () => {
   describe('checkPlatform', () => {
-    it('should return a string or undefined', () => {
-      const result = checkPlatform();
+    afterEach(() => {
+      vi.mocked(getPlatforms).mockReset();
+      vi.mocked(getPlatforms).mockReturnValue([]);
+    });
 
-      expect(typeof result === 'string' || result === undefined).toBe(true);
+    it('should return ios when the platform list includes ios', () => {
+      vi.mocked(getPlatforms).mockReturnValue(['ios', 'mobile']);
 
-      if (typeof result === 'string') {
-        expect(['ios', 'android']).toContain(result);
-      }
+      expect(checkPlatform()).toBe('ios');
+    });
+
+    it('should return android when the platform list includes android', () => {
+      vi.mocked(getPlatforms).mockReturnValue(['android', 'mobile']);
+
+      expect(checkPlatform()).toBe('android');
+    });
+
+    it('should return undefined for desktop platforms', () => {
+      vi.mocked(getPlatforms).mockReturnValue(['desktop']);
+
+      expect(checkPlatform()).toBeUndefined();
     });
   });
 
@@ -37,6 +52,42 @@ describe('utils', () => {
       const result = await waitForElm(mockElement, '#target');
 
       expect(result).toBe(mockTarget);
+    });
+
+    it('should resolve when the element appears after the observer starts', async () => {
+      let observerCallback: MutationCallback | undefined;
+
+      const OriginalObserver = globalThis.MutationObserver;
+
+      globalThis.MutationObserver = class {
+        constructor(callback: MutationCallback) {
+          observerCallback = callback;
+        }
+
+        observe() {
+          return undefined;
+        }
+
+        disconnect() {
+          return undefined;
+        }
+
+        takeRecords(): MutationRecord[] {
+          return [];
+        }
+      } as typeof MutationObserver;
+
+      try {
+        const promise = waitForElm(mockElement, '#target');
+
+        await Promise.resolve();
+        mockElement.appendChild(mockTarget);
+        observerCallback?.([], {} as MutationObserver);
+
+        await expect(promise).resolves.toBe(mockTarget);
+      } finally {
+        globalThis.MutationObserver = OriginalObserver;
+      }
     });
 
     it('should resolve when element is found by class selector', async () => {

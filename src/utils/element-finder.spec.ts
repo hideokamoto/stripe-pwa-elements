@@ -13,9 +13,11 @@ global.MutationObserver = class MutationObserver {
     mutationObserverInstance = this;
   }
 
-  observe(_target: HTMLElement) {
-    // Mock implementation
+  observe(_target: HTMLElement, options?: MutationObserverInit) {
+    this.observedOptions = options;
   }
+
+  observedOptions?: MutationObserverInit;
 
   disconnect() {
     mutationObserverCallback = null;
@@ -70,6 +72,8 @@ describe('element-finder', () => {
       // Element not found initially
       await Promise.resolve();
 
+      expect(mutationObserverInstance.observedOptions).toEqual({ childList: true, subtree: true });
+
       // Add element and trigger mutation observer
       containerElement.appendChild(targetElement);
       triggerMutationObserver();
@@ -77,6 +81,7 @@ describe('element-finder', () => {
       const result = await promise;
 
       expect(result).toBe(targetElement);
+      expect(mutationObserverInstance).toBeNull();
     });
 
     it('should find nested elements', async () => {

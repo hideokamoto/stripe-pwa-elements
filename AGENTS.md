@@ -28,6 +28,7 @@ Japanese docs: [AI コーディングエージェント](https://stripe-pwa-elem
 | Static HTML copies | [`example/`](example/) via `example:copy` | Not the source of truth — see [`example/README.md`](example/README.md) |
 | Real browser + Stripe.js | [`e2e/stripe/`](e2e/stripe/) | `pnpm run verify:agent -- --stripe-e2e` after default steps (optional, not in default CI) |
 | Quint payment sheet model | [`spec/payment-sheet/`](spec/payment-sheet/) | See README; CI runs `model-check` — not part of `verify:agent` |
+| Mutation testing (Node 24+) | services / utils | `pnpm run test:mutation` (`@mizchi/mutator`; not in default CI) |
 
 Full tables: [docs guide (EN)](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/en/guides/agent-verification-map/) · [docs guide (JA)](https://stripe-pwa-elements-docs.wp-kyoto.workers.dev/guides/agent-verification-map/).
 

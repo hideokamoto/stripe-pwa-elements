@@ -57,6 +57,7 @@ describe('platform utilities', () => {
       expect(platforms).toContain('iphone');
       expect(platforms).toContain('ios');
       expect(platforms).toContain('mobile');
+      expect(platforms).toContain('mobileweb');
     });
 
     it('should detect iPad platform (iOS 12 and below)', () => {
@@ -215,6 +216,7 @@ describe('platform utilities', () => {
 
       expect(platforms).toContain('cordova');
       expect(platforms).toContain('hybrid');
+      expect(platforms).not.toContain('mobileweb');
     });
 
     it('should detect Capacitor platform', () => {
@@ -341,6 +343,41 @@ describe('platform utilities', () => {
 
       expect(isPlatform(desktopWin, 'desktop')).toBe(true);
       expect(isPlatform(desktopWin, 'mobile')).toBe(false);
+    });
+
+    it('accepts a platform name as the only argument', () => {
+      expect(typeof isPlatform('desktop')).toBe('boolean');
+    });
+  });
+
+  describe('viewport platforms', () => {
+    const windowAt = (innerWidth: number, innerHeight: number, userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') =>
+      ({
+        navigator: { userAgent },
+        innerWidth,
+        innerHeight,
+        matchMedia: () => ({ matches: false }),
+        document: {
+          documentElement: {
+            classList: { add: vi.fn() },
+          },
+        },
+      }) as any;
+
+    it('detects a phablet viewport', () => {
+      expect(getPlatforms(windowAt(400, 700))).toContain('phablet');
+    });
+
+    it('does not treat the phablet lower bound as a phablet', () => {
+      expect(getPlatforms(windowAt(390, 700))).not.toContain('phablet');
+    });
+
+    it('detects a tablet-sized viewport without iPad or Android', () => {
+      expect(getPlatforms(windowAt(500, 900))).toContain('tablet');
+    });
+
+    it('does not treat a phone-sized viewport as a tablet', () => {
+      expect(getPlatforms(windowAt(360, 640))).not.toContain('tablet');
     });
   });
 });

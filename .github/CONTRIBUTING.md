@@ -5,6 +5,7 @@ Thank you for your interest in contributing. This is a public open-source projec
 ## Environment
 
 - **Node.js** 22.12+ required (`@stencil/vitest` / Vitest 5; CI tests on **22**)
+- **Mutation testing** (`pnpm run test:mutation`) additionally needs **Node.js 24+** (`@mizchi/mutator`). It is not part of default CI.
 - **[pnpm](https://pnpm.io/)** — version pinned in `package.json` (`packageManager` field)
 
 On Node.js 22–24, enable [Corepack](https://nodejs.org/api/corepack.html) before the first `pnpm install`:
@@ -33,6 +34,7 @@ pnpm install
 | Unit tests | `pnpm run test:unit` |
 | Component tests | `pnpm run test:component` |
 | All Vitest specs | `pnpm test` |
+| Mutation testing (Node 24+) | `pnpm run test:mutation` |
 | Production build | `pnpm run build` |
 | Default agent gate (not full CI) | `pnpm run verify:agent` |
 

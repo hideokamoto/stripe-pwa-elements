@@ -141,6 +141,23 @@ describe('CurrencySelectorElementManager', () => {
       expect(state.errorMessage).toBe('');
     });
 
+    it('should ignore a change event without a currency value', async () => {
+      let changeHandler: ((event: any) => void) | undefined;
+
+      mockCurrencySelectorElement.on.mockImplementation((eventName: any, handler: any) => {
+        if (eventName === 'change') {
+          changeHandler = handler;
+        }
+        return mockCurrencySelectorElement;
+      });
+
+      await manager.initialize(containerElement);
+
+      changeHandler!({});
+
+      expect(manager.getState().selectedCurrency).toBeUndefined();
+    });
+
     it('should unmount previous element before initializing new one', async () => {
       await manager.initialize(containerElement);
       await manager.initialize(containerElement);
