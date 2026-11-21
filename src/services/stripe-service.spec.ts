@@ -422,6 +422,45 @@ describe('StripeServiceClass', () => {
 
       expect(service.state.applicationName).toBe('stripe-pwa-elements');
     });
+
+    it('stores stripeAccount', async () => {
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { stripeAccount: 'acct_xxx' });
+
+      expect(service.state.stripeAccount).toBe('acct_xxx');
+    });
+
+    it('stores a custom application name', async () => {
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret', { applicationName: 'custom-app' });
+
+      expect(service.state.applicationName).toBe('custom-app');
+    });
+
+    it('ignores a stale checkout initialize that finishes after a newer one', async () => {
+      const staleCheckout = { stale: true };
+      const freshCheckout = { fresh: true };
+      let resolveStale: (v: typeof mockStripe) => void = () => undefined;
+      const staleStripe = {
+        registerAppInfo: vi.fn(),
+        initCheckoutElementsSdk: vi.fn(() => staleCheckout),
+      };
+      const freshStripe = {
+        registerAppInfo: vi.fn(),
+        initCheckoutElementsSdk: vi.fn(() => freshCheckout),
+      };
+
+      vi.mocked(loadStripe)
+        .mockReturnValueOnce(new Promise(resolve => (resolveStale = resolve)))
+        .mockResolvedValueOnce(freshStripe as any);
+
+      const stale = service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret_1');
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret_2');
+      resolveStale(staleStripe as any);
+      await stale;
+
+      expect(freshStripe.initCheckoutElementsSdk).toHaveBeenCalledWith(expect.objectContaining({ clientSecret: 'cs_test_secret_2' }));
+      expect(staleStripe.initCheckoutElementsSdk).not.toHaveBeenCalled();
+      expect(service.getCheckout()).toBe(freshCheckout);
+    });
   });
 
   describe('onChange', () => {
@@ -459,6 +498,21 @@ describe('StripeServiceClass', () => {
       service.dispose();
 
       expect(mockStore.dispose).toHaveBeenCalled();
+    });
+
+    it('disposes onChange listeners registered with the store', () => {
+      const disposeA = vi.fn();
+      const disposeB = vi.fn();
+
+      vi.mocked(mockStore.onChange).mockReturnValueOnce(disposeA).mockReturnValueOnce(disposeB);
+
+      service.onChange('loadStripeStatus', vi.fn());
+      service.onChange('publishableKey', vi.fn());
+
+      service.dispose();
+
+      expect(disposeA).toHaveBeenCalledTimes(1);
+      expect(disposeB).toHaveBeenCalledTimes(1);
     });
   });
 });
