@@ -1,5 +1,11 @@
 # stripe-pwa-elements
 
+## 4.1.3
+
+### Patch Changes
+
+- 725f38d: Express Checkout default confirmation now reports failures through `paymentFailed` instead of calling the removed `complete` API. Managers drop stale Stripe.js workaround comments and type casts where the installed SDK already defines the APIs.
+
 ## 4.1.2
 
 ### Patch Changes
