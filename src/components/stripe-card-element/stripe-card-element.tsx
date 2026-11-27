@@ -590,17 +590,17 @@ export class StripeCardElement {
             <fieldset class="stripe-input-box">
               <div>
                 <label>
-                  {this.showLabel ? <lenged>{i18n.t('Card Number')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('Card Number')}</legend> : null}
                   <div id="card-number" />
                 </label>
               </div>
               <div class="stripe-input-column" style={{ display: 'flex' }}>
                 <label style={{ width: '50%' }}>
-                  {this.showLabel ? <lenged>{i18n.t('MM / YY')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('MM / YY')}</legend> : null}
                   <div id="card-expiry" />
                 </label>
                 <label style={{ width: '50%' }}>
-                  {this.showLabel ? <lenged>{i18n.t('CVC')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('CVC')}</legend> : null}
                   <div id="card-cvc" />
                 </label>
               </div>
@@ -619,7 +619,7 @@ export class StripeCardElement {
               <fieldset class="stripe-input-box">
                 <div>
                   <label>
-                    {this.showLabel ? <lenged>{i18n.t('Postal Code')}</lenged> : null}
+                    {this.showLabel ? <legend>{i18n.t('Postal Code')}</legend> : null}
                     <input
                       id="zip"
                       name="zip"
@@ -630,7 +630,7 @@ export class StripeCardElement {
                       placeholder={i18n.t('Postal Code')}
                       value={this.zipCode}
                       onInput={e => {
-                        this.zipCode = (e.target as any).value;
+                        this.zipCode = (e.currentTarget as HTMLInputElement).value;
                       }}
                     />
                   </label>

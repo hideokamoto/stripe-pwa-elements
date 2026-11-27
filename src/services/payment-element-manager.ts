@@ -73,9 +73,6 @@ export class PaymentElementManager implements IPaymentElementManager {
 
     this.paymentElement.mount(paymentElementContainer);
 
-    // Note: Payment Element errors are handled during submission
-    // Use setError() method to manually set errors if needed
-
     return this.paymentElement;
   }
 
