@@ -11,6 +11,7 @@ import {
 import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IPaymentElementManager, CheckoutSessionOptions } from '../../services/interfaces';
+import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { confirmCheckoutSession, confirmPaymentOrSetup, isSubmitButtonDisabled, buildSubmitEventProps } from './stripe-payment-element.helpers';
 
 import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
@@ -781,10 +782,7 @@ export class StripePaymentElement {
     });
 
     return (
-      // NOTE: `stripe-payment-sheet-wrap` is a legacy CSS class kept for backward compatibility.
-      // It is a leftover from a former component name but is part of the public DOM contract,
-      // so external stylesheets may target it. Keep it in the rendered output and the .scss.
-      <div class="stripe-payment-sheet-wrap">
+      <div class={LEGACY_PAYMENT_SHEET_WRAP_CLASS}>
         <form id="stripe-payment-element">
           <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
           <div>

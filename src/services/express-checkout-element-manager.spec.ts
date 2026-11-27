@@ -309,14 +309,14 @@ describe('ExpressCheckoutElementManager', () => {
       expect(mockExpressCheckoutElement.update).not.toHaveBeenCalled();
     });
 
-    it('should keep an invalid string buttonHeight as-is', async () => {
+    it('should omit an invalid string buttonHeight', async () => {
       const containerElement = document.createElement('div');
 
       containerElement.innerHTML = '<div id="express-checkout-element"></div>';
 
       await manager.initialize(containerElement, { mode: 'payment', buttonHeight: 'tall' });
 
-      expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', { buttonHeight: 'tall' });
+      expect(mockElements.create).toHaveBeenCalledWith('expressCheckout', {});
     });
 
     it('should convert string buttonHeight to number when updating', async () => {

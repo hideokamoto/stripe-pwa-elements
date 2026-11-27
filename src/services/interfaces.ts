@@ -321,9 +321,12 @@ export interface ICurrencySelectorElementManager {
 
   /**
    * Initialize and mount currency selector element
-   * Note: StripeCurrencySelectorElementOptions is not yet exported in @stripe/stripe-js v8.6.0
    */
-  initialize(containerElement: HTMLElement, options?: any): Promise<StripeCurrencySelectorElement>;
+  initialize(
+    containerElement: HTMLElement,
+    options?: import('@stripe/stripe-js').StripeCurrencySelectorElementOptions & { clientSecret?: string },
+    onCurrencyChange?: (currency: string) => void,
+  ): Promise<StripeCurrencySelectorElement>;
 
   /**
    * Get mounted currency selector element

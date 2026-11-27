@@ -1,7 +1,50 @@
+import type {
+  StripeElementsUpdateOptions,
+  StripeExpressCheckoutElement,
+  StripeExpressCheckoutElementOptions,
+  StripeExpressCheckoutElementUpdateOptions,
+} from '@stripe/stripe-js';
 import type { IExpressCheckoutElementManager, IStripeService, ExpressCheckoutElementOptions, ExpressCheckoutElementState, ExpressCheckoutElementEventHandlers } from './interfaces';
-import { StripeExpressCheckoutElement } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+
+const parseButtonHeight = (buttonHeight: string | number | undefined): number | undefined => {
+  if (buttonHeight == null) {
+    return undefined;
+  }
+
+  if (typeof buttonHeight === 'number') {
+    return buttonHeight;
+  }
+
+  const height = parseInt(buttonHeight.replace('px', ''), 10);
+
+  return Number.isNaN(height) ? undefined : height;
+};
+
+const toExpressCheckoutCreateOptions = (options: ExpressCheckoutElementOptions): StripeExpressCheckoutElementOptions => {
+  const { mode: _mode, amount: _amount, currency: _currency, buttonHeight, ...rest } = options;
+  const parsedHeight = parseButtonHeight(buttonHeight);
+
+  return {
+    ...rest,
+    ...(parsedHeight !== undefined ? { buttonHeight: parsedHeight } : {}),
+  } as StripeExpressCheckoutElementOptions;
+};
+
+const toExpressCheckoutUpdateOptions = (
+  elementOptions: Partial<Omit<ExpressCheckoutElementOptions, 'mode' | 'amount' | 'currency'>>,
+): StripeExpressCheckoutElementUpdateOptions | null => {
+  const { buttonHeight, ...rest } = elementOptions;
+  const parsedHeight = parseButtonHeight(buttonHeight);
+  const update: StripeExpressCheckoutElementUpdateOptions = { ...rest };
+
+  if (parsedHeight !== undefined) {
+    update.buttonHeight = parsedHeight;
+  }
+
+  return Object.keys(update).length > 0 ? update : null;
+};
 
 /**
  * Express Checkout Element Manager
@@ -46,35 +89,15 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
-    // Unmount if already initialized
     if (this.expressCheckoutElement != null) {
       this.unmount();
     }
 
-    // mode / amount / currency belong to stripe.elements(), not to elements.create('expressCheckout')
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { mode, amount, currency, ...restOptions } = options;
-    const createOptions: any = { ...restOptions };
+    const createOptions = toExpressCheckoutCreateOptions(options);
+    const expressCheckout = elements.create('expressCheckout', createOptions);
 
-    // Convert buttonHeight from string to number if present
-
-    if (createOptions.buttonHeight && typeof createOptions.buttonHeight === 'string') {
-      const height = parseInt(createOptions.buttonHeight.replace('px', ''), 10);
-
-      if (!isNaN(height)) {
-        createOptions.buttonHeight = height;
-      }
-    }
-
-    // Create express checkout element
-    // Note: 'expressCheckout' is not yet in the official Stripe type definitions
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const expressCheckout = elements.create('expressCheckout' as any, createOptions as any) as unknown as StripeExpressCheckoutElement;
-
-    // Find the mount point
     const mountPoint = await findElement(containerElement, '#express-checkout-element');
 
-    // Set up event handlers before mounting
     if (eventHandlers?.onConfirm != null) {
       expressCheckout.on('confirm', eventHandlers.onConfirm);
     }
@@ -95,12 +118,10 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       expressCheckout.on('shippingratechange', eventHandlers.onShippingRateChange);
     }
 
-    // Add ready event handler
     expressCheckout.on('ready', () => {
       this.store.set('isReady', true);
     });
 
-    // Mount the element
     expressCheckout.mount(mountPoint);
 
     this.expressCheckoutElement = expressCheckout;
@@ -125,9 +146,8 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       return;
     }
 
-    // mode / amount / currency are Elements group options, so they are updated with elements.update()
     const { mode, amount, currency, ...elementOptions } = options;
-    const groupOptions: import('@stripe/stripe-js').StripeElementsUpdateOptions = {};
+    const groupOptions: StripeElementsUpdateOptions = {};
 
     if (mode !== undefined) {
       groupOptions.mode = mode;
@@ -145,23 +165,13 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
       this.stripeService.getElements()?.update(groupOptions);
     }
 
-    // Convert buttonHeight from string to number if present
-    const updateOptions: any = { ...elementOptions };
+    const updateOptions = toExpressCheckoutUpdateOptions(elementOptions);
 
-    if (updateOptions.buttonHeight && typeof updateOptions.buttonHeight === 'string') {
-      const height = parseInt(updateOptions.buttonHeight.replace('px', ''), 10);
-
-      if (!isNaN(height)) {
-        updateOptions.buttonHeight = height;
-      }
-    }
-
-    if (Object.keys(updateOptions).length === 0) {
+    if (updateOptions == null) {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.expressCheckoutElement.update(updateOptions as any);
+    this.expressCheckoutElement.update(updateOptions);
   }
 
   /**

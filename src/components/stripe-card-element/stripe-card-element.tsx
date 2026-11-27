@@ -15,6 +15,7 @@ import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, ICardElementManager } from '../../services/interfaces';
 import { StripeAPIError } from '../../utils/error';
+import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { buildInitStripeOptionsFromAccount, confirmCardIntent, attachPaymentRequestHandlers } from './stripe-card-element.helpers';
 
 @Component({
@@ -578,10 +579,7 @@ export class StripeCardElement {
     const disabled = this.progress === 'loading' || this.progress === 'success';
 
     return (
-      // NOTE: `stripe-payment-sheet-wrap` is a legacy class name (leftover from a former
-      // component name). External consumers may target it in their own CSS, so it is a
-      // public DOM contract that MUST be kept for backward compatibility. Do not remove it.
-      <div class="stripe-payment-sheet-wrap">
+      <div class={LEGACY_PAYMENT_SHEET_WRAP_CLASS}>
         <form id="stripe-card-element">
           <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
           <div id="stripe-payment-request-button" />
@@ -592,17 +590,17 @@ export class StripeCardElement {
             <fieldset class="stripe-input-box">
               <div>
                 <label>
-                  {this.showLabel ? <lenged>{i18n.t('Card Number')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('Card Number')}</legend> : null}
                   <div id="card-number" />
                 </label>
               </div>
               <div class="stripe-input-column" style={{ display: 'flex' }}>
                 <label style={{ width: '50%' }}>
-                  {this.showLabel ? <lenged>{i18n.t('MM / YY')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('MM / YY')}</legend> : null}
                   <div id="card-expiry" />
                 </label>
                 <label style={{ width: '50%' }}>
-                  {this.showLabel ? <lenged>{i18n.t('CVC')}</lenged> : null}
+                  {this.showLabel ? <legend>{i18n.t('CVC')}</legend> : null}
                   <div id="card-cvc" />
                 </label>
               </div>
@@ -621,7 +619,7 @@ export class StripeCardElement {
               <fieldset class="stripe-input-box">
                 <div>
                   <label>
-                    {this.showLabel ? <lenged>{i18n.t('Postal Code')}</lenged> : null}
+                    {this.showLabel ? <legend>{i18n.t('Postal Code')}</legend> : null}
                     <input
                       id="zip"
                       name="zip"
@@ -632,7 +630,7 @@ export class StripeCardElement {
                       placeholder={i18n.t('Postal Code')}
                       value={this.zipCode}
                       onInput={e => {
-                        this.zipCode = (e.target as any).value;
+                        this.zipCode = (e.currentTarget as HTMLInputElement).value;
                       }}
                     />
                   </label>

@@ -2,6 +2,7 @@ import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch 
 import { checkPlatform } from '../../utils/utils';
 import { StripeDidLoadedHandler, StripeLoadedEvent, ProgressStatus, InitStripeOptions } from '../../interfaces';
 import { i18n } from '../../utils/i18n';
+import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IAddressElementManager } from '../../services/interfaces';
 
@@ -442,12 +443,8 @@ export class StripeAddressElement {
 
     const disabled = this.progress === 'loading';
 
-    // NOTE: `stripe-payment-sheet-wrap` below is a legacy CSS class kept for backward
-    // compatibility (leftover from a former component name). It is part of the public
-    // DOM contract — consumers may target it in their own stylesheets — so it must
-    // remain in the rendered output. Do not remove it.
     return (
-      <div class="stripe-payment-sheet-wrap">
+      <div class={LEGACY_PAYMENT_SHEET_WRAP_CLASS}>
         <form id="stripe-address-element-form">
           <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
           <div class="payment-info address visible">
