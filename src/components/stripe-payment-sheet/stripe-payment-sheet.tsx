@@ -1,5 +1,6 @@
 import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch, Host } from '@stencil/core';
 import type { PaymentIntentResult, SetupIntentResult, StripeCheckoutConfirmResult, StripeError } from '@stripe/stripe-js';
+import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { i18n } from '../../utils/i18n';
 import { checkPlatform } from '../../utils/utils';
 import { findElement } from '../../utils/element-finder';
@@ -584,8 +585,7 @@ export class StripePaymentSheet {
     return (
       <Host>
         <stripe-modal open={this.visible} showCloseButton={!confirming} onClose={this.handleModalClose}>
-          {/* `stripe-payment-sheet-wrap` is shared with the other form components for styling */}
-          <div class="stripe-payment-sheet-wrap">
+          <div class={LEGACY_PAYMENT_SHEET_WRAP_CLASS}>
             <form id="stripe-payment-sheet" onSubmit={this.handleSubmit}>
               <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
               <div class="payment-info visible">

@@ -313,4 +313,45 @@ describe('StripeExpressCheckoutElement', () => {
       expect(mockExpressCheckoutManager.unmount).toHaveBeenCalled();
     });
   });
+
+  describe('defaultConfirmAction', () => {
+    it('calls paymentFailed when confirmation throws', async () => {
+      const element = new StripeExpressCheckoutElement();
+      const paymentFailed = vi.fn();
+      const event = {
+        paymentFailed,
+        expressPaymentType: 'google_pay',
+      } as import('@stripe/stripe-js').StripeExpressCheckoutElementConfirmEvent;
+
+      mockStripeService.getStripe.mockReturnValue({} as unknown as import('@stripe/stripe-js').Stripe);
+      mockStripeService.getElements.mockReturnValue({} as import('@stripe/stripe-js').StripeElements);
+      (element as any).clientSecret = '';
+
+      await (element as any).defaultConfirmAction(event);
+
+      expect(paymentFailed).toHaveBeenCalledWith({ reason: 'fail', message: 'Client secret is required' });
+      expect(mockExpressCheckoutManager.setError).toHaveBeenCalledWith('Client secret is required');
+    });
+
+    it('leaves paymentFailed unused when confirm succeeds', async () => {
+      const element = new StripeExpressCheckoutElement();
+      const paymentFailed = vi.fn();
+      const event = {
+        paymentFailed,
+        expressPaymentType: 'google_pay',
+      } as import('@stripe/stripe-js').StripeExpressCheckoutElementConfirmEvent;
+
+      mockStripeService.getStripe.mockReturnValue({
+        confirmPayment: vi.fn().mockResolvedValue({ paymentIntent: { id: 'pi_test' } }),
+      } as unknown as import('@stripe/stripe-js').Stripe);
+      mockStripeService.getElements.mockReturnValue({} as import('@stripe/stripe-js').StripeElements);
+
+      (element as any).clientSecret = 'pi_test_secret';
+      (element as any).intentType = 'payment';
+
+      await (element as any).defaultConfirmAction(event);
+
+      expect(paymentFailed).not.toHaveBeenCalled();
+    });
+  });
 });

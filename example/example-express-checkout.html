@@ -138,10 +138,8 @@ element.addEventListener('confirm', async (event) => {
   // Your custom logic here
   // e.g., send to your backend, update UI, etc.
 
-  // Complete the payment
-  event.detail.complete('success');
-  // or on failure:
-  // event.detail.complete('fail');
+  // On failure, tell the element:
+  // event.detail.paymentFailed({ reason: 'fail', message: 'Your message' });
 });</code></pre>
 
           <p>

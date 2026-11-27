@@ -1,7 +1,12 @@
+import type { StripeCurrencySelectorElement, StripeCurrencySelectorElementOptions } from '@stripe/stripe-js';
 import type { ICurrencySelectorElementManager, IStripeService, CurrencySelectorElementState } from './interfaces';
-import { StripeCurrencySelectorElement } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+import { onStripeCurrencySelectorChange } from '../utils/stripe-currency-selector-events';
+
+type CurrencySelectorInitOptions = StripeCurrencySelectorElementOptions & {
+  clientSecret?: string;
+};
 
 /**
  * Currency Selector Element Manager
@@ -32,41 +37,38 @@ export class CurrencySelectorElementManager implements ICurrencySelectorElementM
    * Initialize and mount currency selector element to DOM
    * @param containerElement - Parent element containing mount point
    * @param options - Currency selector element options
+   * @param onCurrencyChange - Optional callback when the shopper picks a currency
    * @returns Promise resolving to currency selector element instance
-   * Note: StripeCurrencySelectorElementOptions is not yet exported in @stripe/stripe-js v8.6.0
    */
-  async initialize(containerElement: HTMLElement, options?: any): Promise<StripeCurrencySelectorElement> {
+  async initialize(
+    containerElement: HTMLElement,
+    options?: CurrencySelectorInitOptions,
+    onCurrencyChange?: (currency: string) => void,
+  ): Promise<StripeCurrencySelectorElement> {
     const elements = this.stripeService.getElements();
 
     if (elements == null) {
       throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
     }
 
-    // Unmount if already initialized
     if (this.currencySelectorElement != null) {
       this.unmount();
     }
 
-    // Find mount point first to avoid element leak if findElement throws
     const currencySelectorElementContainer = await findElement(containerElement, '#currency-selector');
 
-    // Create and mount currency selector element
-    // Note: 'currencySelector' type is not yet in @stripe/stripe-js v8.6.0 type definitions
-    // but is documented in Stripe's Currency Selector Element documentation
-    this.currencySelectorElement = (elements as any).create('currencySelector', options || {}) as StripeCurrencySelectorElement;
+    this.currencySelectorElement = elements.create('currencySelector', options ?? {});
 
     this.currencySelectorElement.mount(currencySelectorElementContainer);
 
-    // Listen for changes
-    // Note: The 'change' event type is not yet in @stripe/stripe-js type definitions
-    // but is documented in Stripe's Currency Selector Element documentation
-    (this.currencySelectorElement as any).on('change', (event: any) => {
-      // Clear error on change
+    onStripeCurrencySelectorChange(this.currencySelectorElement, event => {
       this.store.set('errorMessage', '');
 
-      // Update selected currency if available
-      if (event?.value?.currency) {
-        this.store.set('selectedCurrency', event.value.currency);
+      const currency = event.value?.currency;
+
+      if (currency) {
+        this.store.set('selectedCurrency', currency);
+        onCurrencyChange?.(currency);
       }
     });
 

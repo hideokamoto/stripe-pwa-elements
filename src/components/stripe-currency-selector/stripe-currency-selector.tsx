@@ -252,25 +252,9 @@ export class StripeCurrencySelector {
    * Initialize Component using Stripe Currency Selector Element
    */
   private async initElement() {
-    // Prepare currency selector element options
-    // Note: StripeCurrencySelectorElementOptions is not yet exported in @stripe/stripe-js v8.6.0
-    const options: any = {};
+    const options = this.clientSecret ? { clientSecret: this.clientSecret } : undefined;
 
-    if (this.clientSecret) {
-      options.clientSecret = this.clientSecret;
-    }
-
-    // Initialize currency selector element
-    const currencySelectorElement = await this.currencySelectorElementManager.initialize(this.el, options);
-
-    // Listen for currency changes
-    // Note: The 'change' event type is not yet in @stripe/stripe-js type definitions
-    // but is documented in Stripe's Currency Selector Element documentation
-    (currencySelectorElement as any).on('change', (event: any) => {
-      if (event?.value?.currency) {
-        this.currencyChangeEventHandler(event.value.currency);
-      }
-    });
+    await this.currencySelectorElementManager.initialize(this.el, options, currency => this.currencyChangeEventHandler(currency));
   }
 
   componentDidLoad() {

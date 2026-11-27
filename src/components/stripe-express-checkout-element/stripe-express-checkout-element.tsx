@@ -416,18 +416,15 @@ export class StripeExpressCheckoutElement {
         throw new StripeAPIError(result.error);
       }
 
-      // Complete the payment in the Express Checkout Element
-      // Note: complete() method exists at runtime but is not in type definitions yet
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (event as any).complete('success');
-
       this.progress = 'success';
       this.defaultConfirmResultHandler(result);
     } catch (e) {
       console.error(e);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (event as any).complete('fail');
-      this.expressCheckoutManager.setError(e.message);
+
+      const message = e instanceof Error ? e.message : String(e);
+
+      event.paymentFailed({ reason: 'fail', message });
+      this.expressCheckoutManager.setError(message);
       this.progress = 'failure';
       this.defaultConfirmResultHandler(e);
     }

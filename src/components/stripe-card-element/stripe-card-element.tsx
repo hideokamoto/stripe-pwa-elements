@@ -15,6 +15,7 @@ import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, ICardElementManager } from '../../services/interfaces';
 import { StripeAPIError } from '../../utils/error';
+import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { buildInitStripeOptionsFromAccount, confirmCardIntent, attachPaymentRequestHandlers } from './stripe-card-element.helpers';
 
 @Component({
@@ -578,10 +579,7 @@ export class StripeCardElement {
     const disabled = this.progress === 'loading' || this.progress === 'success';
 
     return (
-      // NOTE: `stripe-payment-sheet-wrap` is a legacy class name (leftover from a former
-      // component name). External consumers may target it in their own CSS, so it is a
-      // public DOM contract that MUST be kept for backward compatibility. Do not remove it.
-      <div class="stripe-payment-sheet-wrap">
+      <div class={LEGACY_PAYMENT_SHEET_WRAP_CLASS}>
         <form id="stripe-card-element">
           <div class="stripe-heading">{i18n.t(this.sheetTitle)}</div>
           <div id="stripe-payment-request-button" />
