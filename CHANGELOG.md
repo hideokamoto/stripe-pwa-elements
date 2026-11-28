@@ -1,5 +1,11 @@
 # stripe-pwa-elements
 
+## 4.1.4
+
+### Patch Changes
+
+- e310898: Re-export the Stripe.js types used in the components' public API (`PaymentIntentResult`, `SetupIntentResult`, `StripeCheckoutConfirmResult`, `PaymentRequestOptions`, `PaymentRequestWallet`, `StripeExpressCheckoutElementClickEvent`, `StripeExpressCheckoutElementConfirmEvent`) as type-only exports, so the published typings no longer look like runtime named exports that the CommonJS entry does not provide. The set of exported names is unchanged.
+
 ## 4.1.3
 
 ### Patch Changes

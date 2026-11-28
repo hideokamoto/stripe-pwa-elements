@@ -1,5 +1,11 @@
 # hono-stripe-elements
 
+## 0.1.2
+
+### Patch Changes
+
+- 393a69f: Add the missing `author` field to the published package manifest.
+
 ## 0.1.1
 
 ### Patch Changes
