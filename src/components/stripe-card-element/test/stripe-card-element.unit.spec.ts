@@ -148,12 +148,46 @@ describe('stripe-card-element unit tests', () => {
     });
 
     it('should call stripeService.initialize with correct parameters', async () => {
+      const loaded = vi.fn();
+      element.stripeDidLoaded = loaded;
+
       await element.initStripe('pk_test_xxx');
 
       expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', {
         stripeAccount: undefined,
         applicationName: 'stripe-pwa-elements',
       });
+      expect(mockCardElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(loaded).toHaveBeenCalledTimes(1);
+      expect(mockStripeService.onChange).not.toHaveBeenCalled();
+    });
+
+    it('mounts the card fields only after Stripe.js reports success', async () => {
+      mockStripeService.state.loadStripeStatus = '';
+      let onStatus: (status: string) => Promise<void> | void = () => undefined;
+      const unsubscribe = vi.fn();
+      mockStripeService.onChange.mockImplementation((_key, callback) => {
+        onStatus = callback;
+        return unsubscribe;
+      });
+      const loaded = vi.fn();
+      element.stripeDidLoaded = loaded;
+
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockCardElementManager.initialize).not.toHaveBeenCalled();
+      expect(loaded).not.toHaveBeenCalled();
+
+      await onStatus('failure');
+
+      expect(mockCardElementManager.initialize).not.toHaveBeenCalled();
+      expect(unsubscribe).not.toHaveBeenCalled();
+
+      await onStatus('success');
+
+      expect(mockCardElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(loaded).toHaveBeenCalledTimes(1);
+      expect(unsubscribe).toHaveBeenCalledTimes(1);
     });
 
     it('should call stripeService.initialize with account id', async () => {

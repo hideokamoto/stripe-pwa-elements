@@ -184,12 +184,18 @@ describe('stripe-currency-selector unit tests', () => {
     });
 
     it('should call stripeService.initialize with correct parameters', async () => {
+      const loaded = vi.fn();
+      element.stripeDidLoaded = loaded;
+
       await element.initStripe('pk_test_xxx');
 
       expect(mockStripeService.initialize).toHaveBeenCalledWith('pk_test_xxx', {
         stripeAccount: undefined,
         applicationName: 'stripe-pwa-elements',
       });
+      expect(mockCurrencySelectorElementManager.initialize).toHaveBeenCalledTimes(1);
+      expect(loaded).toHaveBeenCalledTimes(1);
+      expect(mockStripeService.onChange).not.toHaveBeenCalled();
     });
 
     it('should call stripeService.initialize with account id', async () => {
