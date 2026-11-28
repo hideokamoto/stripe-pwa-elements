@@ -13,6 +13,23 @@ import {
 } from '@stripe/stripe-js';
 
 /**
+ * Stripe.js types used in the components' public API (props, events, methods, state).
+ * Components import them from this file, so the generated components.d.ts re-exports them
+ * from './interfaces' with `export type`. Stencil re-exports anything imported straight from
+ * '@stripe/stripe-js' without `type`, and tools that read the package on its own
+ * (Are the Types Wrong?) then report them as missing named exports.
+ */
+export type {
+  PaymentIntentResult,
+  PaymentRequestOptions,
+  PaymentRequestWallet,
+  SetupIntentResult,
+  StripeCheckoutConfirmResult,
+  StripeExpressCheckoutElementClickEvent,
+  StripeExpressCheckoutElementConfirmEvent,
+} from '@stripe/stripe-js';
+
+/**
  * Internal util types
  */
 export type StringifyBoolean = 'true' | 'false';

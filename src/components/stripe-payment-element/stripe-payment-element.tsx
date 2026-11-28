@@ -14,7 +14,8 @@ import type { IStripeService, IPaymentElementManager, CheckoutSessionOptions } f
 import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { confirmCheckoutSession, confirmPaymentOrSetup, isSubmitButtonDisabled, buildSubmitEventProps } from './stripe-payment-element.helpers';
 
-import type { Stripe, StripeElements, StripeCheckoutElementsSdk, StripeCheckoutConfirmResult } from '@stripe/stripe-js';
+import type { Stripe, StripeElements, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
+import type { StripeCheckoutConfirmResult } from '../../interfaces';
 
 /**
  * Payment Element submit event

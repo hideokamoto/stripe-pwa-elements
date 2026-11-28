@@ -5,13 +5,13 @@ import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IExpressCheckoutElementManager, ExpressCheckoutElementOptions } from '../../services/interfaces';
 import { StripeAPIError } from '../../utils/error';
-import {
+import type {
   StripeExpressCheckoutElementConfirmEvent,
   StripeExpressCheckoutElementClickEvent,
   PaymentIntentResult,
   SetupIntentResult,
-  StripeElementsOptionsMode,
-} from '@stripe/stripe-js';
+} from '../../interfaces';
+import { StripeElementsOptionsMode } from '@stripe/stripe-js';
 
 /**
  * Express Checkout Element Component

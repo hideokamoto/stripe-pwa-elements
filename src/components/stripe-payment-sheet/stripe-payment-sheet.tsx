@@ -1,5 +1,6 @@
 import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch, Host } from '@stencil/core';
-import type { PaymentIntentResult, SetupIntentResult, StripeCheckoutConfirmResult, StripeError } from '@stripe/stripe-js';
+import type { StripeError } from '@stripe/stripe-js';
+import type { PaymentIntentResult, SetupIntentResult, StripeCheckoutConfirmResult } from '../../interfaces';
 import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { i18n } from '../../utils/i18n';
 import { checkPlatform } from '../../utils/utils';
