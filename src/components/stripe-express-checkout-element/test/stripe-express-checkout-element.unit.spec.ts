@@ -251,6 +251,19 @@ describe('StripeExpressCheckoutElement', () => {
         applicationName: 'stripe-pwa-elements',
       });
     });
+
+    it('mounts the button when Stripe.js is already loaded', async () => {
+      const element = new StripeExpressCheckoutElement();
+      mockStripeService.state.loadStripeStatus = 'success';
+      const loaded = vi.fn();
+      element.stripeDidLoaded = loaded;
+
+      await element.initStripe('pk_test_xxx');
+
+      expect(mockExpressCheckoutManager.initialize).toHaveBeenCalledTimes(1);
+      expect(loaded).toHaveBeenCalledTimes(1);
+      expect(mockStripeService.onChange).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateElementOptions', () => {

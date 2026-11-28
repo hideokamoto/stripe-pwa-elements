@@ -5,6 +5,7 @@ import { i18n } from '../../utils/i18n';
 import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IAddressElementManager } from '../../services/interfaces';
+import { whenStripeLoaded } from '../../utils/when-stripe-loaded';
 
 /**
  * Address form submit event data
@@ -80,22 +81,10 @@ export class StripeAddressElement {
       applicationName: this.applicationName,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
+    await whenStripeLoaded(this.stripeService, async () => {
       await this.initElement();
       this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    });
   }
 
   /**

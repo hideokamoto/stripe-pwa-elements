@@ -5,12 +5,8 @@ import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, IExpressCheckoutElementManager, ExpressCheckoutElementOptions } from '../../services/interfaces';
 import { StripeAPIError } from '../../utils/error';
-import type {
-  StripeExpressCheckoutElementConfirmEvent,
-  StripeExpressCheckoutElementClickEvent,
-  PaymentIntentResult,
-  SetupIntentResult,
-} from '../../interfaces';
+import { whenStripeLoaded } from '../../utils/when-stripe-loaded';
+import type { StripeExpressCheckoutElementConfirmEvent, StripeExpressCheckoutElementClickEvent, PaymentIntentResult, SetupIntentResult } from '../../interfaces';
 import { StripeElementsOptionsMode } from '@stripe/stripe-js';
 
 /**
@@ -182,22 +178,10 @@ export class StripeExpressCheckoutElement {
       elementsOptions: this.buildElementsOptions(),
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
+    await whenStripeLoaded(this.stripeService, async () => {
       await this.initElement();
       this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    });
   }
 
   /**
