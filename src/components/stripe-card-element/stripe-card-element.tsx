@@ -17,6 +17,7 @@ import type { IStripeService, ICardElementManager } from '../../services/interfa
 import { StripeAPIError } from '../../utils/error';
 import { LEGACY_PAYMENT_SHEET_WRAP_CLASS } from '../../constants/legacy-stripe-class-names';
 import { buildInitStripeOptionsFromAccount, confirmCardIntent, attachPaymentRequestHandlers } from './stripe-card-element.helpers';
+import { whenStripeLoaded } from '../../utils/when-stripe-loaded';
 
 @Component({
   tag: 'stripe-card-element',
@@ -85,22 +86,10 @@ export class StripeCardElement {
       applicationName: this.applicationName,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
+    await whenStripeLoaded(this.stripeService, async () => {
       await this.initElement();
       this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    });
   }
 
   /**

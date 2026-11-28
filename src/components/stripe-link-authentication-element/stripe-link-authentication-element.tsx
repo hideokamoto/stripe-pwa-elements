@@ -1,9 +1,17 @@
 import { Component, Prop, h, State, Method, EventEmitter, Event, Element, Watch } from '@stencil/core';
 import { checkPlatform } from '../../utils/utils';
-import { StripeDidLoadedHandler, StripeLoadedEvent, ProgressStatus, InitStripeOptions, LinkAuthenticationElementChangeEvent, LinkAuthenticationElementChangeHandler } from '../../interfaces';
+import {
+  StripeDidLoadedHandler,
+  StripeLoadedEvent,
+  ProgressStatus,
+  InitStripeOptions,
+  LinkAuthenticationElementChangeEvent,
+  LinkAuthenticationElementChangeHandler,
+} from '../../interfaces';
 import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, ILinkAuthenticationElementManager } from '../../services/interfaces';
+import { whenStripeLoaded } from '../../utils/when-stripe-loaded';
 import type { StripeLinkAuthenticationElementOptions } from '@stripe/stripe-js';
 
 @Component({
@@ -106,22 +114,10 @@ export class StripeLinkAuthenticationElement {
       applicationName: this.applicationName,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
+    await whenStripeLoaded(this.stripeService, async () => {
       await this.initElement();
       this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    });
   }
 
   /**

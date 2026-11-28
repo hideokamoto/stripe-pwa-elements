@@ -4,6 +4,7 @@ import { StripeDidLoadedHandler, StripeLoadedEvent, InitStripeOptions, CurrencyS
 import { i18n } from '../../utils/i18n';
 import { serviceFactory } from '../../services/factory';
 import type { IStripeService, ICurrencySelectorElementManager } from '../../services/interfaces';
+import { whenStripeLoaded } from '../../utils/when-stripe-loaded';
 
 /**
  * Stripe Currency Selector Element
@@ -103,22 +104,10 @@ export class StripeCurrencySelector {
       applicationName: this.applicationName,
     });
 
-    // If already successfully loaded, initialize elements immediately
-    if (this.stripeService.state.loadStripeStatus === 'success') {
+    await whenStripeLoaded(this.stripeService, async () => {
       await this.initElement();
       this.stripeLoadedEventHandler();
-    } else {
-      // Otherwise, wait for successful load
-      const unsubscribe = this.stripeService.onChange('loadStripeStatus', async newState => {
-        if (newState !== 'success') {
-          return;
-        }
-
-        await this.initElement();
-        this.stripeLoadedEventHandler();
-        unsubscribe(); // Clean up listener after first success
-      });
-    }
+    });
   }
 
   /**
