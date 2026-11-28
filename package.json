@@ -15,7 +15,7 @@
     "loader/"
   ],
   "scripts": {
-    "build": "stencil build --docs",
+    "build": "stencil build --docs && pnpm -F hono-stripe-elements run build",
     "start": "stencil build --dev --watch --serve",
     "typecheck": "tsc --noEmit",
     "deploy": "pnpm -C docs run deploy",

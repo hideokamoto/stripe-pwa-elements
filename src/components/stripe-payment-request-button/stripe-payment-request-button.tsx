@@ -1,5 +1,5 @@
 import { Component, Prop, h, State, Method, EventEmitter, Event, Host, Element } from '@stencil/core';
-import { loadStripe, Stripe, PaymentRequestOptions, StripePaymentRequestButtonElement } from '@stripe/stripe-js';
+import { loadStripe, Stripe, StripePaymentRequestButtonElement } from '@stripe/stripe-js';
 import {
   StripeDidLoadedHandler,
   StripeLoadedEvent,
@@ -7,7 +7,7 @@ import {
   PaymentRequestPaymentMethodEventHandler,
   PaymentRequestShippingOptionEventHandler,
 } from '../../interfaces';
-import { PaymentRequestWallet } from '@stripe/stripe-js';
+import type { PaymentRequestOptions, PaymentRequestWallet } from '../../interfaces';
 
 /**
  * @deprecated `stripe-payment-request-button` is deprecated and will be removed in a future release.
