@@ -284,8 +284,10 @@ describe('StripeServiceClass', () => {
       await stale;
 
       expect(freshStripe.elements).toHaveBeenCalledWith({ clientSecret: 'pi_2_secret_2' });
+      expect(staleStripe.registerAppInfo).not.toHaveBeenCalled();
       expect(staleStripe.elements).not.toHaveBeenCalled();
       expect(service.getElements()).toBe(freshElements);
+      expect(service.state.loadStripeStatus).toBe('success');
     });
 
     it('does not drop an in-flight initialize when it is called again with the same new config', async () => {
@@ -335,6 +337,23 @@ describe('StripeServiceClass', () => {
       await service.initialize('pk_test_xxx', { clientSecret: '' });
 
       expect(mockStripe.elements).toHaveBeenCalledWith();
+    });
+
+    it('keeps the previous checkout instance when creating elements throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+      mockStripe.elements.mockImplementation(() => {
+        throw new Error('elements failed');
+      });
+
+      await service.initialize('pk_test_xxx', { clientSecret: 'pi_secret' });
+
+      expect(service.state.loadStripeStatus).toBe('failure');
+      expect(service.state.isCheckoutSession).toBe(false);
+      expect(service.getStripe()).toBe(mockStripe);
+      expect(service.getCheckout()).toBe(mockCheckout);
+      expect(service.getElements()).toBeUndefined();
+      consoleSpy.mockRestore();
     });
   });
 
@@ -458,8 +477,27 @@ describe('StripeServiceClass', () => {
       await stale;
 
       expect(freshStripe.initCheckoutElementsSdk).toHaveBeenCalledWith(expect.objectContaining({ clientSecret: 'cs_test_secret_2' }));
+      expect(staleStripe.registerAppInfo).not.toHaveBeenCalled();
       expect(staleStripe.initCheckoutElementsSdk).not.toHaveBeenCalled();
       expect(service.getCheckout()).toBe(freshCheckout);
+      expect(service.state.loadStripeStatus).toBe('success');
+    });
+
+    it('keeps the previous elements instance when creating checkout throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      await service.initialize('pk_test_xxx');
+      mockStripe.initCheckoutElementsSdk.mockImplementation(() => {
+        throw new Error('checkout failed');
+      });
+
+      await service.initializeWithCheckoutSession('pk_test_xxx', 'cs_test_secret');
+
+      expect(service.state.loadStripeStatus).toBe('failure');
+      expect(service.state.isCheckoutSession).toBe(true);
+      expect(service.getStripe()).toBe(mockStripe);
+      expect(service.getElements()).toBe(mockElements);
+      expect(service.getCheckout()).toBeUndefined();
+      consoleSpy.mockRestore();
     });
   });
 
