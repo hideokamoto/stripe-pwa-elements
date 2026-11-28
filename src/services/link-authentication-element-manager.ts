@@ -2,6 +2,7 @@ import type { ILinkAuthenticationElementManager, IStripeService, LinkAuthenticat
 import type { StripeLinkAuthenticationElement, StripeLinkAuthenticationElementOptions } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+import { requireStripeElements } from './stripe-init-guards';
 
 /**
  * Link Authentication Element Manager
@@ -46,11 +47,7 @@ export class LinkAuthenticationElementManager implements ILinkAuthenticationElem
    * @returns Promise resolving to link authentication element instance
    */
   async initialize(containerElement: HTMLElement, options?: StripeLinkAuthenticationElementOptions): Promise<StripeLinkAuthenticationElement> {
-    const elements = this.stripeService.getElements();
-
-    if (elements == null) {
-      throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-    }
+    const elements = requireStripeElements(this.stripeService);
 
     // Unmount if already initialized
     if (this.linkAuthenticationElement != null) {

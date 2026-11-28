@@ -3,6 +3,7 @@ import type { ICurrencySelectorElementManager, IStripeService, CurrencySelectorE
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
 import { onStripeCurrencySelectorChange } from '../utils/stripe-currency-selector-events';
+import { requireStripeElements } from './stripe-init-guards';
 
 type CurrencySelectorInitOptions = StripeCurrencySelectorElementOptions & {
   clientSecret?: string;
@@ -45,11 +46,7 @@ export class CurrencySelectorElementManager implements ICurrencySelectorElementM
     options?: CurrencySelectorInitOptions,
     onCurrencyChange?: (currency: string) => void,
   ): Promise<StripeCurrencySelectorElement> {
-    const elements = this.stripeService.getElements();
-
-    if (elements == null) {
-      throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-    }
+    const elements = requireStripeElements(this.stripeService);
 
     if (this.currencySelectorElement != null) {
       this.unmount();

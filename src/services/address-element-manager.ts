@@ -1,7 +1,8 @@
+import type { StripeAddressElement, StripeAddressElementOptions } from '@stripe/stripe-js';
 import type { IAddressElementManager, IStripeService, AddressElementState } from './interfaces';
-import { StripeAddressElement } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+import { requireStripeElements } from './stripe-init-guards';
 
 /**
  * Address Element Manager
@@ -34,12 +35,8 @@ export class AddressElementManager implements IAddressElementManager {
    * @param options - Address element options
    * @returns Promise resolving to address element instance
    */
-  async initialize(containerElement: HTMLElement, options?: import('@stripe/stripe-js').StripeAddressElementOptions): Promise<StripeAddressElement> {
-    const elements = this.stripeService.getElements();
-
-    if (elements == null) {
-      throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-    }
+  async initialize(containerElement: HTMLElement, options?: StripeAddressElementOptions): Promise<StripeAddressElement> {
+    const elements = requireStripeElements(this.stripeService);
 
     // Unmount if already initialized
     if (this.addressElement != null) {

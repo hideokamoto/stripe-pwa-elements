@@ -7,6 +7,7 @@ import type {
 import type { IExpressCheckoutElementManager, IStripeService, ExpressCheckoutElementOptions, ExpressCheckoutElementState, ExpressCheckoutElementEventHandlers } from './interfaces';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+import { requireStripeElements } from './stripe-init-guards';
 
 const parseButtonHeight = (buttonHeight: string | number | undefined): number | undefined => {
   if (buttonHeight == null) {
@@ -83,11 +84,7 @@ export class ExpressCheckoutElementManager implements IExpressCheckoutElementMan
     options: ExpressCheckoutElementOptions,
     eventHandlers?: ExpressCheckoutElementEventHandlers,
   ): Promise<StripeExpressCheckoutElement> {
-    const elements = this.stripeService.getElements();
-
-    if (elements == null) {
-      throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-    }
+    const elements = requireStripeElements(this.stripeService);
 
     if (this.expressCheckoutElement != null) {
       this.unmount();

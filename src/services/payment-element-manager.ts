@@ -2,6 +2,7 @@ import type { IPaymentElementManager, IStripeService, PaymentElementState } from
 import { createStore } from '@stencil/store';
 import type { StripePaymentElement, StripePaymentElementOptions, StripeCheckoutPaymentElementOptions } from '@stripe/stripe-js';
 import { findElement } from '../utils/element-finder';
+import { requireStripeCheckout, requireStripeElements } from './stripe-init-guards';
 
 /**
  * Payment Element Manager
@@ -45,21 +46,13 @@ export class PaymentElementManager implements IPaymentElementManager {
 
     if (isCheckoutSession) {
       // Checkout Session mode: use checkout.createPaymentElement()
-      const checkout = this.stripeService.getCheckout();
-
-      if (checkout == null) {
-        throw new Error('StripeService not initialized with Checkout Session. Call StripeService.initializeWithCheckoutSession() first.');
-      }
+      const checkout = requireStripeCheckout(this.stripeService);
 
       // Create payment element using Checkout instance
       this.paymentElement = checkout.createPaymentElement(options as StripeCheckoutPaymentElementOptions);
     } else {
       // Payment Intent mode: use elements.create('payment')
-      const elements = this.stripeService.getElements();
-
-      if (elements == null) {
-        throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-      }
+      const elements = requireStripeElements(this.stripeService);
 
       // Create payment element with options
       const elementOptions: StripePaymentElementOptions = options as StripePaymentElementOptions || {};

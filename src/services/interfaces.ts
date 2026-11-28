@@ -16,6 +16,12 @@ import {
   StripeCheckoutElementsSdk,
   StripeCheckoutElementsOptions,
   StripeCheckoutElementsSdkOptions,
+  StripeElementsOptionsMode,
+  StripePaymentElementOptions,
+  StripeCheckoutPaymentElementOptions,
+  StripeAddressElementOptions,
+  StripeLinkAuthenticationElementOptions,
+  StripeCurrencySelectorElementOptions,
 } from '@stripe/stripe-js';
 import { ProgressStatus } from '../interfaces';
 
@@ -105,7 +111,7 @@ export interface IStripeService {
    */
   initialize(
     publishableKey: string,
-    options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string; elementsOptions?: import('@stripe/stripe-js').StripeElementsOptionsMode },
+    options?: { stripeAccount?: string; applicationName?: string; clientSecret?: string; elementsOptions?: StripeElementsOptionsMode },
   ): Promise<void>;
 
   /**
@@ -201,7 +207,7 @@ export interface IPaymentElementManager {
    * Initialize and mount payment element
    * Supports both Payment Intent mode and Checkout Session mode
    */
-  initialize(containerElement: HTMLElement, options?: import('@stripe/stripe-js').StripePaymentElementOptions | import('@stripe/stripe-js').StripeCheckoutPaymentElementOptions): Promise<StripePaymentElement>;
+  initialize(containerElement: HTMLElement, options?: StripePaymentElementOptions | StripeCheckoutPaymentElementOptions): Promise<StripePaymentElement>;
 
   /**
    * Get mounted payment element
@@ -237,7 +243,7 @@ export interface IAddressElementManager {
   /**
    * Initialize and mount address element
    */
-  initialize(containerElement: HTMLElement, options?: import('@stripe/stripe-js').StripeAddressElementOptions): Promise<StripeAddressElement>;
+  initialize(containerElement: HTMLElement, options?: StripeAddressElementOptions): Promise<StripeAddressElement>;
 
   /**
    * Get mounted address element
@@ -278,7 +284,7 @@ export interface ILinkAuthenticationElementManager {
   /**
    * Initialize and mount link authentication element
    */
-  initialize(containerElement: HTMLElement, options?: import('@stripe/stripe-js').StripeLinkAuthenticationElementOptions): Promise<StripeLinkAuthenticationElement>;
+  initialize(containerElement: HTMLElement, options?: StripeLinkAuthenticationElementOptions): Promise<StripeLinkAuthenticationElement>;
 
   /**
    * Get mounted link authentication element
@@ -324,7 +330,7 @@ export interface ICurrencySelectorElementManager {
    */
   initialize(
     containerElement: HTMLElement,
-    options?: import('@stripe/stripe-js').StripeCurrencySelectorElementOptions & { clientSecret?: string },
+    options?: StripeCurrencySelectorElementOptions & { clientSecret?: string },
     onCurrencyChange?: (currency: string) => void,
   ): Promise<StripeCurrencySelectorElement>;
 

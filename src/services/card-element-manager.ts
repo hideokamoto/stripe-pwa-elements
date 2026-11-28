@@ -2,6 +2,7 @@ import type { ICardElementManager, IStripeService, CardElementInstances, CardEle
 import { i18n } from '../utils/i18n';
 import { createStore } from '@stencil/store';
 import { findElement } from '../utils/element-finder';
+import { requireStripeElements } from './stripe-init-guards';
 
 /**
  * Card Element Manager
@@ -34,11 +35,7 @@ export class CardElementManager implements ICardElementManager {
    * @returns Promise resolving to card element instances
    */
   async initialize(containerElement: HTMLElement): Promise<CardElementInstances> {
-    const elements = this.stripeService.getElements();
-
-    if (elements == null) {
-      throw new Error('StripeService not initialized. Call StripeService.initialize() first.');
-    }
+    const elements = requireStripeElements(this.stripeService);
 
     // Unmount if already initialized
     if (this.cardElements != null) {
