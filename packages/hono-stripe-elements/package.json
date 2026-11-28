@@ -2,6 +2,10 @@
   "name": "hono-stripe-elements",
   "version": "0.1.1",
   "description": "hono/jsx components wrapping stripe-pwa-elements Web Components",
+  "author": {
+    "name": "Hidetaka Okamoto",
+    "url": "https://github.com/hideokamoto"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
