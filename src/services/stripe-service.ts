@@ -1,6 +1,5 @@
-import { Stripe, StripeElements, StripeElementsOptionsMode, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
+import { loadStripe, Stripe, StripeElements, StripeElementsOptionsMode, StripeCheckoutElementsSdk } from '@stripe/stripe-js';
 import { createStore } from '@stencil/store';
-import { loadStripe } from '@stripe/stripe-js';
 import type { IStripeService, StripeServiceState, CheckoutSessionOptions } from './interfaces';
 
 /**
@@ -74,45 +73,19 @@ class StripeServiceClass implements IStripeService {
       this.intentClientSecret === options?.clientSecret &&
       this.elementsOptionsKey === elementsOptionsKey;
 
-    // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = false;
     this.intentClientSecret = options?.clientSecret;
     this.elementsOptionsKey = elementsOptionsKey;
-    if (options?.stripeAccount != null && options?.stripeAccount !== '') {
-      this.store.state.stripeAccount = options.stripeAccount;
-    }
+    this.assignAccountAndApplicationName(options);
 
-    if (options?.applicationName != null && options?.applicationName !== '') {
-      this.store.state.applicationName = options.applicationName;
-    }
-
-    // If Stripe.js already loaded with same config, do nothing.
-    // Return before bumping the generation, so an in-flight init for this same config is not discarded.
     if (isUpToDate) {
       return;
     }
 
     const generation = ++this.initGeneration;
 
-    this.store.state.loadStripeStatus = 'loading';
-
-    try {
-      const stripe = await loadStripe(publishableKey, {
-        stripeAccount: options?.stripeAccount,
-      });
-
-      if (generation !== this.initGeneration) {
-        return;
-      }
-
-      // Register app info
-      stripe.registerAppInfo({
-        name: this.store.state.applicationName,
-      });
-
-      this.store.state.stripe = stripe;
-      // Elements must be created with a client secret, or with mode / amount / currency, depending on the element type
+    await this.loadAndMountStripe(publishableKey, options?.stripeAccount, generation, 'Failed to load Stripe.js:', stripe => {
       if (options?.clientSecret != null && options.clientSecret !== '') {
         this.store.state.elements = stripe.elements({ clientSecret: options.clientSecret });
       } else if (options?.elementsOptions != null) {
@@ -122,11 +95,7 @@ class StripeServiceClass implements IStripeService {
       }
 
       this.store.state.checkout = undefined;
-      this.store.state.loadStripeStatus = 'success';
-    } catch (e) {
-      console.error('Failed to load Stripe.js:', e);
-      this.store.state.loadStripeStatus = 'failure';
-    }
+    });
   }
 
   /**
@@ -138,51 +107,61 @@ class StripeServiceClass implements IStripeService {
   async initializeWithCheckoutSession(
     publishableKey: string,
     checkoutSessionClientSecret: string,
-    options?: { stripeAccount?: string; applicationName?: string } & CheckoutSessionOptions
+    options?: { stripeAccount?: string; applicationName?: string } & CheckoutSessionOptions,
   ): Promise<void> {
     const generation = ++this.initGeneration;
 
-    // Update configuration
     this.store.state.publishableKey = publishableKey;
     this.store.state.isCheckoutSession = true;
-    if (options?.stripeAccount != null && options?.stripeAccount !== '') {
+    this.assignAccountAndApplicationName(options);
+
+    await this.loadAndMountStripe(publishableKey, options?.stripeAccount, generation, 'Failed to initialize Stripe Checkout:', stripe => {
+      this.store.state.checkout = stripe.initCheckoutElementsSdk({
+        clientSecret: checkoutSessionClientSecret,
+        elementsOptions: options?.elementsOptions,
+        defaultValues: options?.defaultValues,
+      });
+      this.store.state.elements = undefined;
+    });
+  }
+
+  private assignAccountAndApplicationName(options?: { stripeAccount?: string; applicationName?: string }): void {
+    if (options?.stripeAccount != null && options.stripeAccount !== '') {
       this.store.state.stripeAccount = options.stripeAccount;
     }
 
-    if (options?.applicationName != null && options?.applicationName !== '') {
+    if (options?.applicationName != null && options.applicationName !== '') {
       this.store.state.applicationName = options.applicationName;
     }
+  }
 
+  private async loadAndMountStripe(
+    publishableKey: string,
+    stripeAccount: string | undefined,
+    generation: number,
+    failureMessage: string,
+    useStripe: (stripe: Stripe) => void,
+  ): Promise<void> {
     this.store.state.loadStripeStatus = 'loading';
 
     try {
       const stripe = await loadStripe(publishableKey, {
-        stripeAccount: options?.stripeAccount,
+        stripeAccount,
       });
 
       if (generation !== this.initGeneration) {
         return;
       }
 
-      // Register app info
       stripe.registerAppInfo({
         name: this.store.state.applicationName,
       });
 
       this.store.state.stripe = stripe;
-
-      // Initialize Checkout instance instead of Elements
-      const checkout = stripe.initCheckoutElementsSdk({
-        clientSecret: checkoutSessionClientSecret,
-        elementsOptions: options?.elementsOptions,
-        defaultValues: options?.defaultValues,
-      });
-
-      this.store.state.checkout = checkout;
-      this.store.state.elements = undefined;
+      useStripe(stripe);
       this.store.state.loadStripeStatus = 'success';
     } catch (e) {
-      console.error('Failed to initialize Stripe Checkout:', e);
+      console.error(failureMessage, e);
       this.store.state.loadStripeStatus = 'failure';
     }
   }
